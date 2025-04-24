@@ -180,23 +180,72 @@ export default function MyPlants() {
           />
         </div>
         
-        <div>
-          <Select
-            value={selectedCategory}
-            onValueChange={setSelectedCategory}
+        <div className="flex overflow-x-auto pb-2 -mx-1">
+          <button
+            onClick={() => setSelectedCategory("all")}
+            className={`whitespace-nowrap px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "all"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
           >
-            <SelectTrigger className="glass-card backdrop-blur-sm border border-gray-100/50 focus:ring-primary/30">
-              <SelectValue placeholder="Filtrer par catégorie" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les plantes</SelectItem>
-              <SelectItem value="legumes">Légumes</SelectItem>
-              <SelectItem value="fruitiers">Arbres fruitiers</SelectItem>
-              <SelectItem value="fleurs">Fleurs</SelectItem>
-              <SelectItem value="interieur">Plantes d'intérieur</SelectItem>
-              <SelectItem value="exterieur">Plantes d'extérieur</SelectItem>
-            </SelectContent>
-          </Select>
+            Toutes
+          </button>
+          <button
+            onClick={() => setSelectedCategory("legumes")}
+            className={`whitespace-nowrap flex items-center px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "legumes"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
+          >
+            <span className="material-icons mr-1 text-sm">spa</span>
+            Légumes
+          </button>
+          <button
+            onClick={() => setSelectedCategory("fruitiers")}
+            className={`whitespace-nowrap flex items-center px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "fruitiers"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
+          >
+            <span className="material-icons mr-1 text-sm">grass</span>
+            Arbres fruitiers
+          </button>
+          <button
+            onClick={() => setSelectedCategory("fleurs")}
+            className={`whitespace-nowrap flex items-center px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "fleurs"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
+          >
+            <span className="material-icons mr-1 text-sm">local_florist</span>
+            Fleurs
+          </button>
+          <button
+            onClick={() => setSelectedCategory("interieur")}
+            className={`whitespace-nowrap flex items-center px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "interieur"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
+          >
+            <span className="material-icons mr-1 text-sm">home</span>
+            Intérieur
+          </button>
+          <button
+            onClick={() => setSelectedCategory("exterieur")}
+            className={`whitespace-nowrap flex items-center px-4 py-2 rounded-full mx-1 transition-colors ${
+              selectedCategory === "exterieur"
+                ? "bg-primary text-white shadow-md"
+                : "bg-gray-100/80 text-gray-600 hover:bg-gray-200/80"
+            }`}
+          >
+            <span className="material-icons mr-1 text-sm">terrain</span>
+            Extérieur
+          </button>
         </div>
       </div>
 
@@ -246,7 +295,7 @@ export default function MyPlants() {
                       </div>
                       <button 
                         onClick={(e) => handleDeleteClick(e, plant.id)}
-                        className="absolute top-2 right-2 glass-card backdrop-blur-sm rounded-full p-1.5 shadow-sm bg-red-500/80 text-white hover:bg-red-600 transition-colors"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors border border-white/30"
                         aria-label="Supprimer"
                       >
                         <span className="material-icons text-sm">delete</span>
