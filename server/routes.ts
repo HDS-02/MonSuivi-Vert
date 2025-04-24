@@ -745,6 +745,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour générer un PDF avec QR code pour une plante
+  app.get("/api/plants/:id/pdf", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier si la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Générer le PDF
+      const pdfBuffer = await pdfService.generatePlantPDF(plantId);
+      
+      // Configurer les en-têtes pour le téléchargement
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${plant.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_fiche.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      // Envoyer le PDF
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Erreur lors de la génération du PDF:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // JOURNAL DE CROISSANCE ROUTES
   // Récupérer les entrées du journal pour une plante spécifique

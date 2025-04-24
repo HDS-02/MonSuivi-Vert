@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileText, Download, QrCode } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
@@ -11,7 +11,6 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { QrCode } from 'lucide-react';
 
 interface PlantQRCodeProps {
   plantId: number;
@@ -91,6 +90,16 @@ export function PlantQRCode({ plantId, plantName }: PlantQRCodeProps) {
         setError(err.message);
         setIsLoading(false);
       });
+  };
+  
+  const downloadPdf = () => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Ouvrir un nouvel onglet avec le PDF
+    const pdfUrl = `/api/plants/${plantId}/pdf`;
+    window.open(pdfUrl, '_blank');
+    setIsLoading(false);
   };
 
   const handleOpenChange = (open: boolean) => {
