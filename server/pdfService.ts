@@ -60,7 +60,7 @@ export class PDFService {
       if (fs.existsSync(LOGO_PATH)) {
         doc.image(LOGO_PATH, 40, 20, {
           fit: [60, 60],
-          align: 'left',
+          align: 'center',
           valign: 'center'
         });
         
@@ -68,13 +68,13 @@ export class PDFService {
         doc.fontSize(24)
            .fill('#FFFFFF')
            .font('Helvetica-Bold')
-           .text('MON SUIVI VERT', 110, 30, { align: 'left' });
+           .text('MON SUIVI VERT', 110, 30);
       } else {
         // Fallback si le logo n'est pas trouvé
         doc.fontSize(30)
            .fill('#FFFFFF')
            .font('Helvetica-Bold')
-           .text('MON SUIVI VERT', 40, 35, { align: 'left' });
+           .text('MON SUIVI VERT', 40, 35);
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout du logo:', error);
@@ -82,14 +82,14 @@ export class PDFService {
       doc.fontSize(30)
          .fill('#FFFFFF')
          .font('Helvetica-Bold')
-         .text('MON SUIVI VERT', 40, 35, { align: 'left' });
+         .text('MON SUIVI VERT', 40, 35);
     }
     
     // Information de la fiche
     doc.fontSize(14)
        .fill('#FFFFFF')
        .font('Helvetica')
-       .text(`Fiche plante - ${new Date().toLocaleDateString('fr-FR')}`, 40, 65, { align: 'left' });
+       .text(`Fiche plante - ${new Date().toLocaleDateString('fr-FR')}`, 40, 65);
     
     // Zone principale
     doc.rect(40, 110, pageWidth + 80, doc.page.height - 160)

@@ -833,30 +833,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Créer une nouvelle entrée dans le journal
   app.post("/api/growth-journal", isAuthenticated, async (req: Request, res: Response) => {
+    console.log("POST /api/growth-journal - Requête reçue:", req.body);
+    
     try {
       if (!req.user?.id) {
+        console.log("POST /api/growth-journal - Erreur: Utilisateur non authentifié");
         return res.status(401).json({ message: "Utilisateur non authentifié" });
       }
       
+      console.log("POST /api/growth-journal - Utilisateur authentifié:", req.user.id);
+      
       // Validation des données
-      const validatedData = insertGrowthJournalSchema.parse({
-        ...req.body,
-        userId: req.user.id
-      });
-      
-      // Vérifier si la plante existe
-      const plant = await storage.getPlant(validatedData.plantId);
-      if (!plant) {
-        return res.status(404).json({ message: "Plante non trouvée" });
+      try {
+        const validatedData = insertGrowthJournalSchema.parse({
+          ...req.body,
+          userId: req.user.id
+        });
+        
+        console.log("POST /api/growth-journal - Données validées:", validatedData);
+        
+        // Vérifier si la plante existe
+        const plant = await storage.getPlant(validatedData.plantId);
+        if (!plant) {
+          console.log("POST /api/growth-journal - Erreur: Plante non trouvée, ID:", validatedData.plantId);
+          return res.status(404).json({ message: "Plante non trouvée" });
+        }
+        
+        console.log("POST /api/growth-journal - Plante trouvée:", plant.id, plant.name);
+        
+        // Créer l'entrée
+        const entry = await storage.createGrowthJournalEntry(validatedData);
+        console.log("POST /api/growth-journal - Entrée créée avec succès:", entry);
+        
+        res.status(201).json(entry);
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          console.log("POST /api/growth-journal - Erreur de validation:", validationError.errors);
+          return res.status(400).json({ 
+            message: "Données invalides", 
+            errors: validationError.errors 
+          });
+        }
+        throw validationError;
       }
-      
-      // Créer l'entrée
-      const entry = await storage.createGrowthJournalEntry(validatedData);
-      res.status(201).json(entry);
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Données invalides", errors: error.errors });
-      }
+      console.error("POST /api/growth-journal - Erreur serveur:", error);
       res.status(500).json({ message: error.message });
     }
   });
