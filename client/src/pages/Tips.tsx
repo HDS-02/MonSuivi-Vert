@@ -1,11 +1,16 @@
 import { Link } from "wouter";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 // Types d'articles
 interface Tip {
   id: number;
   title: string;
   excerpt: string;
+  content?: string; // Contenu complet de l'article
   icon: string;
   category: "beginner" | "care" | "troubleshooting" | "seasonal";
 }

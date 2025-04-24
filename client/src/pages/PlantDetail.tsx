@@ -13,6 +13,7 @@ import { PlantQRCode } from "@/components/PlantQRCode";
 import { PlantGrowthJournal } from "@/components/PlantGrowthJournal";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import NewTaskDialog from "@/components/NewTaskDialog";
 
 export default function PlantDetail() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function PlantDetail() {
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
   
   const { data: plant, isLoading: plantLoading } = useQuery<Plant>({
     queryKey: [`/api/plants/${id}`],
@@ -66,6 +68,7 @@ export default function PlantDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Tâche terminée",
         description: "La tâche a été marquée comme terminée."
@@ -75,6 +78,29 @@ export default function PlantDetail() {
       toast({
         title: "Erreur",
         description: "Impossible de marquer la tâche comme terminée.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Mutation pour supprimer une tâche
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      const response = await apiRequest("DELETE", `/api/tasks/${taskId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Tâche supprimée",
+        description: "La tâche a été supprimée avec succès."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la tâche.",
         variant: "destructive"
       });
     }
@@ -488,7 +514,10 @@ export default function PlantDetail() {
         <CardContent className="p-0">
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-raleway font-semibold">Tâches à faire</h3>
-            <button className="text-primary text-sm font-medium">Ajouter</button>
+            <Button variant="ghost" className="text-primary text-sm font-medium p-1" onClick={() => setNewTaskDialogOpen(true)}>
+              <span className="material-icons text-sm mr-1">add_circle</span>
+              Ajouter
+            </Button>
           </div>
           {tasksLoading ? (
             <p className="text-center py-4">Chargement des tâches...</p>
@@ -500,7 +529,7 @@ export default function PlantDetail() {
                   <div key={task.id} className="py-3 flex items-center">
                     <div className="w-8 h-8 bg-primary-light/10 rounded-full flex items-center justify-center mr-3">
                       <span className="material-icons text-primary text-sm">
-                        {task.type === "water" ? "opacity" : "eco"}
+                        {task.type === "water" ? "opacity" : task.type === "fertilize" ? "grass" : task.type === "repot" ? "place" : task.type === "light" ? "wb_sunny" : "eco"}
                       </span>
                     </div>
                     <div className="flex-grow">
@@ -509,14 +538,30 @@ export default function PlantDetail() {
                         {task.dueDate ? formatDate(task.dueDate) : "Pas de date"}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-400 hover:text-primary"
-                      onClick={() => completeTaskMutation.mutate(task.id)}
-                    >
-                      <span className="material-icons">check_circle_outline</span>
-                    </Button>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-400 hover:text-green-500"
+                        onClick={() => completeTaskMutation.mutate(task.id)}
+                        title="Terminer la tâche"
+                      >
+                        <span className="material-icons">check_circle_outline</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => {
+                          if (window.confirm("Êtes-vous sûr de vouloir supprimer cette tâche ?")) {
+                            deleteTaskMutation.mutate(task.id);
+                          }
+                        }}
+                        title="Supprimer la tâche"
+                      >
+                        <span className="material-icons">delete_outline</span>
+                      </Button>
+                    </div>
                   </div>
                 ))}
             </div>
@@ -561,6 +606,13 @@ export default function PlantDetail() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Dialogue pour créer une nouvelle tâche */}
+      <NewTaskDialog 
+        open={newTaskDialogOpen} 
+        onOpenChange={setNewTaskDialogOpen}
+        selectedPlantId={parseInt(id)}
+      />
     </div>
   );
 }
