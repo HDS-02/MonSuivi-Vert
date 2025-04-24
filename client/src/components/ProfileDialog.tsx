@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { StableDialog } from "./StableDialog";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 // Schéma de validation pour le formulaire de profil
 const profileFormSchema = z.object({
@@ -36,7 +37,8 @@ interface ProfileDialogProps {
 
 export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   
   // Formulaire de mise à jour du profil
   const profileForm = useForm<ProfileFormValues>({
@@ -224,6 +226,29 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
 
             <Separator className="my-2" />
             
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              className="mt-4 mb-2"
+            >
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setLogoutConfirmOpen(true)}
+                className="w-full rounded-md border border-red-300 text-red-600 bg-white hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+              >
+                <motion.span 
+                  className="material-icons mr-2 text-red-500 group-hover:text-red-600"
+                  whileHover={{ rotate: [0, -10, 10, -5, 0] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  logout
+                </motion.span>
+                Se déconnecter
+              </Button>
+            </motion.div>
+            
             <div className="flex justify-end gap-3 pt-3">
               <Button
                 variant="outline"
@@ -245,6 +270,24 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
                 {profileForm.formState.isSubmitting ? "Enregistrement..." : "Enregistrer"}
               </Button>
             </div>
+            
+            {/* Dialogue de confirmation de déconnexion */}
+            <ConfirmDialog
+              open={logoutConfirmOpen}
+              onOpenChange={setLogoutConfirmOpen}
+              title="Se déconnecter"
+              description="Êtes-vous sûr de vouloir vous déconnecter ?"
+              confirmText="Se déconnecter"
+              cancelText="Annuler"
+              confirmVariant="destructive"
+              icon="logout"
+              iconColor="text-red-500"
+              onConfirm={() => {
+                logoutMutation.mutate();
+                setLogoutConfirmOpen(false);
+                onOpenChange(false);
+              }}
+            />
           </form>
         </Form>
       </div>

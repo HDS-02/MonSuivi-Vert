@@ -6,6 +6,7 @@ import { Badge as BadgeType } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function BadgeCollection() {
   const { user } = useAuth();
@@ -46,8 +47,8 @@ export default function BadgeCollection() {
     }
   };
 
-  // Composant pour afficher un badge individuel avec des effets visuels améliorés
-  const BadgeItem = ({ badge }: { badge: BadgeType }) => {
+  // Composant pour afficher un badge individuel avec des effets visuels et animations améliorés
+  const BadgeItem = ({ badge, index = 0 }: { badge: BadgeType; index?: number }) => {
     const [isHovered, setIsHovered] = useState(false);
     
     // Calculer le pourcentage de progression
@@ -60,8 +61,8 @@ export default function BadgeCollection() {
       if (badge.unlocked) {
         return {
           container: `relative p-5 rounded-xl shadow-md flex flex-col items-center text-center 
-                      transition-all duration-300 cursor-pointer transform
-                      ${isHovered ? "scale-[1.03] shadow-lg" : ""}
+                      transition-all duration-300 cursor-pointer
+                      ${isHovered ? "shadow-lg" : ""}
                       bg-gradient-to-br from-primary-light/20 to-primary/30 
                       border border-primary/30`,
           icon: "mb-3 w-16 h-16 flex items-center justify-center rounded-full bg-white shadow-md",
@@ -96,32 +97,82 @@ export default function BadgeCollection() {
     const styles = getBadgeStyle();
     
     return (
-      <div 
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ 
+          duration: 0.4, 
+          delay: index * 0.1,
+          type: "spring",
+          stiffness: 100
+        }}
+        whileHover={{ scale: badge.unlocked ? 1.05 : 1.02 }}
         className={styles.container}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Badge bloqué/débloqué indicator */}
         {badge.unlocked && (
-          <div className="absolute -top-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-            <span className="material-icons text-white text-sm">check</span>
-          </div>
+          <motion.div 
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 + index * 0.1 }}
+            className="absolute -top-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-md z-10"
+          >
+            <motion.span 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.2, delay: 0.3 + index * 0.1 }}
+              className="material-icons text-white text-sm"
+            >
+              check
+            </motion.span>
+          </motion.div>
         )}
         
         {/* Icon container */}
-        <div className={styles.icon}>
-          <span className={`material-icons ${styles.iconColor}`}>
+        <motion.div 
+          className={styles.icon}
+          whileHover={{ rotate: badge.unlocked ? [0, -10, 10, -5, 5, 0] : 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.span 
+            className={`material-icons ${styles.iconColor}`}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+          >
             {badge.icon}
-          </span>
-        </div>
+          </motion.span>
+        </motion.div>
         
         {/* Badge title and description */}
-        <h3 className={styles.title}>{badge.name}</h3>
-        <p className={styles.description}>{badge.description}</p>
+        <motion.h3 
+          className={styles.title}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
+        >
+          {badge.name}
+        </motion.h3>
+        
+        <motion.p 
+          className={styles.description}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+        >
+          {badge.description}
+        </motion.p>
         
         {/* Progress bar for badges in progress */}
         {badge.progress !== undefined && badge.maxProgress !== undefined && (
-          <div className="w-full mt-auto">
+          <motion.div 
+            className="w-full mt-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
+          >
             <div className="text-xs font-medium mb-1 flex justify-between">
               <span className={badge.unlocked ? "text-primary" : "text-gray-500"}>
                 {badge.progress}/{badge.maxProgress}
@@ -131,21 +182,28 @@ export default function BadgeCollection() {
               </span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-500 ${badge.unlocked ? 'bg-gradient-to-r from-primary to-primary-light' : 'bg-primary/40'}`}
-                style={{ width: `${progressPercent}%` }}
-              ></div>
+              <motion.div 
+                initial={{ width: "0%" }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 1, delay: 0.5 + index * 0.05, ease: "easeOut" }}
+                className={`h-full ${badge.unlocked ? 'bg-gradient-to-r from-primary to-primary-light' : 'bg-primary/40'}`}
+              />
             </div>
-          </div>
+          </motion.div>
         )}
         
         {/* Date d'obtention pour les badges débloqués */}
         {badge.unlocked && badge.unlockedAt && (
-          <div className="mt-3 py-1 px-2 rounded-full bg-white/60 text-xs text-gray-500">
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
+            className="mt-3 py-1 px-2 rounded-full bg-white/60 text-xs text-gray-500"
+          >
             Débloqué le {new Date(badge.unlockedAt).toLocaleDateString("fr-FR")}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -243,11 +301,18 @@ export default function BadgeCollection() {
           ) : (
             <>
               {getFilteredBadges().length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {getFilteredBadges().map((badge) => (
-                    <BadgeItem key={badge.id} badge={badge} />
-                  ))}
-                </div>
+                <motion.div 
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <AnimatePresence>
+                    {getFilteredBadges().map((badge, index) => (
+                      <BadgeItem key={badge.id} badge={badge} index={index} />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
               ) : (
                 <div className="text-center p-8 bg-gray-50 rounded-lg">
                   <span className="material-icons text-4xl text-gray-300 mb-2">
