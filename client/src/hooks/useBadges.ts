@@ -56,18 +56,46 @@ export default function useBadges() {
     queryKey: ["/api/badges"],
     // La requête est autorisée à échouer silencieusement si l'utilisateur n'est pas connecté
     retry: 1,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0]);
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Si non authentifié, retourner un tableau vide plutôt que de lancer une erreur
+            return [];
+          }
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Erreur lors de la récupération des badges", error);
+        return [];
+      }
+    }
   });
 
   // Mettre à jour les badges liés à la collection de plantes
   const updatePlantCollectionBadges = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/badges/update-plant-collection");
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/badges/update-plant-collection");
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Si non authentifié, retourner un objet vide plutôt que de lancer une erreur
+            return { unlockedBadges: [] };
+          }
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour des badges de collection:", error);
+        return { unlockedBadges: [] };
+      }
     },
     onSuccess: (data: { unlockedBadges?: Badge[]; updatedBadge?: Badge }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/badges"] });
       
-      if (data.unlockedBadges && data.unlockedBadges.length > 0) {
+      if (data && data.unlockedBadges && data.unlockedBadges.length > 0) {
         notifyBadges(data.unlockedBadges);
       }
     },
@@ -79,13 +107,25 @@ export default function useBadges() {
   // Mettre à jour les badges liés aux tâches
   const updateTaskBadges = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/badges/update-tasks");
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/badges/update-tasks");
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Si non authentifié, retourner un objet vide plutôt que de lancer une erreur
+            return { unlockedBadges: [] };
+          }
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour des badges de tâches:", error);
+        return { unlockedBadges: [] };
+      }
     },
     onSuccess: (data: { unlockedBadges?: Badge[]; updatedBadge?: Badge }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/badges"] });
       
-      if (data.unlockedBadges && data.unlockedBadges.length > 0) {
+      if (data && data.unlockedBadges && data.unlockedBadges.length > 0) {
         notifyBadges(data.unlockedBadges);
       }
     },
@@ -97,13 +137,25 @@ export default function useBadges() {
   // Mettre à jour le badge de connexion consécutive
   const updateLoginStreakBadge = useMutation({
     mutationFn: async (days: number) => {
-      const response = await apiRequest("POST", "/api/badges/login-streak", { days });
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/badges/login-streak", { days });
+        if (!response.ok) {
+          if (response.status === 401) {
+            // Si non authentifié, retourner un objet vide plutôt que de lancer une erreur
+            return { unlockedBadges: [] };
+          }
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du badge de connexion:", error);
+        return { unlockedBadges: [] };
+      }
     },
     onSuccess: (data: { unlockedBadges?: Badge[]; updatedBadge?: Badge }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/badges"] });
       
-      if (data.unlockedBadges && data.unlockedBadges.length > 0) {
+      if (data && data.unlockedBadges && data.unlockedBadges.length > 0) {
         notifyBadges(data.unlockedBadges);
       }
     },

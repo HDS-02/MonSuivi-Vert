@@ -29,6 +29,11 @@ export default function BadgeCollection() {
 
   // Filtrer les badges selon l'onglet actif
   const getFilteredBadges = () => {
+    // Protection supplémentaire contre les erreurs d'authentification
+    if (!user || !badges || !Array.isArray(badges)) {
+      return [];
+    }
+    
     switch (activeTab) {
       case "debloqués":
         return getUnlockedBadges();
@@ -43,7 +48,7 @@ export default function BadgeCollection() {
       case "progression":
         return getBadgesByCategory("progression");
       default:
-        return badges || [];
+        return badges;
     }
   };
 
@@ -245,7 +250,7 @@ export default function BadgeCollection() {
           <div className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-sm flex items-center">
             <span className="material-icons text-primary mr-2">emoji_events</span>
             <span className="font-medium">
-              {!isBadgesLoading && badges && Array.isArray(badges) ? (
+              {!isBadgesLoading && badges && Array.isArray(badges) && user ? (
                 <>{getUnlockedBadges().length} / {badges.length} débloqués</>
               ) : (
                 <>Chargement...</>
@@ -255,7 +260,7 @@ export default function BadgeCollection() {
         </div>
         
         {/* Statistiques des badges par catégorie */}
-        {!isBadgesLoading && badges && Array.isArray(badges) && badges.length > 0 && (
+        {!isBadgesLoading && user && badges && Array.isArray(badges) && badges.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {['collection', 'entretien', 'analyse', 'progression'].map((category) => {
               const categoryBadges = getBadgesByCategory(category);
