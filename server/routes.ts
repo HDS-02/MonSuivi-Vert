@@ -845,10 +845,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validation des données
       try {
-        const validatedData = insertGrowthJournalSchema.parse({
+        // Préparation des données avec des conversions explicites
+        const dataToValidate = {
           ...req.body,
-          userId: req.user.id
-        });
+          userId: req.user.id,
+          plantId: Number(req.body.plantId),
+          height: req.body.height ? Number(req.body.height) : null,
+          leaves: req.body.leaves ? Number(req.body.leaves) : null,
+          healthRating: req.body.healthRating ? Number(req.body.healthRating) : null
+        };
+        
+        console.log("POST /api/growth-journal - Données avant validation:", dataToValidate);
+        
+        const validatedData = insertGrowthJournalSchema.parse(dataToValidate);
         
         console.log("POST /api/growth-journal - Données validées:", validatedData);
         
@@ -861,8 +870,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log("POST /api/growth-journal - Plante trouvée:", plant.id, plant.name);
         
-        // Créer l'entrée
-        const entry = await storage.createGrowthJournalEntry(validatedData);
+        // Créer l'entrée avec des conversions explicites des types
+        const entryToCreate: any = {
+          ...validatedData,
+          plantId: Number(validatedData.plantId),
+          userId: Number(validatedData.userId)
+        };
+        
+        console.log("POST /api/growth-journal - Données à insérer:", entryToCreate);
+        
+        const entry = await storage.createGrowthJournalEntry(entryToCreate);
         console.log("POST /api/growth-journal - Entrée créée avec succès:", entry);
         
         res.status(201).json(entry);
