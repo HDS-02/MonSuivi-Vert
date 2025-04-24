@@ -502,25 +502,7 @@ export default function PlantDetail() {
                       variant="ghost"
                       size="icon"
                       className="text-gray-400 hover:text-primary"
-                      onClick={async () => {
-                        try {
-                          await fetch(`/api/tasks/${task.id}/complete`, {
-                            method: "PATCH",
-                            credentials: "include",
-                          });
-                          queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
-                          toast({
-                            title: "Tâche terminée",
-                            description: "La tâche a été marquée comme terminée",
-                          });
-                        } catch (error) {
-                          toast({
-                            title: "Erreur",
-                            description: "Impossible de marquer la tâche comme terminée",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
+                      onClick={() => completeTaskMutation.mutate(task.id)}
                     >
                       <span className="material-icons">check_circle_outline</span>
                     </Button>
