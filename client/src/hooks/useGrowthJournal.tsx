@@ -42,11 +42,21 @@ export function useGrowthJournal(plantId?: number) {
   // Création d'une nouvelle entrée
   const createEntryMutation = useMutation({
     mutationFn: async (entry: InsertGrowthJournalEntry) => {
-      const res = await apiRequest("POST", "/api/growth-journal", entry);
-      const data = await res.json();
-      return data;
+      console.log("Mutation createEntry - Données envoyées:", entry);
+      
+      try {
+        const res = await apiRequest("POST", "/api/growth-journal", entry);
+        const data = await res.json();
+        console.log("Mutation createEntry - Réponse reçue:", data);
+        return data;
+      } catch (error) {
+        console.error("Mutation createEntry - Erreur:", error);
+        throw error;
+      }
     },
     onSuccess: (data: GrowthJournalEntry) => {
+      console.log("Entrée de journal créée avec succès:", data);
+      
       toast({
         title: "Entrée créée",
         description: "L'entrée a été ajoutée au journal de croissance.",
@@ -58,10 +68,15 @@ export function useGrowthJournal(plantId?: number) {
       }
       queryClient.invalidateQueries({ queryKey: ["/api/growth-journal"] });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Erreur lors de la création d'une entrée:", error);
+      
+      // Afficher un message plus détaillé si possible
+      const errorMessage = error.message || "Impossible d'ajouter l'entrée au journal. Veuillez réessayer.";
+      
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter l'entrée au journal. Veuillez réessayer.",
+        description: errorMessage,
         variant: "destructive",
       });
     },

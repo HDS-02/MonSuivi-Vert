@@ -47,18 +47,25 @@ const formSchema = insertGrowthJournalSchema.extend({
   date: z.date({
     required_error: "Veuillez sélectionner une date",
   }),
-  healthRating: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().min(1).max(5).nullable().optional()
-  ),
-  height: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().positive().nullable().optional()
-  ),
-  leaves: z.preprocess(
-    (val) => (val === "" ? null : Number(val)),
-    z.number().nonnegative().nullable().optional()
-  ),
+  healthRating: z.union([
+    z.literal("").transform(() => null),
+    z.literal("0").transform(() => null),
+    z.string().transform(val => Number(val)),
+    z.number().min(1).max(5),
+    z.null()
+  ]).optional(),
+  height: z.union([
+    z.literal("").transform(() => null),
+    z.string().transform(val => Number(val)),
+    z.number().positive(),
+    z.null()
+  ]).optional(),
+  leaves: z.union([
+    z.literal("").transform(() => null),
+    z.string().transform(val => Number(val)),
+    z.number().nonnegative(),
+    z.null()
+  ]).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -99,12 +106,15 @@ export function GrowthJournalEntryDialog({
     // Correction pour s'assurer que les valeurs optionnelles sont correctement gérées
     const sanitizedValues = {
       ...values,
+      plantId: Number(values.plantId), // Assurer que plantId est un nombre
       notes: values.notes || "",
       imageUrl: values.imageUrl || "",
-      healthRating: values.healthRating === "0" ? null : values.healthRating,
-      height: values.height === "" ? null : values.height,
-      leaves: values.leaves === "" ? null : values.leaves,
     };
+    
+    // Les champs healthRating, height et leaves sont déjà gérés correctement par le schéma Zod
+    // qui transforme les chaînes vides et "0" en null, et les chaînes numériques en nombre
+    
+    console.log("Soumission des données du journal:", sanitizedValues);
     onSave(sanitizedValues);
   }
   
