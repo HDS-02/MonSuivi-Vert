@@ -11,6 +11,8 @@ import EditPlantDialog from "@/components/EditPlantDialog";
 import SOSPlantDialog from "@/components/SOSPlantDialog";
 import { PlantQRCode } from "@/components/PlantQRCode";
 import { PlantGrowthJournal } from "@/components/PlantGrowthJournal";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 export default function PlantDetail() {
   const { id } = useParams();
@@ -19,6 +21,8 @@ export default function PlantDetail() {
   const [displayTab, setDisplayTab] = useState<"overview" | "history" | "growth-journal">("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
   
   const { data: plant, isLoading: plantLoading } = useQuery<Plant>({
     queryKey: [`/api/plants/${id}`],
@@ -377,7 +381,14 @@ export default function PlantDetail() {
               {plant.gallery && Array.isArray(plant.gallery) && plant.gallery.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {plant.gallery.map((image: string, index: number) => (
-                    <div key={index} className="aspect-square bg-gray-100 rounded-md overflow-hidden">
+                    <div 
+                      key={index} 
+                      className="aspect-square bg-gray-100 rounded-md overflow-hidden cursor-pointer"
+                      onClick={() => {
+                        setSelectedImage(image);
+                        setImageDialogOpen(true);
+                      }}
+                    >
                       <img 
                         src={image} 
                         alt={`${plant.name} - image ${index + 1}`}
@@ -530,6 +541,26 @@ export default function PlantDetail() {
         onOpenChange={setSosDialogOpen}
         plant={plant}
       />
+
+      {/* Modal d'affichage des images en plein écran */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] p-0 bg-black/90 border-none">
+          <DialogClose className="absolute right-4 top-4 z-10">
+            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 text-white hover:bg-white/20">
+              <X className="h-5 w-5" />
+            </Button>
+          </DialogClose>
+          <div className="flex items-center justify-center h-[80vh]">
+            {selectedImage && (
+              <img 
+                src={selectedImage} 
+                alt="Image agrandie"
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
