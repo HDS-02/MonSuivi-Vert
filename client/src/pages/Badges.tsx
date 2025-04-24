@@ -11,36 +11,8 @@ export default function Badges() {
   const { updatePlantCollectionBadges, updateTaskBadges } = useBadges();
   const { toast } = useToast();
 
-  // Simuler une vérification de badges au chargement de la page
-  useEffect(() => {
-    // Ne vérifier les badges que si l'utilisateur est connecté
-    if (!user) {
-      return; // Ne rien faire si l'utilisateur n'est pas connecté
-    }
-    
-    // Ceci est simplement pour la démonstration, en production nous aurions
-    // des vérifications de badges à des moments spécifiques (ajout de plante, tâche complétée, etc.)
-    const checkBadges = async () => {
-      try {
-        if (updatePlantCollectionBadges && typeof updatePlantCollectionBadges.mutateAsync === 'function') {
-          await updatePlantCollectionBadges.mutateAsync();
-        }
-        
-        if (updateTaskBadges && typeof updateTaskBadges.mutateAsync === 'function') {
-          await updateTaskBadges.mutateAsync();
-        }
-      } catch (error) {
-        console.log("Erreur ignorée lors de la vérification des badges");
-      }
-    };
-    
-    // Exécuter la vérification avec un petit délai pour s'assurer que tout est chargé
-    const timer = setTimeout(() => {
-      checkBadges();
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [user, updatePlantCollectionBadges, updateTaskBadges]);
+  // Nous ne faisons plus de vérification automatique des badges au chargement de la page
+  // Pour éviter les appels en boucle et les problèmes d'authentification
 
   // Fonction de démonstration pour simuler l'obtention d'un badge
   const simulateUnlockBadge = () => {

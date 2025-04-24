@@ -2,9 +2,37 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "./use-auth";
 
 export default function useBadges() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Si l'utilisateur n'est pas connecté, retourner des données vides
+  if (!user) {
+    // Retourner un objet avec les mêmes propriétés mais des fonctions et valeurs vides
+    return {
+      badges: [],
+      isBadgesLoading: false,
+      isBadgesError: false,
+      badgesError: null,
+      updatePlantCollectionBadges: {
+        mutateAsync: async () => ({ unlockedBadges: [] }),
+        isPending: false,
+      },
+      updateTaskBadges: {
+        mutateAsync: async () => ({ unlockedBadges: [] }),
+        isPending: false,
+      },
+      updateLoginStreakBadge: {
+        mutateAsync: async () => ({ unlockedBadges: [] }),
+        isPending: false,
+      },
+      getBadgesByCategory: () => [],
+      getUnlockedBadges: () => [],
+      getInProgressBadges: () => [],
+    };
+  }
   
   // Pour limiter les notifications de badges
   const showBadgeNotification = () => {
@@ -46,7 +74,7 @@ export default function useBadges() {
     }
   };
   
-  // Récupérer tous les badges
+  // Récupérer tous les badges, seulement si l'utilisateur est connecté
   const {
     data: badges = [],
     isLoading: isBadgesLoading,
@@ -54,6 +82,8 @@ export default function useBadges() {
     error: badgesError,
   } = useQuery({
     queryKey: ["/api/badges"],
+    // Ne pas exécuter la requête si l'utilisateur n'est pas connecté
+    enabled: !!user,
     // La requête est autorisée à échouer silencieusement si l'utilisateur n'est pas connecté
     retry: 1,
     queryFn: async ({ queryKey }) => {

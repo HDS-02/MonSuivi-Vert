@@ -11,20 +11,14 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function BadgeCollection() {
   const { user } = useAuth();
   
-  // Ne pas charger les données des badges si l'utilisateur n'est pas connecté
+  // Toujours appeler le hook, mais il retournera des données vides si l'utilisateur n'est pas connecté
   const {
     badges = [],
     isBadgesLoading,
     getBadgesByCategory,
     getUnlockedBadges,
     getInProgressBadges,
-  } = user ? useBadges() : {
-    badges: [],
-    isBadgesLoading: false,
-    getBadgesByCategory: () => [], 
-    getUnlockedBadges: () => [],
-    getInProgressBadges: () => []
-  };
+  } = useBadges();
   
   const [activeTab, setActiveTab] = useState("tous");
 
@@ -264,26 +258,41 @@ export default function BadgeCollection() {
         {!isBadgesLoading && user && badges && Array.isArray(badges) && badges.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {['collection', 'entretien', 'analyse', 'progression'].map((category) => {
-              const categoryBadges = getBadgesByCategory(category);
-              const unlockedCount = categoryBadges.filter((b: BadgeType) => b.unlocked).length;
-              const totalCount = categoryBadges.length;
-              
-              return (
-                <div key={category} className="bg-white/40 backdrop-blur-sm rounded-lg p-2 text-center">
-                  <span className="material-icons text-sm mb-1" style={{
-                    color: category === 'collection' ? '#10b981' :
-                           category === 'entretien' ? '#3b82f6' :
-                           category === 'analyse' ? '#8b5cf6' :
-                           '#f59e0b'
-                  }}>
-                    {category === 'collection' ? 'eco' :
-                     category === 'entretien' ? 'water_drop' :
-                     category === 'analyse' ? 'search' :
-                     'trending_up'}
-                  </span>
-                  <div className="text-xs font-medium">{unlockedCount}/{totalCount}</div>
-                </div>
-              );
+              try {
+                // Vérification pour éviter les erreurs si les badges ne sont pas définis correctement
+                const categoryBadges = getBadgesByCategory ? getBadgesByCategory(category) : [];
+                const unlockedCount = categoryBadges && Array.isArray(categoryBadges) 
+                  ? categoryBadges.filter(
+                      (b: BadgeType) => b && typeof b === 'object' && b.unlocked
+                    ).length
+                  : 0;
+                const totalCount = categoryBadges && Array.isArray(categoryBadges) ? categoryBadges.length : 0;
+                
+                return (
+                  <div key={category} className="bg-white/40 backdrop-blur-sm rounded-lg p-2 text-center">
+                    <span className="material-icons text-sm mb-1" style={{
+                      color: category === 'collection' ? '#10b981' :
+                             category === 'entretien' ? '#3b82f6' :
+                             category === 'analyse' ? '#8b5cf6' :
+                             '#f59e0b'
+                    }}>
+                      {category === 'collection' ? 'eco' :
+                       category === 'entretien' ? 'water_drop' :
+                       category === 'analyse' ? 'search' :
+                       'trending_up'}
+                    </span>
+                    <div className="text-xs font-medium">{unlockedCount}/{totalCount}</div>
+                  </div>
+                );
+              } catch (error) {
+                // En cas d'erreur, afficher un composant de secours
+                return (
+                  <div key={category} className="bg-white/40 backdrop-blur-sm rounded-lg p-2 text-center">
+                    <span className="material-icons text-sm mb-1 text-gray-400">help_outline</span>
+                    <div className="text-xs font-medium text-gray-400">0/0</div>
+                  </div>
+                );
+              }
             })}
           </div>
         )}
