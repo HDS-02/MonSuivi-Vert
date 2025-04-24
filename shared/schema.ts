@@ -54,9 +54,24 @@ export const tasks = pgTable("tasks", {
   dateCompleted: timestamp("date_completed"),
 });
 
+// Journal de croissance
+export const growthJournal = pgTable("growth_journal", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").notNull(),
+  date: timestamp("date").defaultNow(),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  imageUrl: text("image_url"),
+  height: integer("height"), // hauteur en cm
+  leaves: integer("leaves"), // nombre de feuilles
+  healthRating: integer("health_rating"), // note de santé de 1 à 5
+  userId: integer("user_id").notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   plants: many(plants),
+  growthEntries: many(growthJournal),
 }));
 
 export const plantsRelations = relations(plants, ({ one, many }) => ({
@@ -66,6 +81,7 @@ export const plantsRelations = relations(plants, ({ one, many }) => ({
   }),
   analyses: many(plantAnalyses),
   tasks: many(tasks),
+  growthEntries: many(growthJournal),
 }));
 
 export const plantAnalysesRelations = relations(plantAnalyses, ({ one }) => ({
@@ -79,6 +95,17 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   plant: one(plants, {
     fields: [tasks.plantId],
     references: [plants.id],
+  }),
+}));
+
+export const growthJournalRelations = relations(growthJournal, ({ one }) => ({
+  plant: one(plants, {
+    fields: [growthJournal.plantId],
+    references: [plants.id],
+  }),
+  user: one(users, {
+    fields: [growthJournal.userId],
+    references: [users.id],
   }),
 }));
 

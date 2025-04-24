@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { QrCode } from 'lucide-react';
 
@@ -110,7 +111,14 @@ export function PlantQRCode({ plantId, plantName }: PlantQRCodeProps) {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+        <DialogHeader className="relative">
+          <button 
+            className="absolute right-0 top-0 rounded-full w-6 h-6 inline-flex items-center justify-center text-gray-500 hover:text-gray-700"
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="sr-only">Fermer</span>
+            <span className="material-icons text-sm">close</span>
+          </button>
           <DialogTitle>Étiquette QR Code</DialogTitle>
           <DialogDescription>
             Générez une étiquette QR code pour votre plante {plantName}.
