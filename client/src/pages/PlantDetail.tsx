@@ -10,12 +10,13 @@ import { queryClient } from "@/lib/queryClient";
 import EditPlantDialog from "@/components/EditPlantDialog";
 import SOSPlantDialog from "@/components/SOSPlantDialog";
 import { PlantQRCode } from "@/components/PlantQRCode";
+import { PlantGrowthJournal } from "@/components/PlantGrowthJournal";
 
 export default function PlantDetail() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [displayTab, setDisplayTab] = useState<"overview" | "history">("overview");
+  const [displayTab, setDisplayTab] = useState<"overview" | "history" | "growth-journal">("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   
@@ -184,7 +185,7 @@ export default function PlantDetail() {
       </div>
 
       <div className="flex justify-between items-center mb-4">
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 overflow-x-auto pb-1">
           <Button
             variant={displayTab === "overview" ? "default" : "outline"}
             className={displayTab === "overview" ? "bg-primary text-white" : ""}
@@ -199,11 +200,18 @@ export default function PlantDetail() {
           >
             Historique de santé
           </Button>
+          <Button
+            variant={displayTab === "growth-journal" ? "default" : "outline"}
+            className={displayTab === "growth-journal" ? "bg-primary text-white" : ""}
+            onClick={() => setDisplayTab("growth-journal")}
+          >
+            Journal de croissance
+          </Button>
         </div>
         
         <Button 
           variant="outline"
-          className="flex items-center justify-center rounded-full w-14 h-14 bg-white border-2 border-red-400 text-red-500 hover:bg-red-50 hover:text-red-600 shadow-md p-0" 
+          className="flex items-center justify-center rounded-full w-14 h-14 bg-white border-2 border-red-400 text-red-500 hover:bg-red-50 hover:text-red-600 shadow-md p-0 flex-shrink-0 ml-2" 
           onClick={() => setSosDialogOpen(true)}
         >
           <span className="material-icons text-2xl">healing</span>
@@ -376,6 +384,14 @@ export default function PlantDetail() {
                 Aucun historique disponible pour cette plante.
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {displayTab === "growth-journal" && (
+        <Card className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <CardContent className="p-0">
+            <PlantGrowthJournal plantId={Number(id)} plantName={plant.name} />
           </CardContent>
         </Card>
       )}
