@@ -608,11 +608,13 @@ export default function PlantDetail() {
       </Dialog>
       
       {/* Dialogue pour créer une nouvelle tâche */}
-      <NewTaskDialog 
-        open={newTaskDialogOpen} 
-        onOpenChange={setNewTaskDialogOpen}
-        selectedPlantId={parseInt(id)}
-      />
+      {id && (
+        <NewTaskDialog 
+          open={newTaskDialogOpen} 
+          onOpenChange={setNewTaskDialogOpen}
+          selectedPlantId={parseInt(id)}
+        />
+      )}
     </div>
   );
 }

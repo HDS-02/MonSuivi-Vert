@@ -60,12 +60,14 @@ interface NewTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate?: Date;
+  selectedPlantId?: number;
 }
 
 export default function NewTaskDialog({
   open,
   onOpenChange,
   selectedDate,
+  selectedPlantId,
 }: NewTaskDialogProps) {
   const { toast } = useToast();
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -91,8 +93,12 @@ export default function NewTaskDialog({
           const data = await response.json();
           setPlants(data);
           
-          // Si des plantes sont disponibles, sélectionner la première par défaut
-          if (data.length > 0) {
+          // Si une plante spécifique est sélectionnée, l'utiliser
+          if (selectedPlantId) {
+            form.setValue("plantId", selectedPlantId);
+          }
+          // Sinon, si des plantes sont disponibles, sélectionner la première par défaut
+          else if (data.length > 0) {
             form.setValue("plantId", data[0].id);
           }
         } catch (error) {
@@ -106,7 +112,7 @@ export default function NewTaskDialog({
 
       fetchPlants();
     }
-  }, [open, form, toast]);
+  }, [open, form, toast, selectedPlantId]);
 
   // Réinitialiser le formulaire quand on ouvre le dialogue
   useEffect(() => {
@@ -115,9 +121,10 @@ export default function NewTaskDialog({
         description: "",
         type: "water",
         dueDate: selectedDate || new Date(),
+        ...(selectedPlantId && { plantId: selectedPlantId }),
       });
     }
-  }, [open, selectedDate, form]);
+  }, [open, selectedDate, selectedPlantId, form]);
 
   // Gérer la soumission du formulaire
   const onSubmit = async (data: TaskFormValues) => {
