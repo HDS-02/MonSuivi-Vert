@@ -291,10 +291,64 @@ export default function PlantDetail() {
             <CardContent className="p-0">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-raleway font-semibold">Galerie</h3>
-                <button className="text-primary text-sm font-medium flex items-center">
+                <label htmlFor="gallery-photo-input" className="text-primary text-sm font-medium flex items-center cursor-pointer">
                   <span className="material-icons text-sm mr-1">add_photo_alternate</span>
                   Ajouter
-                </button>
+                  <input 
+                    id="gallery-photo-input" 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      // Convertir l'image en base64
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const imageData = event.target?.result as string;
+                        // Mettre à jour la galerie
+                        if (imageData) {
+                          const updatedGallery = plant.gallery 
+                            ? Array.isArray(plant.gallery) 
+                              ? [...plant.gallery, imageData]
+                              : [imageData]
+                            : [imageData];
+                            
+                          // Appeler l'API pour mettre à jour la plante
+                          fetch(`/api/plants/${plant.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ gallery: updatedGallery })
+                          })
+                          .then(response => {
+                            if (response.ok) {
+                              // Rafraîchir les données
+                              queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}`] });
+                              toast({
+                                title: "Photo ajoutée",
+                                description: "La photo a été ajoutée à la galerie."
+                              });
+                            } else {
+                              throw new Error("Erreur lors de l'ajout de la photo");
+                            }
+                          })
+                          .catch(error => {
+                            toast({
+                              title: "Erreur",
+                              description: "Impossible d'ajouter la photo à la galerie.",
+                              variant: "destructive"
+                            });
+                            console.error("Erreur:", error);
+                          });
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                      // Réinitialiser l'input pour permettre le téléchargement du même fichier
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
               </div>
               
               {plant.gallery && Array.isArray(plant.gallery) && plant.gallery.length > 0 ? (

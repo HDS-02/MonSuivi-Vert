@@ -20,6 +20,10 @@ const loginSchema = z.object({
 const registerSchema = loginSchema.extend({
   firstName: z.string().min(2, { message: "Le prénom doit contenir au moins 2 caractères" }),
   email: z.string().email({ message: "Adresse email invalide" }).optional(),
+  invitationCode: z.string().min(1, { message: "Le code d'invitation est requis" })
+    .refine(value => value === "MERCIVERT", { 
+      message: "Code d'invitation invalide. Contactez l'équipe de l'application pour obtenir un code valide." 
+    }),
   confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
@@ -49,6 +53,7 @@ export default function AuthPage() {
       username: "",
       firstName: "",
       email: "",
+      invitationCode: "",
       password: "",
       confirmPassword: "",
     },
@@ -274,6 +279,26 @@ export default function AuthPage() {
                               />
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="invitationCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-primary-dark">Code d'invitation</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Entrez votre code d'invitation" 
+                                className="input-glass focus:ring-2 ring-primary/30 transition-all"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Le code d'invitation est fourni uniquement par l'équipe de l'application.
+                            </p>
                           </FormItem>
                         )}
                       />
