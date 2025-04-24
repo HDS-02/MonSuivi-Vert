@@ -203,7 +203,7 @@ export function GrowthJournalEntryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Non évalué</SelectItem>
+                        <SelectItem value="null">Non évalué</SelectItem>
                         <SelectItem value="1">1 - Critique</SelectItem>
                         <SelectItem value="2">2 - Mauvaise</SelectItem>
                         <SelectItem value="3">3 - Moyenne</SelectItem>

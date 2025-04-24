@@ -16,12 +16,12 @@ export function useGrowthJournal(plantId?: number) {
     isLoading: isLoadingPlantEntries,
     error: plantEntriesError,
   } = useQuery<GrowthJournalEntry[]>({
-    queryKey: plantId ? [`/api/plants/${plantId}/growth-journal`] : null,
+    queryKey: [`/api/plants/${plantId}/growth-journal`],
     enabled: !!plantId,
     // Trier par date décroissante pour afficher les entrées les plus récentes en premier
     select: (data) => 
       [...data].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        new Date(b.date || new Date()).getTime() - new Date(a.date || new Date()).getTime()
       ),
   });
   
@@ -35,7 +35,7 @@ export function useGrowthJournal(plantId?: number) {
     // Trier par date décroissante
     select: (data) => 
       [...data].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        new Date(b.date || new Date()).getTime() - new Date(a.date || new Date()).getTime()
       ),
   });
   
