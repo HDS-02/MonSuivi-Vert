@@ -1,108 +1,101 @@
-import { useState } from "react";
-import { 
-  useQuery, 
-  useMutation, 
-  UseMutationResult,
-  useQueryClient
-} from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { GrowthJournalEntry, InsertGrowthJournalEntry } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 
+/**
+ * Hook pour gérer le journal de croissance d'une plante
+ * @param plantId ID de la plante (optionnel)
+ */
 export function useGrowthJournal(plantId?: number) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const [selectedEntry, setSelectedEntry] = useState<GrowthJournalEntry | null>(null);
-
-  // Récupérer les entrées du journal pour une plante spécifique
+  
+  // Récupération des entrées pour une plante spécifique
   const {
     data: plantEntries = [],
     isLoading: isLoadingPlantEntries,
     error: plantEntriesError,
-    refetch: refetchPlantEntries
   } = useQuery<GrowthJournalEntry[]>({
-    queryKey: plantId ? ['/api/plants', plantId, 'growth-journal'] : [],
-    queryFn: plantId 
-      ? async () => {
-          const res = await apiRequest("GET", `/api/plants/${plantId}/growth-journal`);
-          return await res.json();
-        }
-      : () => Promise.resolve([]),
-    enabled: !!plantId
+    queryKey: plantId ? [`/api/plants/${plantId}/growth-journal`] : null,
+    enabled: !!plantId,
+    // Trier par date décroissante pour afficher les entrées les plus récentes en premier
+    select: (data) => 
+      [...data].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
   });
-
-  // Récupérer toutes les entrées du journal pour l'utilisateur connecté
+  
+  // Récupération de toutes les entrées de l'utilisateur connecté
   const {
     data: userEntries = [],
     isLoading: isLoadingUserEntries,
     error: userEntriesError,
-    refetch: refetchUserEntries
   } = useQuery<GrowthJournalEntry[]>({
-    queryKey: ['/api/growth-journal'],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/growth-journal");
-      return await res.json();
-    },
-    enabled: !!user, // Activé uniquement si l'utilisateur est connecté
+    queryKey: ["/api/growth-journal"],
+    // Trier par date décroissante
+    select: (data) => 
+      [...data].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
   });
-
-  // Créer une nouvelle entrée dans le journal
+  
+  // Création d'une nouvelle entrée
   const createEntryMutation = useMutation({
     mutationFn: async (entry: InsertGrowthJournalEntry) => {
       const res = await apiRequest("POST", "/api/growth-journal", entry);
-      return await res.json();
+      const data = await res.json();
+      return data;
     },
     onSuccess: (data: GrowthJournalEntry) => {
       toast({
-        title: "Entrée ajoutée",
-        description: "L'entrée a été ajoutée au journal de croissance avec succès.",
+        title: "Entrée créée",
+        description: "L'entrée a été ajoutée au journal de croissance.",
       });
       
-      // Invalider les requêtes pour mettre à jour les données
+      // Invalider les requêtes pour rafraîchir les données
       if (plantId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/plants', plantId, 'growth-journal'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/plants/${plantId}/growth-journal`] });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/growth-journal'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/growth-journal"] });
     },
     onError: (error: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible d'ajouter l'entrée : ${error.message}`,
+        description: "Impossible d'ajouter l'entrée au journal. Veuillez réessayer.",
         variant: "destructive",
       });
     },
   });
-
-  // Mettre à jour une entrée existante
+  
+  // Mise à jour d'une entrée existante
   const updateEntryMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: number, updates: Partial<GrowthJournalEntry> }) => {
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<GrowthJournalEntry> }) => {
       const res = await apiRequest("PATCH", `/api/growth-journal/${id}`, updates);
-      return await res.json();
+      const data = await res.json();
+      return data;
     },
     onSuccess: (data: GrowthJournalEntry) => {
       toast({
         title: "Entrée mise à jour",
-        description: "L'entrée du journal a été mise à jour avec succès.",
+        description: "Les modifications ont été enregistrées.",
       });
       
-      // Invalider les requêtes pour mettre à jour les données
+      // Invalider les requêtes pour rafraîchir les données
       if (plantId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/plants', plantId, 'growth-journal'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/plants/${plantId}/growth-journal`] });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/growth-journal'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/growth-journal"] });
     },
     onError: (error: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de mettre à jour l'entrée : ${error.message}`,
+        description: "Impossible de mettre à jour l'entrée. Veuillez réessayer.",
         variant: "destructive",
       });
     },
   });
-
-  // Supprimer une entrée
+  
+  // Suppression d'une entrée
   const deleteEntryMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/growth-journal/${id}`);
@@ -114,48 +107,35 @@ export function useGrowthJournal(plantId?: number) {
         description: "L'entrée a été supprimée du journal de croissance.",
       });
       
-      // Invalider les requêtes pour mettre à jour les données
+      // Invalider les requêtes pour rafraîchir les données
       if (plantId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/plants', plantId, 'growth-journal'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/plants/${plantId}/growth-journal`] });
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/growth-journal'] });
-      
-      // Réinitialiser l'entrée sélectionnée si elle vient d'être supprimée
-      if (selectedEntry && selectedEntry.id === id) {
-        setSelectedEntry(null);
-      }
+      queryClient.invalidateQueries({ queryKey: ["/api/growth-journal"] });
     },
     onError: (error: Error) => {
       toast({
         title: "Erreur",
-        description: `Impossible de supprimer l'entrée : ${error.message}`,
+        description: "Impossible de supprimer l'entrée. Veuillez réessayer.",
         variant: "destructive",
       });
     },
   });
-
+  
   return {
-    // Données
+    // Données pour une plante spécifique
     plantEntries,
-    userEntries,
-    selectedEntry,
-    setSelectedEntry,
-    
-    // États de chargement
     isLoadingPlantEntries,
-    isLoadingUserEntries,
-    
-    // Erreurs
     plantEntriesError,
+    
+    // Données pour toutes les plantes de l'utilisateur
+    userEntries,
+    isLoadingUserEntries,
     userEntriesError,
     
     // Mutations
     createEntryMutation,
     updateEntryMutation,
     deleteEntryMutation,
-    
-    // Méthodes de rafraîchissement
-    refetchPlantEntries,
-    refetchUserEntries
   };
 }

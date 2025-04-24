@@ -1,30 +1,65 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { GrowthJournalEntry, insertGrowthJournalSchema } from "@shared/schema";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { CalendarIcon, ImageIcon, XCircleIcon } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { insertGrowthJournalSchema, GrowthJournalEntry } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
-import { X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
-// Schéma de validation du formulaire
-const formSchema = z.object({
-  plantId: z.number(),
-  title: z.string().min(3, "Le titre doit contenir au moins 3 caractères"),
-  notes: z.string().optional(),
-  imageUrl: z.string().optional(),
-  height: z.number().min(0, "La hauteur ne peut pas être négative").optional(),
-  leaves: z.number().min(0, "Le nombre de feuilles ne peut pas être négatif").optional(),
-  healthRating: z.number().min(1, "La note doit être entre 1 et 5").max(5, "La note doit être entre 1 et 5").optional(),
-  userId: z.number()
+// Schéma de validation étendu pour le formulaire
+const formSchema = insertGrowthJournalSchema.extend({
+  date: z.date({
+    required_error: "Veuillez sélectionner une date",
+  }),
+  healthRating: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().min(1).max(5).nullable().optional()
+  ),
+  height: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().positive().nullable().optional()
+  ),
+  leaves: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().nonnegative().nullable().optional()
+  ),
 });
 
-// Type d'une entrée à créer/modifier
 type FormValues = z.infer<typeof formSchema>;
 
 interface GrowthJournalEntryDialogProps {
@@ -40,132 +75,147 @@ export function GrowthJournalEntryDialog({
   onOpenChange,
   plantId,
   entry,
-  onSave
+  onSave,
 }: GrowthJournalEntryDialogProps) {
-  const { user } = useAuth();
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(entry?.imageUrl || null);
   
-  // Initialiser le formulaire
+  // Initialiser le formulaire avec les valeurs par défaut (mode création) ou existantes (mode édition)
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      plantId: plantId,
+      plantId,
       title: entry?.title || "",
+      date: entry?.date ? new Date(entry.date) : new Date(),
       notes: entry?.notes || "",
       imageUrl: entry?.imageUrl || "",
-      height: entry?.height || 0,
-      leaves: entry?.leaves || 0,
-      healthRating: entry?.healthRating || 3,
-      userId: user?.id || 0
-    }
+      healthRating: entry?.healthRating || null,
+      height: entry?.height || null,
+      leaves: entry?.leaves || null,
+    },
   });
   
-  // Mettre à jour le formulaire quand l'entrée change
-  useEffect(() => {
-    if (entry) {
-      form.reset({
-        plantId: plantId,
-        title: entry.title,
-        notes: entry.notes || "",
-        imageUrl: entry.imageUrl || "",
-        height: entry.height || 0,
-        leaves: entry.leaves || 0,
-        healthRating: entry.healthRating || 3,
-        userId: entry.userId
-      });
-      
-      if (entry.imageUrl) {
-        setPreviewImage(entry.imageUrl);
-      }
-    } else {
-      // Réinitialiser en mode création
-      form.reset({
-        plantId: plantId,
-        title: "",
-        notes: "",
-        imageUrl: "",
-        height: 0,
-        leaves: 0,
-        healthRating: 3,
-        userId: user?.id || 0
-      });
-      setPreviewImage(null);
-    }
-  }, [entry, plantId, user, form]);
-  
-  // Fonction de soumission du formulaire
   function onSubmit(values: FormValues) {
     onSave(values);
   }
   
-  // Gérer le changement d'image
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    
-    // Pour l'instant on stocke juste l'URL, mais on pourrait implémenter
-    // un upload de fichier plus tard
+    if (!file) {
+      return;
+    }
+
+    // Créer un aperçu de l'image
     const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      const result = e.target?.result as string;
-      setPreviewImage(result);
-      form.setValue("imageUrl", result);
+    fileReader.onload = (event) => {
+      if (event.target?.result) {
+        setImagePreview(event.target.result.toString());
+        form.setValue("imageUrl", event.target.result.toString());
+      }
     };
     fileReader.readAsDataURL(file);
+  }
+  
+  function clearImage() {
+    setImagePreview(null);
+    form.setValue("imageUrl", "");
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex justify-between">
-            {entry ? "Modifier l'entrée" : "Nouvelle entrée au journal"}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onOpenChange(false)}
-              className="h-6 w-6 rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <DialogTitle>
+            {entry ? "Modifier une entrée" : "Ajouter une entrée"}
           </DialogTitle>
+          <DialogDescription>
+            Documentez l'évolution de votre plante dans votre journal de croissance.
+          </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Titre</FormLabel>
+                  <FormLabel>Titre <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
-                    <Input placeholder="Titre de l'entrée" {...field} />
+                    <Input placeholder="Ex: Nouvelle pousse" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
-              name="notes"
+              name="date"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Observations sur l'évolution de votre plante..." 
-                      {...field} 
-                      rows={4}
-                    />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date <span className="text-red-500">*</span></FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className="w-full pl-3 text-left font-normal"
+                        >
+                          {field.value ? (
+                            format(field.value, "d MMMM yyyy", { locale: fr })
+                          ) : (
+                            <span className="text-muted-foreground">Choisir une date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        locale={fr}
+                        disabled={(date) => date > new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="healthRating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Santé (1-5)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value?.toString() || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Évaluer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Non évalué</SelectItem>
+                        <SelectItem value="1">1 - Critique</SelectItem>
+                        <SelectItem value="2">2 - Mauvaise</SelectItem>
+                        <SelectItem value="3">3 - Moyenne</SelectItem>
+                        <SelectItem value="4">4 - Bonne</SelectItem>
+                        <SelectItem value="5">5 - Excellente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="height"
@@ -173,32 +223,38 @@ export function GrowthJournalEntryDialog({
                   <FormItem>
                     <FormLabel>Hauteur (cm)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min={0} 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        value={field.value || 0}
+                      <Input
+                        type="number"
+                        placeholder="En cm"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          field.onChange(val === "" ? null : val);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="leaves"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre de feuilles</FormLabel>
+                    <FormLabel>Nb. feuilles</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min={0} 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        value={field.value || 0}
+                      <Input
+                        type="number"
+                        placeholder="Quantité"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          field.onChange(val === "" ? null : val);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -206,86 +262,81 @@ export function GrowthJournalEntryDialog({
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
-              name="healthRating"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Évaluation de santé (1-5)</FormLabel>
-                  <div className="flex items-center gap-4">
-                    <span>1</span>
-                    <FormControl>
-                      <Slider
-                        min={1}
-                        max={5}
-                        step={1}
-                        {...field}
-                        value={[field.value || 3]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                      />
-                    </FormControl>
-                    <span>5</span>
-                  </div>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Observations sur l'état de votre plante"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Photo de la plante</FormLabel>
-                  <div className="flex flex-col gap-2">
-                    <Input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageChange} 
-                      className="flex-1"
-                    />
-                    <Input 
-                      type="text" 
-                      placeholder="Ou entrez une URL d'image" 
-                      value={field.value || ""} 
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        setPreviewImage(e.target.value);
-                      }}
-                      className="flex-1"
-                    />
+                  <FormLabel>Photo</FormLabel>
+                  <div className="space-y-2">
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Aperçu"
+                          className="w-full h-48 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                          onClick={clearImage}
+                        >
+                          <XCircleIcon className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-md h-48 bg-gray-50">
+                        <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-500 mb-2">
+                          Formats acceptés: JPG, PNG
+                        </p>
+                        <label
+                          htmlFor="image-upload"
+                          className="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-md cursor-pointer hover:bg-primary/90"
+                        >
+                          Choisir une image
+                          <input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                      </div>
+                    )}
+                    {/* Le champ caché qui stocke l'URL de l'image */}
+                    <input type="hidden" {...field} />
                   </div>
-                  
-                  {previewImage && (
-                    <div className="mt-2 relative">
-                      <img 
-                        src={previewImage} 
-                        alt="Aperçu" 
-                        className="rounded-md w-full max-h-[200px] object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-6 w-6 rounded-full"
-                        onClick={() => {
-                          setPreviewImage(null);
-                          form.setValue("imageUrl", "");
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
-              <Button type="submit">
-                {entry ? "Mettre à jour" : "Enregistrer"}
+              <Button type="submit" className="w-full">
+                {entry ? "Mettre à jour" : "Ajouter"}
               </Button>
             </DialogFooter>
           </form>
