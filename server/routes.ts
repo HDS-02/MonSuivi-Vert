@@ -745,6 +745,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // JOURNAL DE CROISSANCE ROUTES
+  // Récupérer les entrées du journal pour une plante spécifique
+  app.get("/api/plants/:id/growth-journal", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier si la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      const entries = await storage.getGrowthJournalEntries(plantId);
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Récupérer toutes les entrées du journal pour un utilisateur
+  app.get("/api/growth-journal", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      const entries = await storage.getGrowthJournalEntriesByUserId(req.user.id);
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Récupérer une entrée spécifique du journal
+  app.get("/api/growth-journal/:id", async (req: Request, res: Response) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      if (isNaN(entryId)) {
+        return res.status(400).json({ message: "ID d'entrée invalide" });
+      }
+      
+      const entry = await storage.getGrowthJournalEntry(entryId);
+      if (!entry) {
+        return res.status(404).json({ message: "Entrée du journal non trouvée" });
+      }
+      
+      res.json(entry);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Créer une nouvelle entrée dans le journal
+  app.post("/api/growth-journal", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      // Validation des données
+      const validatedData = insertGrowthJournalSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      // Vérifier si la plante existe
+      const plant = await storage.getPlant(validatedData.plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Créer l'entrée
+      const entry = await storage.createGrowthJournalEntry(validatedData);
+      res.status(201).json(entry);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Mettre à jour une entrée du journal
+  app.patch("/api/growth-journal/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      const entryId = parseInt(req.params.id);
+      if (isNaN(entryId)) {
+        return res.status(400).json({ message: "ID d'entrée invalide" });
+      }
+      
+      // Récupérer l'entrée existante
+      const existingEntry = await storage.getGrowthJournalEntry(entryId);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Entrée du journal non trouvée" });
+      }
+      
+      // Vérifier que l'utilisateur est propriétaire de cette entrée
+      if (existingEntry.userId !== req.user.id) {
+        return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette entrée" });
+      }
+      
+      // Validation partielle des données
+      const validatedData = insertGrowthJournalSchema.partial().parse(req.body);
+      
+      // Mettre à jour l'entrée
+      const updatedEntry = await storage.updateGrowthJournalEntry(entryId, validatedData);
+      res.json(updatedEntry);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Supprimer une entrée du journal
+  app.delete("/api/growth-journal/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      const entryId = parseInt(req.params.id);
+      if (isNaN(entryId)) {
+        return res.status(400).json({ message: "ID d'entrée invalide" });
+      }
+      
+      // Récupérer l'entrée existante
+      const existingEntry = await storage.getGrowthJournalEntry(entryId);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Entrée du journal non trouvée" });
+      }
+      
+      // Vérifier que l'utilisateur est propriétaire de cette entrée
+      if (existingEntry.userId !== req.user.id) {
+        return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer cette entrée" });
+      }
+      
+      // Supprimer l'entrée
+      const success = await storage.deleteGrowthJournalEntry(entryId);
+      if (!success) {
+        return res.status(500).json({ message: "Erreur lors de la suppression de l'entrée" });
+      }
+      
+      res.status(204).end();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
