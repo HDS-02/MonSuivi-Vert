@@ -6,6 +6,9 @@ import { qrCodeService } from './qrCodeService';
 import { storage } from './storage';
 import { Plant } from '@shared/schema';
 
+// Chemin relatif vers le logo
+const LOGO_PATH = path.join(process.cwd(), 'client', 'src', 'assets', 'logo.png');
+
 /**
  * Service de génération de PDF pour les plantes
  */
@@ -52,11 +55,35 @@ export class PDFService {
     doc.rect(0, 0, doc.page.width, 100)
       .fill(primaryColor);
     
-    // Logo (texte stylisé puisque nous n'avons pas d'image de logo)
-    doc.fontSize(30)
-       .fill('#FFFFFF')
-       .font('Helvetica-Bold')
-       .text('MON SUIVI VERT', 40, 35, { align: 'left' });
+    // Logo de l'application
+    try {
+      if (fs.existsSync(LOGO_PATH)) {
+        doc.image(LOGO_PATH, 40, 20, {
+          fit: [60, 60],
+          align: 'left',
+          valign: 'center'
+        });
+        
+        // Texte à côté du logo
+        doc.fontSize(24)
+           .fill('#FFFFFF')
+           .font('Helvetica-Bold')
+           .text('MON SUIVI VERT', 110, 30, { align: 'left' });
+      } else {
+        // Fallback si le logo n'est pas trouvé
+        doc.fontSize(30)
+           .fill('#FFFFFF')
+           .font('Helvetica-Bold')
+           .text('MON SUIVI VERT', 40, 35, { align: 'left' });
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du logo:', error);
+      // Fallback en cas d'erreur
+      doc.fontSize(30)
+         .fill('#FFFFFF')
+         .font('Helvetica-Bold')
+         .text('MON SUIVI VERT', 40, 35, { align: 'left' });
+    }
     
     // Information de la fiche
     doc.fontSize(14)
@@ -93,7 +120,7 @@ export class PDFService {
     // Colonne de gauche - Informations principales et image
     
     // Image de la plante si disponible
-    if (plant.image) {
+    if (plant.image && plant.image.includes(',')) {
       try {
         const imgBuffer = Buffer.from(plant.image.split(',')[1], 'base64');
         doc.image(imgBuffer, 80, yPos, {
@@ -103,7 +130,17 @@ export class PDFService {
         yPos += 160;
       } catch (error) {
         console.error('Erreur lors de l\'ajout de l\'image de la plante:', error);
+        // En cas d'erreur, on continue sans image
       }
+    } else {
+      // Ajout d'un texte explicatif si pas d'image
+      doc.fontSize(10)
+         .fill('#666666')
+         .text('Aucune image disponible pour cette plante', 80, yPos + 50, { 
+           width: colWidth - 20,
+           align: 'center'
+         });
+      yPos += 90; // On ajoute quand même de l'espace
     }
     
     // Informations détaillées dans une carte

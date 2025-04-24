@@ -49,11 +49,26 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
   } = useGrowthJournal(plantId);
   
   const handleAddEntry = (data: any) => {
+    console.log("Tentative d'ajout d'une entrée au journal:", { 
+      ...data, 
+      plantId, 
+      date: data.date 
+    });
+    
     createEntryMutation.mutate({
       ...data,
       plantId,
+      userId: 1, // Assurez-vous que userId est fourni
       date: data.date,
+    }, {
+      onSuccess: (responseData) => {
+        console.log("Entrée de journal créée avec succès:", responseData);
+      },
+      onError: (error: any) => {
+        console.error("Erreur lors de la création de l'entrée de journal:", error);
+      }
     });
+    
     setOpenAddDialog(false);
   };
   
