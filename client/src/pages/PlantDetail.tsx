@@ -14,6 +14,7 @@ import { PlantGrowthJournal } from "@/components/PlantGrowthJournal";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import NewTaskDialog from "@/components/NewTaskDialog";
+import useBadges from "@/hooks/useBadges";
 
 export default function PlantDetail() {
   const { id } = useParams();
@@ -74,7 +75,7 @@ export default function PlantDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
       // Mettre à jour les badges de tâches complétées
-      updateTaskBadges.mutate();
+      updateTaskBadges.mutateAsync();
       
       toast({
         title: "Tâche terminée",

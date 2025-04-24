@@ -16,6 +16,7 @@ import PlantAutocomplete from "@/components/PlantAutocomplete";
 import PlantCategorySelect, { PlantCategory } from "@/components/PlantCategorySelect";
 import PlantListByCategory, { PlantEntry } from "@/components/PlantListByCategory";
 import useNotifications from "@/hooks/useNotifications";
+import useBadges from "@/hooks/useBadges";
 
 interface PlantSuggestion {
   name: string;
@@ -26,6 +27,7 @@ export default function AddPlantManually() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
+  const { updatePlantCollectionBadges } = useBadges();
   
   // État pour suivre l'étape du processus hiérarchique
   const [step, setStep] = useState<'category' | 'plant-list' | 'details'>('category');
@@ -322,6 +324,9 @@ export default function AddPlantManually() {
       
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["/api/plants"] });
+      
+      // Mettre à jour les badges liés à la collection de plantes
+      updatePlantCollectionBadges.mutateAsync();
       
       // Ajouter une notification pour informer l'utilisateur
       addNotification({
