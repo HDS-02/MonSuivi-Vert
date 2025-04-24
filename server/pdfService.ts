@@ -70,9 +70,7 @@ export class PDFService {
        
     // Titre de la plante
     doc.roundedRect(60, 120, pageWidth + 40, 50, 5)
-       .fill('#FFFFFF')
-       .shadowColor('#000000', 0.1)
-       .shadowBlur(10);
+       .fill('#FFFFFF');
        
     doc.fill(primaryColor)
        .fontSize(22)
@@ -110,9 +108,7 @@ export class PDFService {
     
     // Informations détaillées dans une carte
     doc.roundedRect(60, yPos, colWidth + 20, 220, 5)
-       .fill('#FFFFFF')
-       .shadowColor('#000000', 0.1)
-       .shadowBlur(5);
+       .fill('#FFFFFF');
     
     doc.fill(primaryColor)
        .fontSize(16)
@@ -153,9 +149,7 @@ export class PDFService {
     
     // QR Code card
     doc.roundedRect(colWidth + 80 + colGap, 190, colWidth + 20, 160, 5)
-       .fill('#FFFFFF')
-       .shadowColor('#000000', 0.1)
-       .shadowBlur(5);
+       .fill('#FFFFFF');
     
     doc.fill(primaryColor)
        .fontSize(16)
@@ -180,9 +174,7 @@ export class PDFService {
     // Notes de soin
     if (plant.careNotes) {
       doc.roundedRect(colWidth + 80 + colGap, 360, colWidth + 20, 160, 5)
-         .fill('#FFFFFF')
-         .shadowColor('#000000', 0.1)
-         .shadowBlur(5);
+         .fill('#FFFFFF');
       
       doc.fill(primaryColor)
          .fontSize(16)
@@ -218,9 +210,7 @@ export class PDFService {
         
         if (Array.isArray(diseases) && diseases.length > 0) {
           doc.roundedRect(60, yPos + 230, colWidth + 20, 90, 5)
-             .fill('#FFFFFF')
-             .shadowColor('#000000', 0.1)
-             .shadowBlur(5);
+             .fill('#FFFFFF');
           
           doc.fill(primaryColor)
              .fontSize(16)
