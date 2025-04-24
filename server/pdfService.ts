@@ -50,7 +50,8 @@ export class PDFService {
     
     // Définir constantes pour la mise en page
     const pageWidth = doc.page.width - 80; // Largeur utile (avec les marges)
-
+    const centerX = doc.page.width / 2; // Centre horizontal de la page
+    
     // Créer un en-tête avec logo et design moderne
     doc.rect(0, 0, doc.page.width, 100)
       .fill(primaryColor);
@@ -74,7 +75,7 @@ export class PDFService {
         doc.fontSize(30)
            .fill('#FFFFFF')
            .font('Helvetica-Bold')
-           .text('MON SUIVI VERT', 40, 35);
+           .text('MON SUIVI VERT', centerX - 110, 35, { align: 'center' });
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout du logo:', error);
@@ -82,7 +83,7 @@ export class PDFService {
       doc.fontSize(30)
          .fill('#FFFFFF')
          .font('Helvetica-Bold')
-         .text('MON SUIVI VERT', 40, 35);
+         .text('MON SUIVI VERT', centerX - 110, 35, { align: 'center' });
     }
     
     // Information de la fiche
@@ -91,30 +92,32 @@ export class PDFService {
        .font('Helvetica')
        .text(`Fiche plante - ${new Date().toLocaleDateString('fr-FR')}`, 40, 65);
     
-    // Zone principale
-    doc.rect(40, 110, pageWidth + 80, doc.page.height - 160)
+    // Zone principale - calculée correctement par rapport à la taille de la page
+    doc.rect(40, 110, pageWidth, doc.page.height - 160)
        .fill('#F9F9F9');
        
-    // Titre de la plante
-    doc.roundedRect(60, 120, pageWidth + 40, 50, 5)
+    // Titre de la plante dans une boîte de taille correcte
+    doc.roundedRect(60, 120, pageWidth - 40, 50, 5)
        .fill('#FFFFFF');
        
     doc.fill(primaryColor)
        .fontSize(22)
        .font('Helvetica-Bold')
-       .text(plant.name, 80, 135, { width: pageWidth });
+       .text(plant.name, 80, 135, { width: pageWidth - 80 });
        
     // Sous-titre (espèce)
     if (plant.species) {
       doc.fill('#666666')
          .fontSize(14)
          .font('Helvetica')
-         .text(plant.species, 80, 160, { width: pageWidth });
+         .text(plant.species, 80, 160, { width: pageWidth - 80 });
     }
     
-    // Mise en page en deux colonnes
-    const colWidth = pageWidth / 2;
-    const colGap = 20;
+    // Mise en page en deux colonnes avec dimensions précises pour éviter les débordements
+    const colWidth = (pageWidth - 60) / 2; // Deux colonnes avec espace entre
+    const colGap = 20; // Espace entre les colonnes
+    const leftColX = 60; // X de départ pour la colonne de gauche
+    const rightColX = leftColX + colWidth + 40; // X de départ pour la colonne de droite
     let yPos = 190;
     
     // Colonne de gauche - Informations principales et image
@@ -185,18 +188,21 @@ export class PDFService {
     // Colonne de droite - QR code et conseils
     
     // QR Code card
-    doc.roundedRect(colWidth + 80 + colGap, 190, colWidth + 20, 160, 5)
+    doc.roundedRect(rightColX, 190, colWidth + 20, 160, 5)
        .fill('#FFFFFF');
     
     doc.fill(primaryColor)
        .fontSize(16)
        .font('Helvetica-Bold')
-       .text('Accès rapide - QR Code', colWidth + 100 + colGap, 205, { align: 'center', width: colWidth - 20 });
+       .text('Accès rapide - QR Code', rightColX + 20, 205, { 
+         align: 'center', 
+         width: colWidth - 20 
+       });
     
     try {
       // Centrer le QR code
       const qrCodeWidth = 120;
-      const qrCodeX = colWidth + 80 + colGap + (colWidth + 20 - qrCodeWidth) / 2;
+      const qrCodeX = rightColX + (colWidth + 20 - qrCodeWidth) / 2;
       
       // Ajouter le SVG du QR code
       SVGtoPDF(doc, qrCodeSVG, qrCodeX, 230, {
@@ -205,30 +211,36 @@ export class PDFService {
       });
     } catch (error) {
       console.error('Erreur lors de l\'ajout du QR code:', error);
-      doc.text('Erreur lors de la génération du QR code', { align: 'center' });
+      doc.text('Erreur lors de la génération du QR code', rightColX + 20, 230, { 
+        align: 'center',
+        width: colWidth - 20 
+      });
     }
     
     // Notes de soin
     if (plant.careNotes) {
-      doc.roundedRect(colWidth + 80 + colGap, 360, colWidth + 20, 160, 5)
+      doc.roundedRect(rightColX, 360, colWidth + 20, 160, 5)
          .fill('#FFFFFF');
       
       doc.fill(primaryColor)
          .fontSize(16)
          .font('Helvetica-Bold')
-         .text('Notes de soin', colWidth + 100 + colGap, 375, { width: colWidth - 40 });
+         .text('Notes de soin', rightColX + 20, 375, { 
+           width: colWidth - 20,
+           align: 'center'
+         });
       
       // Ligne de séparation
       doc.strokeColor(primaryColor)
          .lineWidth(1)
-         .moveTo(colWidth + 100 + colGap, 395)
-         .lineTo(colWidth + 100 + colGap + colWidth - 60, 395)
+         .moveTo(rightColX + 20, 395)
+         .lineTo(rightColX + colWidth, 395)
          .stroke();
       
       doc.fill('#333333')
          .fontSize(11)
          .font('Helvetica')
-         .text(plant.careNotes, colWidth + 100 + colGap, 405, { 
+         .text(plant.careNotes, rightColX + 20, 405, { 
            width: colWidth - 40,
            height: 110,
            ellipsis: true
@@ -265,13 +277,22 @@ export class PDFService {
           const maxDiseases = Math.min(diseases.length, 2);
           for (let i = 0; i < maxDiseases; i++) {
             const disease = diseases[i];
+            // On augmente l'espacement vertical pour éviter les chevauchements
+            const diseaseY = yPos + 275 + (i * 35); // Plus d'espace entre les maladies
+            
             doc.fill('#333333')
                .fontSize(11)
                .font('Helvetica-Bold')
-               .text(`${i + 1}. ${disease.name || 'N/A'}`, 80, yPos + 275 + (i * 20), { continued: false, width: colWidth - 40 })
+               .text(`${i + 1}. ${disease.name || 'N/A'}`, 80, diseaseY, { 
+                 width: colWidth - 40 
+               });
+            
+            // Traitement sur une ligne séparée avec plus d'espacement
+            doc.fontSize(9)
                .font('Helvetica')
-               .fontSize(9)
-               .text(`Traitement: ${disease.treatment || 'N/A'}`, 100, yPos + 290 + (i * 20), { width: colWidth - 60 });
+               .text(`Traitement: ${disease.treatment || 'N/A'}`, 100, diseaseY + 15, { 
+                 width: colWidth - 60
+               });
           }
         }
       } catch (error) {
@@ -283,10 +304,14 @@ export class PDFService {
     doc.rect(0, doc.page.height - 50, doc.page.width, 50)
        .fill(primaryColor);
     
+    // Centrage correct du texte en pied de page en utilisant centerX
     doc.fill('#FFFFFF')
        .fontSize(10)
        .text('© Mon Suivi Vert - L\'application qui vous aide à prendre soin de vos plantes', 
-             40, doc.page.height - 30, { align: 'center' });
+             0, doc.page.height - 30, { 
+               width: doc.page.width, 
+               align: 'center' 
+             });
 
     // Finaliser le document
     doc.end();
