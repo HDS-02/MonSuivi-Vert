@@ -34,9 +34,10 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 interface ProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onLogout?: () => void;
 }
 
-export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
+export default function ProfileDialog({ open, onOpenChange, onLogout }: ProfileDialogProps) {
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -286,7 +287,11 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
                 logoutMutation.mutate();
                 setLogoutConfirmOpen(false);
                 onOpenChange(false);
-                navigate('/auth');
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  navigate('/auth');
+                }
               }}
             />
           </form>
