@@ -60,6 +60,9 @@ export default function PlantDetail() {
     }
   });
   
+  // Hook pour les badges
+  const { updateTaskBadges } = useBadges();
+  
   // Mutation pour marquer une tâche comme terminée
   const completeTaskMutation = useMutation({
     mutationFn: async (taskId: number) => {
@@ -69,6 +72,10 @@ export default function PlantDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      
+      // Mettre à jour les badges de tâches complétées
+      updateTaskBadges.mutate();
+      
       toast({
         title: "Tâche terminée",
         description: "La tâche a été marquée comme terminée."
