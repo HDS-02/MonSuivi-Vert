@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import EditPlantDialog from "@/components/EditPlantDialog";
 import SOSPlantDialog from "@/components/SOSPlantDialog";
+import { PlantQRCode } from "@/components/PlantQRCode";
 
 export default function PlantDetail() {
   const { id } = useParams();
@@ -131,14 +132,17 @@ export default function PlantDetail() {
         <div className="p-4">
           <div className="flex justify-between items-start mb-2">
             <h2 className="text-xl font-raleway font-semibold">{plant.name}</h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-gray-400 hover:text-primary"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <span className="material-icons">edit</span>
-            </Button>
+            <div className="flex gap-2">
+              <PlantQRCode plantId={plant.id} plantName={plant.name} />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-gray-400 hover:text-primary"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <span className="material-icons">edit</span>
+              </Button>
+            </div>
           </div>
           <div className="flex items-center mb-4">
             <div className={`px-2 py-1 ${getStatusClass(plant.status)} rounded-full text-xs font-medium`}>

@@ -12,6 +12,7 @@ import { setupAuth } from "./auth";
 import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
+import { qrCodeService } from "./qrCodeService";
 
 // Configure multer for in-memory file storage
 const upload = multer({
@@ -687,6 +688,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedBadge = badgeService.updateConsecutiveLoginBadge(userId, daysStreak);
       
       res.json({ updatedBadge });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // QR CODE ROUTES
+  // Route pour générer un QR code en PNG pour une plante
+  app.get("/api/plants/:id/qrcode", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier si la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Taille du QR code (optionnelle)
+      const size = req.query.size ? parseInt(req.query.size as string) : 300;
+      
+      // Générer le QR code
+      const qrCodeDataUrl = await qrCodeService.generatePlantQRCode(plantId, size);
+      
+      res.json({ qrCodeDataUrl });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Route pour générer un QR code en SVG pour une plante
+  app.get("/api/plants/:id/qrcode/svg", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier si la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Générer le QR code en SVG
+      const svgContent = await qrCodeService.generatePlantQRCodeSVG(plantId);
+      
+      // Définir les headers pour le SVG
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.send(svgContent);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
