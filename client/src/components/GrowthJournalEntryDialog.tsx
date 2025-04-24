@@ -101,9 +101,9 @@ export function GrowthJournalEntryDialog({
       ...values,
       notes: values.notes || "",
       imageUrl: values.imageUrl || "",
-      healthRating: typeof values.healthRating === "string" && values.healthRating === "" ? null : values.healthRating,
-      height: typeof values.height === "string" && values.height === "" ? null : values.height,
-      leaves: typeof values.leaves === "string" && values.leaves === "" ? null : values.leaves,
+      healthRating: values.healthRating === "0" ? null : values.healthRating,
+      height: values.height === "" ? null : values.height,
+      leaves: values.leaves === "" ? null : values.leaves,
     };
     onSave(sanitizedValues);
   }
@@ -220,7 +220,7 @@ export function GrowthJournalEntryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Non évalué</SelectItem>
+                        <SelectItem value="0">Non évalué</SelectItem>
                         <SelectItem value="1">1 - Critique</SelectItem>
                         <SelectItem value="2">2 - Mauvaise</SelectItem>
                         <SelectItem value="3">3 - Moyenne</SelectItem>

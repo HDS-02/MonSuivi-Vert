@@ -13,6 +13,7 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
+import { pdfService } from "./pdfService";
 
 // Configure multer for in-memory file storage
 const upload = multer({
