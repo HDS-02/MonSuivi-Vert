@@ -245,7 +245,7 @@ export default function BadgeCollection() {
           <div className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-sm flex items-center">
             <span className="material-icons text-primary mr-2">emoji_events</span>
             <span className="font-medium">
-              {!isBadgesLoading && badges ? (
+              {!isBadgesLoading && badges && Array.isArray(badges) ? (
                 <>{getUnlockedBadges().length} / {badges.length} débloqués</>
               ) : (
                 <>Chargement...</>
@@ -255,11 +255,11 @@ export default function BadgeCollection() {
         </div>
         
         {/* Statistiques des badges par catégorie */}
-        {!isBadgesLoading && badges && badges.length > 0 && (
+        {!isBadgesLoading && badges && Array.isArray(badges) && badges.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-3">
             {['collection', 'entretien', 'analyse', 'progression'].map((category) => {
-              const categoryBadges = getBadgesByCategory(category as any);
-              const unlockedCount = categoryBadges.filter(b => b.unlocked).length;
+              const categoryBadges = getBadgesByCategory(category);
+              const unlockedCount = categoryBadges.filter((b: BadgeType) => b.unlocked).length;
               const totalCount = categoryBadges.length;
               
               return (
@@ -308,7 +308,7 @@ export default function BadgeCollection() {
                   transition={{ duration: 0.5 }}
                 >
                   <AnimatePresence>
-                    {getFilteredBadges().map((badge, index) => (
+                    {getFilteredBadges().map((badge: BadgeType, index: number) => (
                       <BadgeItem key={badge.id} badge={badge} index={index} />
                     ))}
                   </AnimatePresence>
