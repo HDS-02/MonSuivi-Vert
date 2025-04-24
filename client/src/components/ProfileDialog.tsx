@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -39,6 +40,7 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [, navigate] = useLocation();
   
   // Formulaire de mise à jour du profil
   const profileForm = useForm<ProfileFormValues>({
@@ -273,19 +275,18 @@ export default function ProfileDialog({ open, onOpenChange }: ProfileDialogProps
             
             {/* Dialogue de confirmation de déconnexion */}
             <ConfirmDialog
-              open={logoutConfirmOpen}
-              onOpenChange={setLogoutConfirmOpen}
+              isOpen={logoutConfirmOpen}
+              onClose={() => setLogoutConfirmOpen(false)}
               title="Se déconnecter"
               description="Êtes-vous sûr de vouloir vous déconnecter ?"
               confirmText="Se déconnecter"
               cancelText="Annuler"
-              confirmVariant="destructive"
-              icon="logout"
-              iconColor="text-red-500"
+              variant="destructive"
               onConfirm={() => {
                 logoutMutation.mutate();
                 setLogoutConfirmOpen(false);
                 onOpenChange(false);
+                navigate('/auth');
               }}
             />
           </form>
