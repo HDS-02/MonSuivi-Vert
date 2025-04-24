@@ -45,7 +45,27 @@ export function useGrowthJournal(plantId?: number) {
       console.log("Mutation createEntry - Données envoyées:", entry);
       
       try {
-        const res = await apiRequest("POST", "/api/growth-journal", entry);
+        // S'assurer que les types de données sont corrects
+        const processedEntry = {
+          ...entry,
+          plantId: Number(entry.plantId),
+          userId: Number(entry.userId),
+          // S'assurer que les valeurs numériques sont soit des nombres, soit null
+          healthRating: entry.healthRating !== undefined ? Number(entry.healthRating) : null,
+          height: entry.height !== undefined ? Number(entry.height) : null,
+          leaves: entry.leaves !== undefined ? Number(entry.leaves) : null,
+        };
+        
+        console.log("Mutation createEntry - Données traitées:", processedEntry);
+        
+        const res = await apiRequest("POST", "/api/growth-journal", processedEntry);
+        if (!res.ok) {
+          // Tenter d'extraire les détails de l'erreur de la réponse
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Mutation createEntry - Erreur de réponse:", res.status, errorData);
+          throw new Error(errorData.message || `Erreur ${res.status}: ${res.statusText}`);
+        }
+        
         const data = await res.json();
         console.log("Mutation createEntry - Réponse reçue:", data);
         return data;

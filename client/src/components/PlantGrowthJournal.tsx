@@ -57,28 +57,32 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
       return;
     }
     
-    console.log("Tentative d'ajout d'une entrée au journal:", { 
-      ...data, 
-      plantId, 
-      userId: user.id,
-      date: data.date 
-    });
-    
-    createEntryMutation.mutate({
+    // Préparer les données avec les conversions explicites
+    const entryData = {
       ...data,
-      plantId,
-      userId: user.id, // Utiliser l'ID de l'utilisateur actuel
-      date: data.date,
-    }, {
+      plantId: Number(plantId),
+      userId: Number(user.id),
+      // S'assurer que les valeurs numériques sont soit des nombres, soit null
+      healthRating: data.healthRating !== undefined ? Number(data.healthRating) : null,
+      height: data.height !== undefined ? Number(data.height) : null,
+      leaves: data.leaves !== undefined ? Number(data.leaves) : null,
+    };
+    
+    console.log("Tentative d'ajout d'une entrée au journal (avant):", data);
+    console.log("Tentative d'ajout d'une entrée au journal (après):", entryData);
+    
+    createEntryMutation.mutate(entryData, {
       onSuccess: (responseData) => {
         console.log("Entrée de journal créée avec succès:", responseData);
+        // Fermer le dialogue après création réussie
+        setOpenAddDialog(false);
       },
       onError: (error: any) => {
         console.error("Erreur lors de la création de l'entrée de journal:", error);
+        console.error("Détails de l'erreur:", error.message);
+        // On ne ferme pas le dialogue en cas d'erreur pour permettre à l'utilisateur de corriger
       }
     });
-    
-    setOpenAddDialog(false);
   };
   
   const handleEditEntry = (entry: GrowthJournalEntry) => {

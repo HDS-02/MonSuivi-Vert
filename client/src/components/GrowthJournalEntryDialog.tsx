@@ -103,18 +103,20 @@ export function GrowthJournalEntryDialog({
   });
   
   function onSubmit(values: FormValues) {
-    // Correction pour s'assurer que les valeurs optionnelles sont correctement gérées
+    // Correction pour s'assurer que les valeurs optionnelles sont correctement gérées et formatées
     const sanitizedValues = {
       ...values,
       plantId: Number(values.plantId), // Assurer que plantId est un nombre
       notes: values.notes || "",
       imageUrl: values.imageUrl || "",
+      // S'assurer que les valeurs numériques sont bien des nombres ou null
+      healthRating: values.healthRating ? Number(values.healthRating) : null,
+      height: values.height ? Number(values.height) : null,
+      leaves: values.leaves ? Number(values.leaves) : null,
     };
     
-    // Les champs healthRating, height et leaves sont déjà gérés correctement par le schéma Zod
-    // qui transforme les chaînes vides et "0" en null, et les chaînes numériques en nombre
-    
-    console.log("Soumission des données du journal:", sanitizedValues);
+    console.log("Soumission des données du journal (avant):", values);
+    console.log("Soumission des données du journal (après):", sanitizedValues);
     onSave(sanitizedValues);
   }
   
