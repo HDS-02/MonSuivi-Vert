@@ -155,16 +155,28 @@ export function PlantQRCode({ plantId, plantName }: PlantQRCodeProps) {
                 alt={`QR Code pour ${plantName}`} 
                 className="border p-2 rounded-md max-w-[250px]"
               />
-              <div className="flex gap-2">
-                <Button onClick={downloadQrCode} className="w-full">
-                  Télécharger PNG
-                </Button>
-                <Button onClick={downloadSvgQrCode} variant="outline" className="w-full">
-                  Télécharger SVG
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex gap-2">
+                  <Button onClick={downloadQrCode} className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Télécharger PNG
+                  </Button>
+                  <Button onClick={downloadSvgQrCode} variant="outline" className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Télécharger SVG
+                  </Button>
+                </div>
+                <Button 
+                  onClick={downloadPdf} 
+                  variant="default" 
+                  className="w-full mt-2 bg-green-700 hover:bg-green-800"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Télécharger fiche PDF complète
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground text-center mt-2">
-                Imprimez cette étiquette et placez-la près de votre plante.
+                Imprimez cette étiquette, la fiche PDF complète ou placez-la près de votre plante pour un accès rapide.
               </p>
             </div>
           ) : null}
