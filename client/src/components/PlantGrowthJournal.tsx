@@ -26,8 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthJournal } from "@/hooks/useGrowthJournal";
-// Import du nouveau formulaire simplifié au lieu de l'ancien
-import { SimpleGrowthJournalForm } from "@/components/SimpleGrowthJournalForm";
+import { GrowthJournalEntryDialog } from "@/components/GrowthJournalEntryDialog";
 import { GrowthJournalEntry } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -252,17 +251,17 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
         ))
       )}
       
-      {/* Dialogue pour ajouter une entrée (avec le nouveau formulaire simplifié) */}
-      <SimpleGrowthJournalForm
+      {/* Dialogue pour ajouter une entrée */}
+      <GrowthJournalEntryDialog
         open={openAddDialog}
         onOpenChange={setOpenAddDialog}
         plantId={plantId}
         onSave={handleAddEntry}
       />
       
-      {/* Dialogue pour modifier une entrée (avec le nouveau formulaire simplifié) */}
+      {/* Dialogue pour modifier une entrée */}
       {selectedEntry && (
-        <SimpleGrowthJournalForm
+        <GrowthJournalEntryDialog
           open={openEditDialog}
           onOpenChange={setOpenEditDialog}
           plantId={plantId}
