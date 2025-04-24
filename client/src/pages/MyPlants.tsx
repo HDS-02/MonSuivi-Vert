@@ -316,6 +316,18 @@ export default function MyPlants() {
           </Link>
         </div>
       )}
+
+      {/* Boîte de dialogue de confirmation pour la suppression */}
+      <ConfirmDialog
+        isOpen={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Supprimer cette plante"
+        description="Êtes-vous sûr de vouloir supprimer cette plante ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="destructive"
+      />
     </div>
   );
 }
