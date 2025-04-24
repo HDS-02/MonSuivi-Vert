@@ -10,7 +10,7 @@ import { Plant } from '@shared/schema';
 const LOGO_PATH = path.join(process.cwd(), 'client', 'src', 'assets', 'logo.png');
 
 /**
- * Service de génération de PDF pour les plantes
+ * Service de génération de PDF pour les plantes - Implémentation simplifiée
  */
 export class PDFService {
   /**
@@ -28,11 +28,12 @@ export class PDFService {
     // Générer le QR code SVG
     const qrCodeSVG = await qrCodeService.generatePlantQRCodeSVG(plantId);
 
-    // Créer un nouveau document PDF
+    // Créer un nouveau document PDF avec une orientation portrait
     const pdfBuffer: Buffer[] = [];
     const doc = new PDFDocument({
       size: 'A4',
-      margin: 40,
+      margin: 50, // Marge uniforme pour éviter les problèmes de limite de page
+      bufferPages: true, // Pour pouvoir numéroter les pages
       info: {
         Title: `Fiche de plante - ${plant.name}`,
         Author: 'Mon Suivi Vert',
@@ -43,211 +44,138 @@ export class PDFService {
     // Pipe le document PDF dans un buffer
     doc.on('data', pdfBuffer.push.bind(pdfBuffer));
     
-    // Définir les couleurs
-    const primaryColor = '#3B8564'; // Vert primaire de l'application
-    const secondaryColor = '#6CAE75'; // Vert secondaire
-    const accentColor = '#F2A365'; // Accent orangé
+    // Couleurs de la charte graphique
+    const primaryColor = '#3B8564';
+    const textColor = '#333333';
+    const backgroundColor = '#F5F5F5';
     
-    // Définir constantes pour la mise en page
-    const pageWidth = doc.page.width - 80; // Largeur utile (avec les marges)
-    const centerX = doc.page.width / 2; // Centre horizontal de la page
+    // Variables pour la mise en page
+    const pageWidth = doc.page.width;
+    const contentWidth = pageWidth - 100; // 50px de marge de chaque côté
+    const centerX = pageWidth / 2;
     
-    // Créer un en-tête avec logo et design moderne
-    doc.rect(0, 0, doc.page.width, 100)
-      .fill(primaryColor);
+    // En-tête avec fond coloré
+    doc.rect(0, 0, pageWidth, 80)
+       .fill(primaryColor);
     
-    // Logo de l'application
-    try {
-      if (fs.existsSync(LOGO_PATH)) {
-        doc.image(LOGO_PATH, 40, 20, {
-          fit: [60, 60],
-          align: 'center',
-          valign: 'center'
-        });
-        
-        // Texte à côté du logo
-        doc.fontSize(24)
-           .fill('#FFFFFF')
-           .font('Helvetica-Bold')
-           .text('MON SUIVI VERT', 110, 30);
-      } else {
-        // Fallback si le logo n'est pas trouvé
-        doc.fontSize(30)
-           .fill('#FFFFFF')
-           .font('Helvetica-Bold')
-           .text('MON SUIVI VERT', centerX - 110, 35, { align: 'center' });
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du logo:', error);
-      // Fallback en cas d'erreur
-      doc.fontSize(30)
-         .fill('#FFFFFF')
-         .font('Helvetica-Bold')
-         .text('MON SUIVI VERT', centerX - 110, 35, { align: 'center' });
-    }
-    
-    // Information de la fiche
-    doc.fontSize(14)
+    // Titre de l'application - version texte simple
+    doc.fontSize(24)
+       .fill('#FFFFFF')
+       .font('Helvetica-Bold')
+       .text('MON SUIVI VERT', 50, 30);
+       
+    // Date de génération
+    doc.fontSize(12)
        .fill('#FFFFFF')
        .font('Helvetica')
-       .text(`Fiche plante - ${new Date().toLocaleDateString('fr-FR')}`, 40, 65);
+       .text(`Fiche générée le ${new Date().toLocaleDateString('fr-FR')}`, 50, 55);
     
-    // Zone principale - calculée correctement par rapport à la taille de la page
-    doc.rect(40, 110, pageWidth, doc.page.height - 160)
-       .fill('#F9F9F9');
-       
-    // Titre de la plante dans une boîte de taille correcte
-    doc.roundedRect(60, 120, pageWidth - 40, 50, 5)
-       .fill('#FFFFFF');
-       
-    doc.fill(primaryColor)
-       .fontSize(22)
+    // Titre de la fiche
+    doc.fontSize(22)
+       .fill(primaryColor)
        .font('Helvetica-Bold')
-       .text(plant.name, 80, 135, { width: pageWidth - 80 });
-       
-    // Sous-titre (espèce)
+       .text(`Fiche de : ${plant.name}`, 50, 100);
+    
+    // Espèce (sous-titre)
     if (plant.species) {
-      doc.fill('#666666')
-         .fontSize(14)
-         .font('Helvetica')
-         .text(plant.species, 80, 160, { width: pageWidth - 80 });
+      doc.fontSize(16)
+         .fill(textColor)
+         .font('Helvetica-Oblique')
+         .text(plant.species, 50, 130);
     }
     
-    // Mise en page en deux colonnes avec dimensions précises pour éviter les débordements
-    const colWidth = (pageWidth - 60) / 2; // Deux colonnes avec espace entre
-    const colGap = 20; // Espace entre les colonnes
-    const leftColX = 60; // X de départ pour la colonne de gauche
-    const rightColX = leftColX + colWidth + 40; // X de départ pour la colonne de droite
-    let yPos = 190;
-    
-    // Colonne de gauche - Informations principales et image
-    
-    // Image de la plante si disponible
+    // Image de la plante (si disponible)
+    let yPosition = 160;
     if (plant.image && plant.image.includes(',')) {
       try {
         const imgBuffer = Buffer.from(plant.image.split(',')[1], 'base64');
-        doc.image(imgBuffer, 80, yPos, {
-          fit: [colWidth - 20, 150],
-          align: 'center',
+        doc.image(imgBuffer, 50, yPosition, { 
+          fit: [200, 150]
         });
-        yPos += 160;
+        yPosition += 170; // Espace après l'image
       } catch (error) {
-        console.error('Erreur lors de l\'ajout de l\'image de la plante:', error);
-        // En cas d'erreur, on continue sans image
+        console.error('Erreur lors de l\'ajout de l\'image:', error);
       }
-    } else {
-      // Ajout d'un texte explicatif si pas d'image
-      doc.fontSize(10)
-         .fill('#666666')
-         .text('Aucune image disponible pour cette plante', 80, yPos + 50, { 
-           width: colWidth - 20,
-           align: 'center'
-         });
-      yPos += 90; // On ajoute quand même de l'espace
     }
     
-    // Informations détaillées dans une carte
-    doc.roundedRect(60, yPos, colWidth + 20, 220, 5)
-       .fill('#FFFFFF');
-    
-    doc.fill(primaryColor)
-       .fontSize(16)
+    // Section d'informations générales avec fond gris clair
+    doc.rect(50, yPosition, contentWidth, 180)
+       .fill(backgroundColor);
+       
+    // Titre de la section
+    doc.fontSize(16)
+       .fill(primaryColor)
        .font('Helvetica-Bold')
-       .text('Informations générales', 80, yPos + 15, { width: colWidth - 20 });
+       .text('Informations générales', 70, yPosition + 15);
     
     // Ligne de séparation
     doc.strokeColor(primaryColor)
        .lineWidth(1)
-       .moveTo(80, yPos + 35)
-       .lineTo(colWidth + 40, yPos + 35)
+       .moveTo(70, yPosition + 35)
+       .lineTo(contentWidth - 20, yPosition + 35)
        .stroke();
     
-    // Fonction d'aide pour ajouter une ligne d'information
-    const addInfoLine = (label: string, value: string | null | undefined, y: number) => {
+    // Fonction pour ajouter des informations avec un espacement constant
+    let infoY = yPosition + 50;
+    const addInfo = (label: string, value: string | null | undefined) => {
       if (value) {
-        doc.fill('#333333')
-           .fontSize(11)
+        doc.fontSize(12)
+           .fill(textColor)
            .font('Helvetica-Bold')
-           .text(`${label}: `, 80, y, { continued: true, width: colWidth - 40 })
+           .text(`${label}: `, 70, infoY, { continued: true })
            .font('Helvetica')
            .text(value);
-        return y + 22; // Retourne la nouvelle position Y
+        infoY += 25; // espacement constant entre les lignes
       }
-      return y;
     };
     
-    // Ajouter les détails de la plante
-    let infoY = yPos + 45;
-    infoY = addInfoLine('Statut', plant.status, infoY);
-    infoY = addInfoLine('Arrosage', 
-      plant.wateringFrequency ? `Tous les ${plant.wateringFrequency} jours` : 'Non spécifié', infoY);
-    infoY = addInfoLine('Lumière', plant.light, infoY);
-    infoY = addInfoLine('Température', plant.temperature, infoY);
-    infoY = addInfoLine('Taille de pot', plant.potSize, infoY);
+    // Ajout des informations
+    addInfo('Statut', plant.status);
+    addInfo('Fréquence d\'arrosage', plant.wateringFrequency ? `Tous les ${plant.wateringFrequency} jours` : 'Non spécifié');
+    addInfo('Lumière', plant.light);
+    addInfo('Température', plant.temperature);
+    addInfo('Taille de pot', plant.potSize);
     
-    // Colonne de droite - QR code et conseils
+    // Section pour le QR code
+    yPosition += 200;
     
-    // QR Code card
-    doc.roundedRect(rightColX, 190, colWidth + 20, 160, 5)
-       .fill('#FFFFFF');
-    
-    doc.fill(primaryColor)
-       .fontSize(16)
+    doc.fontSize(16)
+       .fill(primaryColor)
        .font('Helvetica-Bold')
-       .text('Accès rapide - QR Code', rightColX + 20, 205, { 
-         align: 'center', 
-         width: colWidth - 20 
-       });
-    
+       .text('QR Code d\'accès rapide', 50, yPosition);
+       
     try {
-      // Centrer le QR code
-      const qrCodeWidth = 120;
-      const qrCodeX = rightColX + (colWidth + 20 - qrCodeWidth) / 2;
-      
-      // Ajouter le SVG du QR code
-      SVGtoPDF(doc, qrCodeSVG, qrCodeX, 230, {
-        width: qrCodeWidth,
-        height: qrCodeWidth,
+      // QR code centré
+      SVGtoPDF(doc, qrCodeSVG, 50, yPosition + 30, {
+        width: 150,
+        height: 150
       });
     } catch (error) {
       console.error('Erreur lors de l\'ajout du QR code:', error);
-      doc.text('Erreur lors de la génération du QR code', rightColX + 20, 230, { 
-        align: 'center',
-        width: colWidth - 20 
-      });
+      doc.text('QR code non disponible', 50, yPosition + 70);
     }
     
-    // Notes de soin
+    // Notes de soin - à droite du QR code pour optimiser l'espace
     if (plant.careNotes) {
-      doc.roundedRect(rightColX, 360, colWidth + 20, 160, 5)
-         .fill('#FFFFFF');
-      
-      doc.fill(primaryColor)
-         .fontSize(16)
+      doc.rect(230, yPosition, contentWidth - 180, 150)
+         .fill(backgroundColor);
+         
+      doc.fontSize(16)
+         .fill(primaryColor)
          .font('Helvetica-Bold')
-         .text('Notes de soin', rightColX + 20, 375, { 
-           width: colWidth - 20,
-           align: 'center'
-         });
-      
-      // Ligne de séparation
-      doc.strokeColor(primaryColor)
-         .lineWidth(1)
-         .moveTo(rightColX + 20, 395)
-         .lineTo(rightColX + colWidth, 395)
-         .stroke();
-      
-      doc.fill('#333333')
-         .fontSize(11)
+         .text('Notes de soin', 250, yPosition + 10);
+         
+      doc.fontSize(12)
+         .fill(textColor)
          .font('Helvetica')
-         .text(plant.careNotes, rightColX + 20, 405, { 
-           width: colWidth - 40,
-           height: 110,
-           ellipsis: true
+         .text(plant.careNotes, 250, yPosition + 40, {
+           width: contentWidth - 220,
+           height: 100
          });
     }
     
     // Maladies communes
+    yPosition += 180;
     if (plant.commonDiseases) {
       try {
         let diseases;
@@ -258,61 +186,53 @@ export class PDFService {
         }
         
         if (Array.isArray(diseases) && diseases.length > 0) {
-          doc.roundedRect(60, yPos + 230, colWidth + 20, 90, 5)
-             .fill('#FFFFFF');
-          
-          doc.fill(primaryColor)
-             .fontSize(16)
+          doc.rect(50, yPosition, contentWidth, 100)
+             .fill(backgroundColor);
+             
+          doc.fontSize(16)
+             .fill(primaryColor)
              .font('Helvetica-Bold')
-             .text('Maladies communes', 80, yPos + 245, { width: colWidth - 20 });
+             .text('Maladies communes', 70, yPosition + 15);
           
-          // Ligne de séparation
-          doc.strokeColor(primaryColor)
-             .lineWidth(1)
-             .moveTo(80, yPos + 265)
-             .lineTo(colWidth + 40, yPos + 265)
-             .stroke();
+          let diseaseY = yPosition + 45;
+          const maxDiseases = Math.min(diseases.length, 2); // Limiter à 2 maladies
           
-          // Ajouter jusqu'à 2 maladies (pour tenir sur une page)
-          const maxDiseases = Math.min(diseases.length, 2);
           for (let i = 0; i < maxDiseases; i++) {
             const disease = diseases[i];
-            // On augmente l'espacement vertical pour éviter les chevauchements
-            const diseaseY = yPos + 275 + (i * 35); // Plus d'espace entre les maladies
-            
-            doc.fill('#333333')
-               .fontSize(11)
+            doc.fontSize(12)
+               .fill(textColor)
                .font('Helvetica-Bold')
-               .text(`${i + 1}. ${disease.name || 'N/A'}`, 80, diseaseY, { 
-                 width: colWidth - 40 
-               });
-            
-            // Traitement sur une ligne séparée avec plus d'espacement
-            doc.fontSize(9)
+               .text(`${i + 1}. ${disease.name || 'N/A'}`, 70, diseaseY);
+               
+            diseaseY += 20;
+            doc.fontSize(11)
                .font('Helvetica')
-               .text(`Traitement: ${disease.treatment || 'N/A'}`, 100, diseaseY + 15, { 
-                 width: colWidth - 60
+               .text(`Traitement: ${disease.treatment || 'N/A'}`, 90, diseaseY, {
+                 width: contentWidth - 110
                });
+               
+            diseaseY += 30; // Espace entre les maladies
           }
         }
       } catch (error) {
-        console.error('Erreur lors du parsing des maladies communes:', error);
+        console.error('Erreur lors du parsing des maladies:', error);
       }
     }
     
-    // Pied de page avec barre colorée
-    doc.rect(0, doc.page.height - 50, doc.page.width, 50)
+    // Pied de page
+    const footerY = doc.page.height - 50;
+    doc.rect(0, footerY, pageWidth, 50)
        .fill(primaryColor);
-    
-    // Centrage correct du texte en pied de page en utilisant centerX
-    doc.fill('#FFFFFF')
-       .fontSize(10)
+       
+    doc.fontSize(10)
+       .fill('#FFFFFF')
+       .font('Helvetica')
        .text('© Mon Suivi Vert - L\'application qui vous aide à prendre soin de vos plantes', 
-             0, doc.page.height - 30, { 
-               width: doc.page.width, 
+             centerX - 200, footerY + 20, { 
+               width: 400, 
                align: 'center' 
              });
-
+    
     // Finaliser le document
     doc.end();
 

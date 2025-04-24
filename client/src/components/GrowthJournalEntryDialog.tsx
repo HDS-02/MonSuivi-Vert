@@ -46,26 +46,34 @@ import {
 const formSchema = insertGrowthJournalSchema.extend({
   date: z.date({
     required_error: "Veuillez sélectionner une date",
-  }),
+  }).or(z.string().transform(val => {
+    try {
+      // Si c'est une chaîne ISO, la convertir en objet Date
+      return new Date(val);
+    } catch (error) {
+      // En cas d'erreur, renvoyer la date actuelle
+      return new Date();
+    }
+  })),
   healthRating: z.union([
     z.literal("").transform(() => null),
     z.literal("0").transform(() => null),
-    z.string().transform(val => Number(val)),
-    z.number().min(1).max(5),
+    z.string().transform(val => Number(val) || null), // Ajouter || null pour gérer les cas de NaN
+    z.number().min(1).max(5).nullable(),
     z.null()
-  ]).optional(),
+  ]).optional().nullable(),
   height: z.union([
     z.literal("").transform(() => null),
-    z.string().transform(val => Number(val)),
-    z.number().positive(),
+    z.string().transform(val => Number(val) || null), // Ajouter || null pour gérer les cas de NaN
+    z.number().positive().nullable(),
     z.null()
-  ]).optional(),
+  ]).optional().nullable(),
   leaves: z.union([
     z.literal("").transform(() => null),
-    z.string().transform(val => Number(val)),
-    z.number().nonnegative(),
+    z.string().transform(val => Number(val) || null), // Ajouter || null pour gérer les cas de NaN
+    z.number().nonnegative().nullable(),
     z.null()
-  ]).optional(),
+  ]).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
