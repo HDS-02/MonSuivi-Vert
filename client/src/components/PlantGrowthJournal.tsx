@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthJournal } from "@/hooks/useGrowthJournal";
 import { GrowthJournalEntryDialog } from "@/components/GrowthJournalEntryDialog";
 import { GrowthJournalEntry } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 
 interface PlantGrowthJournalProps {
   plantId: number;
@@ -40,6 +41,8 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<GrowthJournalEntry | null>(null);
   
+  const { user } = useAuth();
+  
   const {
     plantEntries,
     isLoadingPlantEntries,
@@ -49,16 +52,22 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
   } = useGrowthJournal(plantId);
   
   const handleAddEntry = (data: any) => {
+    if (!user) {
+      console.error("Impossible d'ajouter une entrée : utilisateur non connecté");
+      return;
+    }
+    
     console.log("Tentative d'ajout d'une entrée au journal:", { 
       ...data, 
       plantId, 
+      userId: user.id,
       date: data.date 
     });
     
     createEntryMutation.mutate({
       ...data,
       plantId,
-      userId: 1, // Assurez-vous que userId est fourni
+      userId: user.id, // Utiliser l'ID de l'utilisateur actuel
       date: data.date,
     }, {
       onSuccess: (responseData) => {
@@ -142,10 +151,12 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Journal de croissance</h3>
-        <Button onClick={() => setOpenAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter une entrée
-        </Button>
+        {user && (
+          <Button onClick={() => setOpenAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter une entrée
+          </Button>
+        )}
       </div>
       
       {plantEntries.length === 0 ? (
@@ -153,14 +164,16 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
           <p className="text-muted-foreground">
             Aucune entrée n'a été ajoutée au journal pour cette plante.
           </p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => setOpenAddDialog(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Commencer à documenter l'évolution
-          </Button>
+          {user && (
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => setOpenAddDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Commencer à documenter l'évolution
+            </Button>
+          )}
         </div>
       ) : (
         plantEntries.map((entry) => (
