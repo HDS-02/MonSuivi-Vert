@@ -146,6 +146,14 @@ export type InsertPlantAnalysis = z.infer<typeof insertPlantAnalysisSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
+export const insertGrowthJournalSchema = createInsertSchema(growthJournal).omit({
+  id: true,
+  date: true,
+});
+
+export type GrowthJournalEntry = typeof growthJournal.$inferSelect;
+export type InsertGrowthJournalEntry = z.infer<typeof insertGrowthJournalSchema>;
+
 // Badges types
 export interface Badge {
   id: string;

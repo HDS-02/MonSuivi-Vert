@@ -2,7 +2,8 @@ import {
   plants, Plant, InsertPlant, 
   tasks, Task, InsertTask,
   plantAnalyses, PlantAnalysis, InsertPlantAnalysis,
-  users, User, InsertUser
+  users, User, InsertUser,
+  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry
 } from "@shared/schema";
 import { db } from "./db";
 import { pool } from "./db";
@@ -162,5 +163,52 @@ export class DatabaseStorage implements IStorage {
       .values({ ...analysis, date: new Date() })
       .returning();
     return newAnalysis;
+  }
+  
+  // Journal de croissance CRUD methods
+  async getGrowthJournalEntries(plantId: number): Promise<GrowthJournalEntry[]> {
+    return await db
+      .select()
+      .from(growthJournal)
+      .where(eq(growthJournal.plantId, plantId))
+      .orderBy(desc(growthJournal.date));
+  }
+  
+  async getGrowthJournalEntriesByUserId(userId: number): Promise<GrowthJournalEntry[]> {
+    return await db
+      .select()
+      .from(growthJournal)
+      .where(eq(growthJournal.userId, userId))
+      .orderBy(desc(growthJournal.date));
+  }
+  
+  async getGrowthJournalEntry(id: number): Promise<GrowthJournalEntry | undefined> {
+    const [entry] = await db
+      .select()
+      .from(growthJournal)
+      .where(eq(growthJournal.id, id));
+    return entry;
+  }
+  
+  async createGrowthJournalEntry(entry: InsertGrowthJournalEntry): Promise<GrowthJournalEntry> {
+    const [newEntry] = await db
+      .insert(growthJournal)
+      .values({ ...entry, date: new Date() })
+      .returning();
+    return newEntry;
+  }
+  
+  async updateGrowthJournalEntry(id: number, updates: Partial<GrowthJournalEntry>): Promise<GrowthJournalEntry | undefined> {
+    const [updatedEntry] = await db
+      .update(growthJournal)
+      .set(updates)
+      .where(eq(growthJournal.id, id))
+      .returning();
+    return updatedEntry;
+  }
+  
+  async deleteGrowthJournalEntry(id: number): Promise<boolean> {
+    const result = await db.delete(growthJournal).where(eq(growthJournal.id, id));
+    return true; // Supposons que la suppression a réussi
   }
 }

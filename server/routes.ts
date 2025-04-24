@@ -2,7 +2,7 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertPlantSchema, insertTaskSchema, insertPlantAnalysisSchema, insertUserSchema } from "@shared/schema";
+import { insertPlantSchema, insertTaskSchema, insertPlantAnalysisSchema, insertUserSchema, insertGrowthJournalSchema } from "@shared/schema";
 import { analyzePlantImage, getPlantInfoByName } from "./openai";
 import multer from "multer";
 import fs from "fs";

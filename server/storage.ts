@@ -2,7 +2,8 @@ import {
   plants, Plant, InsertPlant, 
   tasks, Task, InsertTask,
   plantAnalyses, PlantAnalysis, InsertPlantAnalysis,
-  users, User, InsertUser
+  users, User, InsertUser,
+  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -37,6 +38,14 @@ export interface IStorage {
   getPlantAnalyses(plantId: number): Promise<PlantAnalysis[]>;
   getLatestPlantAnalysis(plantId: number): Promise<PlantAnalysis | undefined>;
   createPlantAnalysis(analysis: InsertPlantAnalysis): Promise<PlantAnalysis>;
+  
+  // Journal de croissance CRUD methods
+  getGrowthJournalEntries(plantId: number): Promise<GrowthJournalEntry[]>;
+  getGrowthJournalEntriesByUserId(userId: number): Promise<GrowthJournalEntry[]>;
+  getGrowthJournalEntry(id: number): Promise<GrowthJournalEntry | undefined>;
+  createGrowthJournalEntry(entry: InsertGrowthJournalEntry): Promise<GrowthJournalEntry>;
+  updateGrowthJournalEntry(id: number, updates: Partial<GrowthJournalEntry>): Promise<GrowthJournalEntry | undefined>;
+  deleteGrowthJournalEntry(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: session.Store;
