@@ -7,9 +7,9 @@ channel = "stable-24_05"
 packages = ["jq"]
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "cloudrun"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["sh", "-c", "npm run"]
 
 [[ports]]
 localPort = 5000
