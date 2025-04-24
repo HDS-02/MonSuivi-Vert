@@ -13,20 +13,33 @@ export default function Badges() {
 
   // Simuler une vérification de badges au chargement de la page
   useEffect(() => {
-    if (user) {
-      // Ceci est simplement pour la démonstration, en production nous aurions
-      // des vérifications de badges à des moments spécifiques (ajout de plante, tâche complétée, etc.)
-      const checkBadges = async () => {
-        try {
-          await updatePlantCollectionBadges.mutateAsync();
-          await updateTaskBadges.mutateAsync();
-        } catch (error) {
-          // Ignorer les erreurs silencieusement
-        }
-      };
-      
-      checkBadges();
+    // Ne vérifier les badges que si l'utilisateur est connecté
+    if (!user) {
+      return; // Ne rien faire si l'utilisateur n'est pas connecté
     }
+    
+    // Ceci est simplement pour la démonstration, en production nous aurions
+    // des vérifications de badges à des moments spécifiques (ajout de plante, tâche complétée, etc.)
+    const checkBadges = async () => {
+      try {
+        if (updatePlantCollectionBadges && typeof updatePlantCollectionBadges.mutateAsync === 'function') {
+          await updatePlantCollectionBadges.mutateAsync();
+        }
+        
+        if (updateTaskBadges && typeof updateTaskBadges.mutateAsync === 'function') {
+          await updateTaskBadges.mutateAsync();
+        }
+      } catch (error) {
+        console.log("Erreur ignorée lors de la vérification des badges");
+      }
+    };
+    
+    // Exécuter la vérification avec un petit délai pour s'assurer que tout est chargé
+    const timer = setTimeout(() => {
+      checkBadges();
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [user, updatePlantCollectionBadges, updateTaskBadges]);
 
   // Fonction de démonstration pour simuler l'obtention d'un badge
@@ -36,6 +49,36 @@ export default function Badges() {
       description: "Premier pas vert - Ajoutez votre première plante à l'application"
     });
   };
+
+  // Afficher un message si l'utilisateur n'est pas connecté
+  if (!user) {
+    return (
+      <div className="organic-bg min-h-screen pb-24">
+        <div className="gradient-header bg-gradient-to-br from-primary/90 to-primary-light/90 text-white px-4 pt-6 pb-8 mb-6 shadow-md">
+          <h1 className="text-2xl font-raleway font-semibold">Mes Réalisations</h1>
+          <p className="text-white/80 mt-1">
+            Suivez votre progression et déverrouillez des badges en prenant soin de vos plantes
+          </p>
+        </div>
+
+        <div className="px-4">
+          <div className="glass-card backdrop-blur-sm border border-gray-100/80 shadow-lg rounded-xl p-6 mb-8 text-center">
+            <div className="p-6 flex flex-col items-center">
+              <span className="material-icons text-5xl text-gray-300 mb-4">account_circle</span>
+              <h2 className="text-xl font-medium mb-2">Connectez-vous pour voir vos badges</h2>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Vous devez être connecté pour accéder à vos badges et récompenses. 
+                Créez un compte ou connectez-vous pour commencer à débloquer des badges !
+              </p>
+              <Button size="lg" asChild>
+                <a href="/auth">Se connecter</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="organic-bg min-h-screen pb-24">

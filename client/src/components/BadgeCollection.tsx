@@ -10,22 +10,23 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function BadgeCollection() {
   const { user } = useAuth();
+  
+  // Ne pas charger les données des badges si l'utilisateur n'est pas connecté
   const {
-    badges,
+    badges = [],
     isBadgesLoading,
     getBadgesByCategory,
     getUnlockedBadges,
     getInProgressBadges,
-  } = useBadges();
+  } = user ? useBadges() : {
+    badges: [],
+    isBadgesLoading: false,
+    getBadgesByCategory: () => [], 
+    getUnlockedBadges: () => [],
+    getInProgressBadges: () => []
+  };
+  
   const [activeTab, setActiveTab] = useState("tous");
-
-  // Mettre à jour les données des badges au chargement du composant
-  useEffect(() => {
-    if (user) {
-      // En production, nous aurions des fonctions pour vérifier les badges
-      // à chaque action de l'utilisateur (ajout de plante, tâche complétée, etc.)
-    }
-  }, [user]);
 
   // Filtrer les badges selon l'onglet actif
   const getFilteredBadges = () => {
