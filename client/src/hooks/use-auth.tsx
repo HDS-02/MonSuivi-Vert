@@ -80,10 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Efface tous les caches pour éviter les problèmes après déconnexion
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt sur Mon Suivi Vert !",
       });
+      // La redirection se fera dans le composant qui appelle cette mutation
     },
     onError: (error: Error) => {
       toast({

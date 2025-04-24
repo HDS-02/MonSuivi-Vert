@@ -5,6 +5,7 @@ import ProfileDialog from "./ProfileDialog";
 import newLogo from "../assets/logo.png";
 import { useAuth } from "@/hooks/use-auth";
 import useNotifications from "@/hooks/useNotifications";
+import { useLocation } from "wouter";
 
 export default function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -12,6 +13,7 @@ export default function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
+  const [, navigate] = useLocation();
 
   return (
     <header className="bg-primary/80 backdrop-blur-md text-white shadow-lg sticky top-0 z-20">
@@ -64,6 +66,7 @@ export default function Header() {
       <ProfileDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
+        onLogout={() => navigate('/auth')}
       />
     </header>
   );
