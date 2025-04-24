@@ -307,11 +307,12 @@ export default function Home() {
                 <span className="material-icons text-primary/70 text-3xl">eco</span>
               </div>
               <p className="text-gray-500 mb-6">Vous n'avez pas encore de plantes</p>
-              <Link href="/add-plant">
-                <Button className="bg-gradient-to-r from-primary to-primary-light text-white hover:shadow-md transition-shadow">
-                  Ajouter une plante
-                </Button>
-              </Link>
+              <Button 
+                className="bg-gradient-to-r from-primary to-primary-light text-white hover:shadow-md transition-shadow"
+                onClick={() => window.location.href = '/add-plant'}
+              >
+                Ajouter une plante
+              </Button>
             </div>
           )}
         </div>
