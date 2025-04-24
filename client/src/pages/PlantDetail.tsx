@@ -1,12 +1,12 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plant, Task, PlantAnalysis } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import EditPlantDialog from "@/components/EditPlantDialog";
 import SOSPlantDialog from "@/components/SOSPlantDialog";
 import { PlantQRCode } from "@/components/PlantQRCode";
@@ -30,6 +30,50 @@ export default function PlantDetail() {
   
   const { data: analyses, isLoading: analysesLoading } = useQuery<PlantAnalysis[]>({
     queryKey: [`/api/plants/${id}/analyses`],
+  });
+  
+  // Mutation pour mettre à jour une plante
+  const updatePlantMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number, updates: Partial<Plant> }) => {
+      const response = await apiRequest("PATCH", `/api/plants/${id}`, updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}`] });
+      toast({
+        title: "Plante mise à jour",
+        description: "Les modifications ont été enregistrées avec succès."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour la plante.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Mutation pour marquer une tâche comme terminée
+  const completeTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      const response = await apiRequest("PATCH", `/api/tasks/${taskId}/complete`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
+      toast({
+        title: "Tâche terminée",
+        description: "La tâche a été marquée comme terminée."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de marquer la tâche comme terminée.",
+        variant: "destructive"
+      });
+    }
   });
 
   function formatDate(dateString: string | Date | null | undefined) {
@@ -314,32 +358,11 @@ export default function PlantDetail() {
                               ? [...plant.gallery, imageData]
                               : [imageData]
                             : [imageData];
-                            
-                          // Appeler l'API pour mettre à jour la plante
-                          fetch(`/api/plants/${plant.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ gallery: updatedGallery })
-                          })
-                          .then(response => {
-                            if (response.ok) {
-                              // Rafraîchir les données
-                              queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}`] });
-                              toast({
-                                title: "Photo ajoutée",
-                                description: "La photo a été ajoutée à la galerie."
-                              });
-                            } else {
-                              throw new Error("Erreur lors de l'ajout de la photo");
-                            }
-                          })
-                          .catch(error => {
-                            toast({
-                              title: "Erreur",
-                              description: "Impossible d'ajouter la photo à la galerie.",
-                              variant: "destructive"
-                            });
-                            console.error("Erreur:", error);
+                          
+                          // Utiliser useMutation pour mettre à jour la galerie
+                          updatePlantMutation.mutate({
+                            id: plant.id,
+                            updates: { gallery: updatedGallery }
                           });
                         }
                       };

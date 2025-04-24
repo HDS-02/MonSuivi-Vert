@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { GrowthJournalEntry, insertGrowthJournalSchema } from "@shared/schema";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { CalendarIcon, ImageIcon, XCircleIcon } from "lucide-react";
+import { CalendarIcon, ImageIcon, XCircleIcon, X } from "lucide-react";
 
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -88,9 +89,9 @@ export function GrowthJournalEntryDialog({
       date: entry?.date ? new Date(entry.date) : new Date(),
       notes: entry?.notes || "",
       imageUrl: entry?.imageUrl || "",
-      healthRating: entry?.healthRating || null,
-      height: entry?.height || null,
-      leaves: entry?.leaves || null,
+      healthRating: entry?.healthRating || undefined,
+      height: entry?.height || undefined,
+      leaves: entry?.leaves || undefined,
     },
   });
   
@@ -124,9 +125,16 @@ export function GrowthJournalEntryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {entry ? "Modifier une entrée" : "Ajouter une entrée"}
-          </DialogTitle>
+          <div className="flex justify-between items-start">
+            <DialogTitle>
+              {entry ? "Modifier une entrée" : "Ajouter une entrée"}
+            </DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </div>
           <DialogDescription>
             Documentez l'évolution de votre plante dans votre journal de croissance.
           </DialogDescription>
@@ -274,6 +282,7 @@ export function GrowthJournalEntryDialog({
                       placeholder="Observations sur l'état de votre plante"
                       className="resize-none"
                       {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -327,7 +336,7 @@ export function GrowthJournalEntryDialog({
                       </div>
                     )}
                     {/* Le champ caché qui stocke l'URL de l'image */}
-                    <input type="hidden" {...field} />
+                    <input type="hidden" {...field} value={field.value || ""} />
                   </div>
                   <FormMessage />
                 </FormItem>
