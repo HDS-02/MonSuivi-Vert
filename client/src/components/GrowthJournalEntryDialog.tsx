@@ -96,7 +96,16 @@ export function GrowthJournalEntryDialog({
   });
   
   function onSubmit(values: FormValues) {
-    onSave(values);
+    // Correction pour s'assurer que les valeurs optionnelles sont correctement gérées
+    const sanitizedValues = {
+      ...values,
+      notes: values.notes || "",
+      imageUrl: values.imageUrl || "",
+      healthRating: typeof values.healthRating === "string" && values.healthRating === "" ? null : values.healthRating,
+      height: typeof values.height === "string" && values.height === "" ? null : values.height,
+      leaves: typeof values.leaves === "string" && values.leaves === "" ? null : values.leaves,
+    };
+    onSave(sanitizedValues);
   }
   
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -211,7 +220,7 @@ export function GrowthJournalEntryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="null">Non évalué</SelectItem>
+                        <SelectItem value="">Non évalué</SelectItem>
                         <SelectItem value="1">1 - Critique</SelectItem>
                         <SelectItem value="2">2 - Mauvaise</SelectItem>
                         <SelectItem value="3">3 - Moyenne</SelectItem>
