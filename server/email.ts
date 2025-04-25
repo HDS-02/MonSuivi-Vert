@@ -28,10 +28,10 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   }
 
   try {
-    // Adresse email générique qui ne nécessite pas de vérification spécifique
+    // Utilisation de l'adresse email vérifiée de l'utilisateur
     const msg = {
       to,
-      from: 'noreply@example.com', // Adresse générique
+      from: 'Anthony.hurtebise@outlook.fr', // Adresse vérifiée auprès de SendGrid
       subject,
       text: text || 'Contenu non disponible en format texte',
       html: html || '<p>Contenu non disponible en HTML</p>'
