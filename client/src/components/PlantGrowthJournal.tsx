@@ -26,7 +26,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthJournal } from "@/hooks/useGrowthJournal";
-import { GrowthJournalEntryDialog } from "@/components/GrowthJournalEntryDialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { GrowthJournalEntry } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -251,23 +260,275 @@ export function PlantGrowthJournal({ plantId, plantName }: PlantGrowthJournalPro
         ))
       )}
       
-      {/* Dialogue pour ajouter une entrée */}
-      <GrowthJournalEntryDialog
-        open={openAddDialog}
-        onOpenChange={setOpenAddDialog}
-        plantId={plantId}
-        onSave={handleAddEntry}
-      />
+      {/* Dialogue simplifié pour ajouter une entrée */}
+      <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter une entrée au journal</DialogTitle>
+            <DialogDescription>
+              Documentez l'évolution de votre plante au fil du temps.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Titre de l'entrée */}
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium">
+                Titre <span className="text-destructive">*</span>
+              </label>
+              <Input
+                id="title"
+                placeholder="Ex: Nouvelle pousse"
+                onChange={(e) => {
+                  // Le formulaire est stocké en mémoire
+                  (window as any).entryFormData = {
+                    ...(window as any).entryFormData || {},
+                    title: e.target.value
+                  };
+                }}
+              />
+            </div>
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <label htmlFor="notes" className="text-sm font-medium">
+                Notes et observations
+              </label>
+              <Textarea 
+                id="notes" 
+                placeholder="Décrivez vos observations..."
+                onChange={(e) => {
+                  (window as any).entryFormData = {
+                    ...(window as any).entryFormData || {},
+                    notes: e.target.value
+                  };
+                }}
+              />
+            </div>
+            
+            {/* Mesures optionnelles */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="health" className="text-sm font-medium">
+                  Santé (1-5)
+                </label>
+                <Input
+                  id="health"
+                  type="number"
+                  min="1"
+                  max="5"
+                  placeholder="Ex: 4"
+                  onChange={(e) => {
+                    (window as any).entryFormData = {
+                      ...(window as any).entryFormData || {},
+                      healthRating: e.target.value ? Number(e.target.value) : null
+                    };
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="height" className="text-sm font-medium">
+                  Hauteur (cm)
+                </label>
+                <Input
+                  id="height"
+                  type="number"
+                  min="0"
+                  placeholder="Ex: 25"
+                  onChange={(e) => {
+                    (window as any).entryFormData = {
+                      ...(window as any).entryFormData || {},
+                      height: e.target.value ? Number(e.target.value) : null
+                    };
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="leaves" className="text-sm font-medium">
+                  Nombre de feuilles
+                </label>
+                <Input
+                  id="leaves"
+                  type="number"
+                  min="0"
+                  placeholder="Ex: 8"
+                  onChange={(e) => {
+                    (window as any).entryFormData = {
+                      ...(window as any).entryFormData || {},
+                      leaves: e.target.value ? Number(e.target.value) : null
+                    };
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="submit"
+              onClick={() => {
+                // Récupérer les données stockées dans la variable globale
+                const formData = (window as any).entryFormData || {};
+                
+                // Préparer un objet à envoyer au serveur
+                const entryData = {
+                  title: formData.title || "Nouvelle entrée",
+                  date: new Date(),
+                  plantId: Number(plantId),
+                  userId: user?.id ? Number(user.id) : 0,
+                  notes: formData.notes || "",
+                  imageUrl: "",
+                  healthRating: formData.healthRating || null,
+                  height: formData.height || null,
+                  leaves: formData.leaves || null
+                };
+                
+                // Envoyer les données au serveur
+                handleAddEntry(entryData);
+                
+                // Réinitialiser la variable globale
+                (window as any).entryFormData = {};
+              }}
+            >
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
-      {/* Dialogue pour modifier une entrée */}
+      {/* Dialogue simplifié pour modifier une entrée */}
       {selectedEntry && (
-        <GrowthJournalEntryDialog
-          open={openEditDialog}
-          onOpenChange={setOpenEditDialog}
-          plantId={plantId}
-          entry={selectedEntry}
-          onSave={handleUpdateEntry}
-        />
+        <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Modifier une entrée</DialogTitle>
+              <DialogDescription>
+                Mettez à jour les détails de cette entrée.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Titre de l'entrée */}
+              <div className="space-y-2">
+                <label htmlFor="edit-title" className="text-sm font-medium">
+                  Titre <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="edit-title"
+                  defaultValue={selectedEntry.title}
+                  onChange={(e) => {
+                    (window as any).editFormData = {
+                      ...(window as any).editFormData || {},
+                      title: e.target.value
+                    };
+                  }}
+                />
+              </div>
+              
+              {/* Notes */}
+              <div className="space-y-2">
+                <label htmlFor="edit-notes" className="text-sm font-medium">
+                  Notes et observations
+                </label>
+                <Textarea 
+                  id="edit-notes" 
+                  defaultValue={selectedEntry.notes || ""}
+                  onChange={(e) => {
+                    (window as any).editFormData = {
+                      ...(window as any).editFormData || {},
+                      notes: e.target.value
+                    };
+                  }}
+                />
+              </div>
+              
+              {/* Mesures optionnelles */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="edit-health" className="text-sm font-medium">
+                    Santé (1-5)
+                  </label>
+                  <Input
+                    id="edit-health"
+                    type="number"
+                    min="1"
+                    max="5"
+                    defaultValue={selectedEntry.healthRating || ""}
+                    onChange={(e) => {
+                      (window as any).editFormData = {
+                        ...(window as any).editFormData || {},
+                        healthRating: e.target.value ? Number(e.target.value) : null
+                      };
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-height" className="text-sm font-medium">
+                    Hauteur (cm)
+                  </label>
+                  <Input
+                    id="edit-height"
+                    type="number"
+                    min="0"
+                    defaultValue={selectedEntry.height || ""}
+                    onChange={(e) => {
+                      (window as any).editFormData = {
+                        ...(window as any).editFormData || {},
+                        height: e.target.value ? Number(e.target.value) : null
+                      };
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-leaves" className="text-sm font-medium">
+                    Nombre de feuilles
+                  </label>
+                  <Input
+                    id="edit-leaves"
+                    type="number"
+                    min="0"
+                    defaultValue={selectedEntry.leaves || ""}
+                    onChange={(e) => {
+                      (window as any).editFormData = {
+                        ...(window as any).editFormData || {},
+                        leaves: e.target.value ? Number(e.target.value) : null
+                      };
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                type="submit"
+                onClick={() => {
+                  // Récupérer les données du formulaire
+                  const formData = (window as any).editFormData || {};
+                  
+                  // Préparer l'objet avec les valeurs par défaut de l'entrée sélectionnée
+                  const updatedEntry = {
+                    title: formData.title !== undefined ? formData.title : selectedEntry.title,
+                    notes: formData.notes !== undefined ? formData.notes : selectedEntry.notes,
+                    date: selectedEntry.date,
+                    healthRating: formData.healthRating !== undefined ? formData.healthRating : selectedEntry.healthRating,
+                    height: formData.height !== undefined ? formData.height : selectedEntry.height,
+                    leaves: formData.leaves !== undefined ? formData.leaves : selectedEntry.leaves,
+                    imageUrl: selectedEntry.imageUrl || ""
+                  };
+                  
+                  // Envoyer les données
+                  handleUpdateEntry(updatedEntry);
+                  
+                  // Réinitialiser
+                  (window as any).editFormData = {};
+                }}
+              >
+                Enregistrer les modifications
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
       
       {/* Dialogue de confirmation de suppression */}
