@@ -81,6 +81,7 @@ export default function NewTaskDialog({
       description: "",
       type: "water",
       dueDate: selectedDate || new Date(),
+      scheduleFuture: false, // Par défaut, ne pas programmer les arrosages futurs
     },
   });
 
@@ -122,6 +123,7 @@ export default function NewTaskDialog({
         description: "",
         type: "water",
         dueDate: selectedDate || new Date(),
+        scheduleFuture: false,
         ...(selectedPlantId && { plantId: selectedPlantId }),
       });
     }
@@ -138,6 +140,9 @@ export default function NewTaskDialog({
         type: data.type,
         description: data.description,
         dueDate: data.dueDate,
+        // Ajouter le paramètre pour la programmation automatique des arrosages futurs
+        // uniquement si c'est une tâche d'arrosage et que l'option est activée
+        ...(data.type === "water" && { scheduleFuture: !!data.scheduleFuture }),
         // Le champ 'completed' sera fourni par défaut avec le schéma modifié
       };
 
@@ -159,12 +164,19 @@ export default function NewTaskDialog({
 
       // Rafraîchir les données de tâches dans le cache
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-
-      // Notification de succès
-      toast({
-        title: "Tâche créée",
-        description: "La nouvelle tâche a été ajoutée avec succès",
-      });
+      
+      // Message de succès différent si des arrosages automatiques ont été programmés
+      if (data.type === "water" && data.scheduleFuture) {
+        toast({
+          title: "Tâches d'arrosage programmées",
+          description: "La tâche a été créée et les prochains arrosages ont été programmés automatiquement.",
+        });
+      } else {
+        toast({
+          title: "Tâche créée",
+          description: "La nouvelle tâche a été ajoutée avec succès",
+        });
+      }
 
       // Fermer le dialogue
       onOpenChange(false);
@@ -299,6 +311,34 @@ export default function NewTaskDialog({
                 </FormItem>
               )}
             />
+            
+            {/* Option de programmation automatique des arrosages futurs - visible uniquement pour les tâches d'arrosage */}
+            {form.watch("type") === "water" && (
+              <FormField
+                control={form.control}
+                name="scheduleFuture"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Programmer les arrosages futurs
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Créer automatiquement 3 tâches d'arrosage basées sur la fréquence de la plante
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DialogFooter className="mt-6">
               <Button
