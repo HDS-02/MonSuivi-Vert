@@ -1,14 +1,21 @@
-import sgMail from '@sendgrid/mail';
 import { Task } from '@shared/schema';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import fs from 'fs';
+import path from 'path';
 
-// Configurer SendGrid avec la clé API
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('Service email configuré avec SendGrid');
-} else {
-  console.warn('SENDGRID_API_KEY non définie, les emails ne seront pas envoyés');
+// Service d'email simulé (hors ligne)
+console.log('Service email simulé configuré (mode hors ligne)');
+
+// Créer un dossier pour stocker les emails simulés si nécessaire
+const emailFolderPath = path.join('.', 'emails_simules');
+try {
+  if (!fs.existsSync(emailFolderPath)) {
+    fs.mkdirSync(emailFolderPath, { recursive: true });
+    console.log(`Dossier ${emailFolderPath} créé pour stocker les emails simulés`);
+  }
+} catch (err) {
+  console.error('Impossible de créer le dossier pour les emails simulés:', err);
 }
 
 interface EmailOptions {
@@ -19,46 +26,74 @@ interface EmailOptions {
 }
 
 /**
- * Envoie un email via SendGrid
+ * Simule l'envoi d'un email et sauvegarde son contenu
  */
 export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<boolean> {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.warn('Tentative d\'envoi d\'email sans API KEY configurée');
-    return false;
-  }
-
   try {
-    // Utilisation de l'adresse email vérifiée de l'utilisateur
     const msg = {
       to,
-      from: 'Anthony.hurtebise@outlook.fr', // Adresse vérifiée auprès de SendGrid
+      from: 'notification@monsuivivert.fr', // Adresse fictive pour la simulation
       subject,
       text: text || 'Contenu non disponible en format texte',
       html: html || '<p>Contenu non disponible en HTML</p>'
     };
-
-    // Solution 1: Tenter d'envoyer l'email via SendGrid
+    
+    // Afficher l'email dans la console
+    console.log('------ EMAIL SIMULÉ ------');
+    console.log(`À: ${msg.to}`);
+    console.log(`De: ${msg.from}`);
+    console.log(`Sujet: ${msg.subject}`);
+    console.log(`Date: ${new Date().toLocaleString('fr-FR')}`);
+    console.log('------------------------');
+    
+    // Sauvegarder l'email dans un fichier (optionnel)
     try {
-      await sgMail.send(msg);
-      console.log(`Email envoyé à ${to} avec succès`);
-      return true;
-    } catch (sendgridError) {
-      console.error('Erreur SendGrid:', sendgridError);
+      const timestamp = Date.now();
+      const fileName = `email_${timestamp}.html`;
+      const filePath = path.join(emailFolderPath, fileName);
       
-      // Solution 2: Simulation d'email (pour déboguer et tester)
-      console.log('------ EMAIL SIMULÉ ------');
-      console.log(`À: ${msg.to}`);
-      console.log(`De: ${msg.from}`);
-      console.log(`Sujet: ${msg.subject}`);
-      console.log('Contenu HTML:');
-      console.log(msg.html);
-      console.log('------------------------');
+      const emailContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Email Simulé - ${subject}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .email-container { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; }
+          .email-header { background-color: #f5f5f5; padding: 10px; margin-bottom: 20px; }
+          .email-content { padding: 20px; }
+          .email-footer { margin-top: 30px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="email-header">
+            <div><strong>À:</strong> ${msg.to}</div>
+            <div><strong>De:</strong> ${msg.from}</div>
+            <div><strong>Sujet:</strong> ${msg.subject}</div>
+            <div><strong>Date:</strong> ${new Date().toLocaleString('fr-FR')}</div>
+          </div>
+          <div class="email-content">
+            ${msg.html}
+          </div>
+          <div class="email-footer">
+            <p>Email simulé généré par l'application Mon Suivi Vert</p>
+          </div>
+        </div>
+      </body>
+      </html>
+      `;
       
-      // On retourne true pour signaler que le mail a été "envoyé" (simulé)
-      return true;
+      fs.writeFileSync(filePath, emailContent);
+      console.log(`Email simulé sauvegardé dans ${filePath}`);
+    } catch (error) {
+      console.warn('Échec de sauvegarde de l\'email (non critique):', error);
     }
+    
+    return true;
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    console.error('Erreur lors de la simulation d\'email:', error);
     return false;
   }
 }
