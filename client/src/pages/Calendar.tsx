@@ -32,10 +32,12 @@ export default function Calendar() {
     });
   }
 
-  // Fonction utilitaire pour normaliser une date (sans l'heure)
+  // Fonction utilitaire pour normaliser une date (sans l'heure) en tenant compte du fuseau horaire
   const normalizeDate = (date: Date | string): string => {
     const d = new Date(date);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    // Ajuster pour le fuseau horaire local (pour éviter les problèmes avec UTC)
+    const localDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
   };
 
   const getTasksForDate = (date: Date | undefined) => {
