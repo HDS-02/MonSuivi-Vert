@@ -13,7 +13,7 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
-import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail } from "./email";
+import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification } from "./email";
 import { pdfService } from "./pdfService";
 
 // Configure multer for in-memory file storage
@@ -331,10 +331,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const baseDate = validatedData.dueDate ? new Date(validatedData.dueDate) : new Date();
             
             // Créer 3 tâches futures maximum
+            const wateringDates: Date[] = [];
+            
             for (let i = 1; i <= 3; i++) {
               // Calculer la date du prochain arrosage
               const nextDate = new Date(baseDate);
               nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));
+              wateringDates.push(nextDate);
               
               const futureTask = {
                 plantId: validatedData.plantId,
@@ -348,11 +351,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`✅ Arrosage programmé pour le ${nextDate.toLocaleDateString('fr-FR')}`);
             }
             
-            // Si l'utilisateur a configuré un email, programmer l'envoi de notifications
+            // Si l'utilisateur a configuré un email, envoyer une notification pour les arrosages programmés
             if (req.isAuthenticated() && req.user?.email) {
-              console.log(`Configuration des notifications email pour ${req.user.email}`);
-              // Aucune action immédiate nécessaire ici car les rappels sont envoyés via une route dédiée
-              // qui vérifie régulièrement les tâches en attente
+              try {
+                console.log(`Envoi d'une notification d'arrosages programmés à ${req.user.email}`);
+                await sendScheduledWateringNotification(req.user.email, plant, wateringDates);
+              } catch (emailError) {
+                console.error("Erreur lors de l'envoi de l'email de notification d'arrosages programmés:", emailError);
+                // Ne pas bloquer l'ajout de tâches si l'envoi d'email échoue
+              }
             }
           }
         } catch (schedulingError) {

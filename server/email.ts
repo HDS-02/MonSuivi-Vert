@@ -436,6 +436,62 @@ export async function sendWateringReminderEmail(email: string, plants: Plant[]):
   });
 }
 
+/**
+ * Envoie une notification pour les arrosages programmés automatiquement
+ */
+export async function sendScheduledWateringNotification(email: string, plant: Plant, wateringDates: Date[]): Promise<boolean> {
+  if (wateringDates.length === 0) return true;
+  
+  // Formater les dates d'arrosage pour l'email
+  const datesHtml = wateringDates.map(date => {
+    const formattedDate = format(date, 'EEEE dd MMMM yyyy', { locale: fr });
+    
+    return `
+      <div style="margin-bottom: 10px; padding: 8px; border-left: 3px solid #2196F3; background-color: #f9f9f9;">
+        <p style="margin: 0; font-size: 15px;">${formattedDate}</p>
+      </div>
+    `;
+  }).join('');
+  
+  const content = `
+    <p>Bonjour,</p>
+    <p>Nous avons programmé les prochains arrosages pour votre plante :</p>
+    
+    <div style="margin: 15px 0; padding: 15px; background-color: #e3f2fd; border-radius: 8px;">
+      <div style="display: flex; align-items: center; margin-bottom: 15px;">
+        <div style="margin-right: 15px; background-color: #bbdefb; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+          <span style="color: #1976D2; font-size: 28px;">💧</span>
+        </div>
+        <div>
+          <p style="margin: 0; font-weight: bold; font-size: 18px;">${plant.name}</p>
+          <p style="margin: 3px 0 0; font-size: 14px; color: #555;">${plant.species || 'Espèce non spécifiée'}</p>
+        </div>
+      </div>
+      
+      <p style="margin: 0; font-weight: bold;">Arrosages programmés :</p>
+      <div style="margin-top: 10px;">
+        ${datesHtml}
+      </div>
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; background-color: #e8f5e9; border-radius: 8px;">
+      <p style="margin: 0;"><strong>Conseil :</strong> Cette plante nécessite un arrosage tous les ${plant.wateringFrequency} jours. Les tâches ont été automatiquement ajoutées à votre calendrier.</p>
+    </div>
+    
+    <div style="text-align: center; margin: 25px 0;">
+      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666; font-style: italic;">Vous pouvez modifier ces tâches ou en ajouter de nouvelles directement depuis l'application.</p>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `🌱 Arrosages programmés pour ${plant.name}`,
+    html: emailTemplate('Arrosages programmés', content)
+  });
+}
+
 // Fonction utilitaire pour obtenir l'icône HTML d'une tâche
 function getTaskIcon(type: string): string {
   switch (type) {

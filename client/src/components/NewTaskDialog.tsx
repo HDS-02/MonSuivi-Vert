@@ -51,6 +51,7 @@ const taskSchema = z.object({
   dueDate: z.date({
     required_error: "Veuillez sélectionner une date",
   }),
+  scheduleFuture: z.boolean().optional(), // Nouvelle option pour programmer les arrosages futurs
 });
 
 // Type pour les valeurs du formulaire
