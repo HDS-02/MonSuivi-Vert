@@ -691,6 +691,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour tester l'envoi d'emails
+  app.post("/api/email/test", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Récupérer l'adresse email depuis la requête ou utiliser celle de l'utilisateur connecté
+      const { to, subject } = req.body;
+      const email = to || (req.user?.email || '');
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Adresse email de destination requise' });
+      }
+      
+      console.log(`Test d'envoi d'email à ${email}...`);
+      
+      // Envoyer un email de test
+      const success = await sendEmail({
+        to: email,
+        subject: subject || 'Test d\'envoi d\'email depuis Mon Suivi Vert',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+            <div style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
+              <h1 style="color: white; margin: 0;">Test d'envoi d'email</h1>
+            </div>
+            <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+              <p>Bonjour,</p>
+              <p>Ceci est un email de test envoyé depuis l'application <strong>Mon Suivi Vert</strong>.</p>
+              <p>Si vous recevez cet email, cela signifie que la configuration de notre système d'envoi d'emails fonctionne correctement.</p>
+              <p>Date et heure de l'envoi : ${new Date().toLocaleString('fr-FR')}</p>
+              <div style="margin: 30px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #4CAF50;">
+                <p style="margin: 0;"><strong>Informations techniques :</strong></p>
+                <p style="margin: 5px 0 0;">Expéditeur : ${process.env.EMAIL_USER || 'notification@monsuivivert.fr'}</p>
+                <p style="margin: 5px 0 0;">Service d'envoi : Outlook</p>
+              </div>
+              <p>Merci d'utiliser Mon Suivi Vert !</p>
+            </div>
+            <div style="text-align: center; padding: 10px; font-size: 12px; color: #666;">
+              <p>© 2025 Mon Suivi Vert - Tous droits réservés</p>
+            </div>
+          </div>
+        `
+      });
+      
+      if (success) {
+        console.log('Email de test envoyé avec succès');
+        res.status(200).json({ 
+          message: 'Email de test envoyé avec succès. Vérifiez votre boîte de réception ou consultez le dossier emails_simules.'
+        });
+      } else {
+        console.log('Échec de l\'envoi de l\'email de test');
+        res.status(500).json({ 
+          message: 'Échec de l\'envoi de l\'email de test. Vérifiez les logs du serveur pour plus d\'informations.'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erreur lors de l\'envoi de l\'email de test:', error);
+      res.status(500).json({ 
+        message: 'Erreur lors de l\'envoi de l\'email de test: ' + error.message
+      });
+    }
+  });
 
   // BADGES ROUTES
   app.get("/api/badges", isAuthenticated, async (req: Request, res: Response) => {

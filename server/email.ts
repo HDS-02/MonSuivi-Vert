@@ -16,20 +16,21 @@ interface EmailOptions {
 // Création du transporteur
 console.log('Configuration du service email avec Nodemailer et Gmail...');
 const transporter = nodemailer.createTransport({
-  service: 'gmail',     // Nom du service prédéfini
+  service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'votre_email@gmail.com',
+    user: 'monespacevertapp@gmail.com', // Adresse email Gmail dédiée à l'application
     pass: process.env.EMAIL_PASSWORD || 'votre_mot_de_passe_app'
   },
   tls: {
-    rejectUnauthorized: false  // Accepter les certificats auto-signés
+    rejectUnauthorized: false    // Désactiver la vérification des certificats (utile en dev)
   }
 });
 
 // Vérifier la configuration de l'email
-const emailConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD;
+// Nous utilisons un compte dédié avec l'adresse fixe, donc nous ne vérifions que le mot de passe
+const emailConfigured = process.env.EMAIL_PASSWORD !== undefined;
 if (emailConfigured) {
-  console.log(`Service email configuré avec l'adresse: ${process.env.EMAIL_USER}`);
+  console.log(`Service email configuré avec l'adresse: monespacevertapp@gmail.com`);
   
   // Vérifier la connexion
   transporter.verify((error) => {
@@ -40,7 +41,7 @@ if (emailConfigured) {
     }
   });
 } else {
-  console.warn('Configuration email incomplète. Les identifiants EMAIL_USER et EMAIL_PASSWORD sont nécessaires.');
+  console.warn('Configuration email incomplète. EMAIL_PASSWORD est nécessaire.');
 }
 
 // Dossier pour les emails de secours si l'envoi échoue
@@ -60,7 +61,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   try {
     // Vérifier si les identifiants email sont configurés
     if (emailConfigured) {
-      console.log(`Tentative d'envoi d'email à ${to} via Gmail...`);
+      console.log(`Tentative d'envoi d'email à ${to} via Outlook...`);
       
       // Préparer le message
       const mailOptions = {
@@ -77,7 +78,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         console.log(`Email envoyé avec succès à ${to}. ID: ${info.messageId}`);
         return true;
       } catch (emailError) {
-        console.error('Erreur lors de l\'envoi avec Gmail:', emailError);
+        console.error('Erreur lors de l\'envoi avec Outlook:', emailError);
         // On passe au fallback
       }
     } else {
