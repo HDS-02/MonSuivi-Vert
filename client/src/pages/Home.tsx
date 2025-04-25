@@ -138,38 +138,46 @@ export default function Home() {
         <div className="md:col-span-2">
           <h2 className="text-lg font-raleway font-semibold mb-4">Actions rapides</h2>
           <div className="grid grid-cols-2 gap-4">
-            <Link href="/add-plant">
-              <Button variant="ghost" className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100">
-                <div className="bg-gradient-to-br from-primary/90 to-primary-light/90 rounded-full p-3 mb-2 text-white">
-                  <span className="material-icons">add_circle</span>
-                </div>
-                <span className="text-sm font-medium">Ajouter une plante</span>
-              </Button>
-            </Link>
-            <Link href="/plants">
-              <Button variant="ghost" className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100">
-                <div className="bg-gradient-to-br from-green-500/90 to-green-400/90 rounded-full p-3 mb-2 text-white">
-                  <span className="material-icons">format_list_bulleted</span>
-                </div>
-                <span className="text-sm font-medium">Mes plantes</span>
-              </Button>
-            </Link>
-            <Link href="/calendar">
-              <Button variant="ghost" className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100">
-                <div className="bg-gradient-to-br from-blue-500/90 to-blue-400/90 rounded-full p-3 mb-2 text-white">
-                  <span className="material-icons">calendar_today</span>
-                </div>
-                <span className="text-sm font-medium">Calendrier</span>
-              </Button>
-            </Link>
-            <Link href="/tips">
-              <Button variant="ghost" className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100">
-                <div className="bg-gradient-to-br from-amber-500/90 to-amber-400/90 rounded-full p-3 mb-2 text-white">
-                  <span className="material-icons">tips_and_updates</span>
-                </div>
-                <span className="text-sm font-medium">Conseils</span>
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100"
+              onClick={() => window.location.href = '/add-plant'}
+            >
+              <div className="bg-gradient-to-br from-primary/90 to-primary-light/90 rounded-full p-3 mb-2 text-white">
+                <span className="material-icons">add_circle</span>
+              </div>
+              <span className="text-sm font-medium">Ajouter une plante</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100"
+              onClick={() => window.location.href = '/plants'}
+            >
+              <div className="bg-gradient-to-br from-green-500/90 to-green-400/90 rounded-full p-3 mb-2 text-white">
+                <span className="material-icons">format_list_bulleted</span>
+              </div>
+              <span className="text-sm font-medium">Mes plantes</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100"
+              onClick={() => window.location.href = '/calendar'}
+            >
+              <div className="bg-gradient-to-br from-blue-500/90 to-blue-400/90 rounded-full p-3 mb-2 text-white">
+                <span className="material-icons">calendar_today</span>
+              </div>
+              <span className="text-sm font-medium">Calendrier</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-4 h-auto hover:shadow-lg hover:bg-white/90 transition-all duration-200 flex flex-col items-center w-full border border-gray-100"
+              onClick={() => window.location.href = '/tips'}
+            >
+              <div className="bg-gradient-to-br from-amber-500/90 to-amber-400/90 rounded-full p-3 mb-2 text-white">
+                <span className="material-icons">tips_and_updates</span>
+              </div>
+              <span className="text-sm font-medium">Conseils</span>
+            </Button>
           </div>
         </div>
         <div>
@@ -181,12 +189,13 @@ export default function Home() {
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-raleway font-semibold">Tâches du jour</h2>
-          <Link href="/calendar">
-            <a className="text-primary text-sm font-medium flex items-center">
-              Voir tout
-              <span className="material-icons text-sm ml-1">chevron_right</span>
-            </a>
-          </Link>
+          <button 
+            onClick={() => window.location.href = '/calendar'}
+            className="text-primary text-sm font-medium flex items-center hover:underline focus:outline-none"
+          >
+            Voir tout
+            <span className="material-icons text-sm ml-1">chevron_right</span>
+          </button>
         </div>
         <Card className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden border border-gray-100">
           {tasksLoading ? (
@@ -241,12 +250,13 @@ export default function Home() {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-raleway font-semibold">Mes plantes</h2>
-          <Link href="/plants">
-            <a className="text-primary text-sm font-medium flex items-center">
-              Voir toutes
-              <span className="material-icons text-sm ml-1">chevron_right</span>
-            </a>
-          </Link>
+          <button 
+            onClick={() => window.location.href = '/plants'}
+            className="text-primary text-sm font-medium flex items-center hover:underline focus:outline-none"
+          >
+            Voir toutes
+            <span className="material-icons text-sm ml-1">chevron_right</span>
+          </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {plantsLoading ? (
@@ -262,44 +272,46 @@ export default function Home() {
             </div>
           ) : plants && plants.length > 0 ? (
             plants.slice(0, 4).map((plant: Plant) => (
-              <Link key={plant.id} href={`/plants/${plant.id}`}>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] border border-gray-100">
-                  <div className="h-36 relative">
-                    {plant.image ? (
-                      <img 
-                        src={plant.image} 
-                        alt={plant.name} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary-light/10">
-                        <span className="material-icons text-primary/80 text-5xl">eco</span>
-                      </div>
-                    )}
-                    <div className={`absolute top-2 right-2 ${
-                      plant.status === 'healthy' ? 'bg-green-500/90' : 
-                      plant.status === 'warning' ? 'bg-yellow-500/90' : 
-                      plant.status === 'danger' ? 'bg-alert/90' : 
-                      'bg-gray-500/90'
-                    } text-white backdrop-blur-sm shadow-sm px-2 py-1 rounded-full text-xs flex items-center`}>
-                      {plant.status === 'healthy' && <span className="material-icons text-sm mr-1">favorite</span>}
-                      {plant.status === 'warning' && <span className="material-icons text-sm mr-1">warning</span>}
-                      {plant.status === 'danger' && <span className="material-icons text-sm mr-1">warning</span>}
-                      {getPlantStatusText(plant.status)}
+              <div 
+                key={plant.id}
+                className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] border border-gray-100 cursor-pointer"
+                onClick={() => window.location.href = `/plants/${plant.id}`}
+              >
+                <div className="h-36 relative">
+                  {plant.image ? (
+                    <img 
+                      src={plant.image} 
+                      alt={plant.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary-light/10">
+                      <span className="material-icons text-primary/80 text-5xl">eco</span>
                     </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-medium text-sm mb-1">{plant.name}</h3>
-                    <div className="text-xs text-gray-500 flex items-center">
-                      <span className="material-icons text-xs mr-1">calendar_today</span>
-                      {plant.dateAdded ? new Date(plant.dateAdded).toLocaleDateString("fr-FR", {
-                        day: 'numeric',
-                        month: 'short'
-                      }) : 'Date inconnue'}
-                    </div>
+                  )}
+                  <div className={`absolute top-2 right-2 ${
+                    plant.status === 'healthy' ? 'bg-green-500/90' : 
+                    plant.status === 'warning' ? 'bg-yellow-500/90' : 
+                    plant.status === 'danger' ? 'bg-alert/90' : 
+                    'bg-gray-500/90'
+                  } text-white backdrop-blur-sm shadow-sm px-2 py-1 rounded-full text-xs flex items-center`}>
+                    {plant.status === 'healthy' && <span className="material-icons text-sm mr-1">favorite</span>}
+                    {plant.status === 'warning' && <span className="material-icons text-sm mr-1">warning</span>}
+                    {plant.status === 'danger' && <span className="material-icons text-sm mr-1">warning</span>}
+                    {getPlantStatusText(plant.status)}
                   </div>
                 </div>
-              </Link>
+                <div className="p-4">
+                  <h3 className="font-medium text-sm mb-1">{plant.name}</h3>
+                  <div className="text-xs text-gray-500 flex items-center">
+                    <span className="material-icons text-xs mr-1">calendar_today</span>
+                    {plant.dateAdded ? new Date(plant.dateAdded).toLocaleDateString("fr-FR", {
+                      day: 'numeric',
+                      month: 'short'
+                    }) : 'Date inconnue'}
+                  </div>
+                </div>
+              </div>
             ))
           ) : (
             <div className="col-span-full bg-white/80 backdrop-blur-sm rounded-xl p-8 text-center border border-gray-100">
