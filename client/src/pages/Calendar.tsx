@@ -36,25 +36,15 @@ export default function Calendar() {
     });
   }
 
-  // Fonction utilitaire pour normaliser une date (en prenant juste la partie date, sans l'heure)
-  const normalizeDate = (date: Date | string): string => {
-    // Créer un nouvel objet Date
-    const d = new Date(date);
-    
-    // Pour les dates stockées en UTC, ajoutons le décalage horaire pour obtenir la date locale correcte
-    // Mais seulement si la date est stockée avec un 'Z' ou '+' ou '-' (indiquant une date UTC)
-    const dateStr = date.toString();
-    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.includes('T')) {
-      // Ajuster pour le fuseau horaire correct
-      const userTimezoneOffset = new Date().getTimezoneOffset() * 60000;
-      const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
-      
-      // Format simple pour comparer uniquement les années, mois et jours
-      return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}-${String(adjustedDate.getDate()).padStart(2, '0')}`;
+  // Fonction utilitaire pour obtenir une date sans l'heure en format YYYY-MM-DD
+  const getDateString = (date: Date | string): string => {
+    if (typeof date === 'string') {
+      // Pour les dates en format string, extraire uniquement la partie date
+      return date.split('T')[0];
+    } else {
+      // Pour les objets Date, formatter en YYYY-MM-DD
+      return date.toISOString().split('T')[0];
     }
-    
-    // Si c'est déjà une date locale, pas besoin d'ajustement
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   const getTasksForDate = (date: Date | undefined) => {
@@ -63,22 +53,23 @@ export default function Calendar() {
     
     console.log("Recherche de tâches pour la date:", date);
     
-    // Normaliser la date sélectionnée (sans l'heure)
-    const normalizedSelectedDate = normalizeDate(date);
+    // Extraire seulement la partie date au format YYYY-MM-DD
+    const selectedDateStr = getDateString(date);
+    console.log("Date sélectionnée (YYYY-MM-DD):", selectedDateStr);
     
     const filteredTasks = tasks.filter(task => {
       if (!task.dueDate) return false;
       
-      // Normaliser la date de la tâche (sans l'heure)
-      const normalizedTaskDate = normalizeDate(task.dueDate);
+      // Extraire seulement la partie date au format YYYY-MM-DD
+      const taskDateStr = getDateString(task.dueDate);
       
-      // Comparer les dates normalisées
-      const match = normalizedTaskDate === normalizedSelectedDate;
+      // Comparer simplement les chaînes de caractères YYYY-MM-DD
+      const match = taskDateStr === selectedDateStr;
       
       console.log(
         `Tâche ${task.id}: ${task.description}, ` +
-        `Date tâche: ${normalizedTaskDate}, ` +
-        `Date sélectionnée: ${normalizedSelectedDate}, ` +
+        `Date tâche: ${taskDateStr}, ` +
+        `Date sélectionnée: ${selectedDateStr}, ` +
         `Correspond: ${match}`
       );
       
