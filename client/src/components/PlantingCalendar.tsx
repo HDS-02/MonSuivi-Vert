@@ -56,6 +56,11 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
     planting: { start: 7, end: 8 },
     harvesting: { start: 10, end: 12 }
   },
+  "Chou": {
+    seeding: { start: 5, end: 7 },
+    planting: { start: 7, end: 8 },
+    harvesting: { start: 9, end: 12 }
+  },
   "Poivron": {
     seeding: { start: 2, end: 3 },
     planting: { start: 5, end: 6 },
@@ -77,6 +82,16 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
     harvesting: { start: 6, end: 9 }
   },
   "Radis": {
+    seeding: { start: 2, end: 9 },
+    planting: { start: 3, end: 9 },
+    harvesting: { start: 4, end: 10 }
+  },
+  "Épinard": {
+    seeding: { start: 2, end: 5 },
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 5, end: 11 }
+  },
+  "Salade": {
     seeding: { start: 2, end: 9 },
     planting: { start: 3, end: 9 },
     harvesting: { start: 4, end: 10 }
@@ -103,6 +118,73 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
   "Ail": {
     planting: { start: 10, end: 11 },
     harvesting: { start: 6, end: 8 }
+  },
+  "Betterave": {
+    seeding: { start: 3, end: 7 },
+    planting: { start: 4, end: 8 },
+    harvesting: { start: 6, end: 11 }
+  },
+  "Brocoli": {
+    seeding: { start: 3, end: 6 },
+    planting: { start: 4, end: 7 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Courge": {
+    seeding: { start: 4, end: 5 },
+    planting: { start: 5, end: 6 },
+    harvesting: { start: 8, end: 10 }
+  },
+  "Citrouille": {
+    seeding: { start: 4, end: 5 },
+    planting: { start: 5, end: 6 },
+    harvesting: { start: 9, end: 10 }
+  },
+  "Maïs": {
+    seeding: { start: 4, end: 5 },
+    planting: { start: 5, end: 6 },
+    harvesting: { start: 8, end: 9 }
+  },
+  "Poireau": {
+    seeding: { start: 2, end: 4 },
+    planting: { start: 5, end: 7 },
+    harvesting: { start: 9, end: 2 }
+  },
+  "Asperge": {
+    planting: { start: 3, end: 4 },
+    harvesting: { start: 4, end: 6 }
+  },
+  "Artichaut": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 9 }
+  },
+  "Céleri": {
+    seeding: { start: 3, end: 4 },
+    planting: { start: 5, end: 6 },
+    harvesting: { start: 8, end: 10 }
+  },
+  "Fenouil": {
+    seeding: { start: 4, end: 7 },
+    planting: { start: 5, end: 8 },
+    harvesting: { start: 7, end: 10 }
+  },
+  "Navet": {
+    seeding: { start: 3, end: 8 },
+    planting: { start: 4, end: 9 },
+    harvesting: { start: 5, end: 11 }
+  },
+  "Panais": {
+    seeding: { start: 2, end: 5 },
+    planting: { start: 3, end: 6 },
+    harvesting: { start: 9, end: 12 }
+  },
+  "Rhubarbe": {
+    planting: { start: 3, end: 4 },
+    harvesting: { start: 5, end: 7 }
+  },
+  "Endive": {
+    seeding: { start: 5, end: 7 },
+    planting: { start: 7, end: 9 },
+    harvesting: { start: 11, end: 3 }
   },
   
   // Arbres fruitiers
@@ -146,9 +228,73 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
     planting: { start: 3, end: 5 },
     harvesting: { start: 11, end: 4 }
   },
+  "Oranger": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 11, end: 4 }
+  },
   "Olivier": {
     planting: { start: 3, end: 5 },
     harvesting: { start: 9, end: 12 }
+  },
+  "Figuier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 7, end: 10 }
+  },
+  "Mûrier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 6, end: 9 }
+  },
+  "Groseillier": {
+    planting: { start: 10, end: 3 },
+    harvesting: { start: 6, end: 8 }
+  },
+  "Nectarinier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 7, end: 9 }
+  },
+  "Kiwi": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 10, end: 11 }
+  },
+  "Noyer": {
+    planting: { start: 11, end: 2 },
+    harvesting: { start: 9, end: 10 }
+  },
+  "Châtaignier": {
+    planting: { start: 11, end: 2 },
+    harvesting: { start: 9, end: 11 }
+  },
+  "Noisetier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 9, end: 10 }
+  },
+  "Mandarinier": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 11, end: 2 }
+  },
+  "Amandier": {
+    planting: { start: 11, end: 2 },
+    harvesting: { start: 8, end: 10 }
+  },
+  "Grenadier": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 9, end: 11 }
+  },
+  "Kakier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 10, end: 12 }
+  },
+  "Cognassier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 9, end: 10 }
+  },
+  "Myrtillier": {
+    planting: { start: 10, end: 3 },
+    harvesting: { start: 7, end: 9 }
+  },
+  "Cassissier": {
+    planting: { start: 10, end: 3 },
+    harvesting: { start: 6, end: 8 }
   },
   
   // Plantes aromatiques
@@ -174,6 +320,142 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
   "Menthe": {
     planting: { start: 4, end: 6 },
     harvesting: { start: 6, end: 10 }
+  },
+  "Ciboulette": {
+    seeding: { start: 3, end: 5 },
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Coriandre": {
+    seeding: { start: 3, end: 8 },
+    planting: { start: 4, end: 9 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Aneth": {
+    seeding: { start: 3, end: 7 },
+    planting: { start: 4, end: 8 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Estragon": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Sarriette": {
+    seeding: { start: 3, end: 5 },
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Sauge": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Origan": {
+    planting: { start: 3, end: 6 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Lavande": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 9 }
+  },
+  "Mélisse": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 9 }
+  },
+  
+  // Plantes d'intérieur
+  "Ficus": {
+    planting: { start: 3, end: 9 }
+  },
+  "Monstera": {
+    planting: { start: 3, end: 9 }
+  },
+  "Pothos": {
+    planting: { start: 3, end: 9 }
+  },
+  "Sansevière": {
+    planting: { start: 3, end: 9 }
+  },
+  "Aglaonéma": {
+    planting: { start: 3, end: 9 }
+  },
+  "Calathea": {
+    planting: { start: 3, end: 9 }
+  },
+  "Philodendron": {
+    planting: { start: 3, end: 9 }
+  },
+  "Dracaena": {
+    planting: { start: 3, end: 9 }
+  },
+  "Palmier d'intérieur": {
+    planting: { start: 3, end: 9 }
+  },
+  "Yucca": {
+    planting: { start: 3, end: 9 }
+  },
+  "Cactus": {
+    planting: { start: 3, end: 9 }
+  },
+  "Aloe Vera": {
+    planting: { start: 3, end: 9 }
+  },
+  "Orchidée": {
+    planting: { start: 3, end: 9 }
+  },
+  "Bégonia": {
+    planting: { start: 3, end: 9 }
+  },
+  "Anthurium": {
+    planting: { start: 3, end: 9 }
+  },
+  "Spathiphyllum": {
+    planting: { start: 3, end: 9 }
+  },
+  
+  // Fleurs de jardin
+  "Rose": {
+    planting: { start: 10, end: 3 },
+    harvesting: { start: 5, end: 9 }
+  },
+  "Tulipe": {
+    planting: { start: 9, end: 11 },
+    harvesting: { start: 3, end: 5 }
+  },
+  "Jonquille": {
+    planting: { start: 9, end: 11 },
+    harvesting: { start: 3, end: 5 }
+  },
+  "Dahlia": {
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 7, end: 10 }
+  },
+  "Pivoine": {
+    planting: { start: 9, end: 11 },
+    harvesting: { start: 5, end: 6 }
+  },
+  "Iris": {
+    planting: { start: 7, end: 9 },
+    harvesting: { start: 4, end: 6 }
+  },
+  "Lys": {
+    planting: { start: 9, end: 11 },
+    harvesting: { start: 6, end: 8 }
+  },
+  "Hortensia": {
+    planting: { start: 10, end: 4 },
+    harvesting: { start: 6, end: 9 }
+  },
+  "Géranium": {
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Lilas": {
+    planting: { start: 10, end: 3 },
+    harvesting: { start: 4, end: 5 }
+  },
+  "Œillet": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 5, end: 9 }
   }
 };
 

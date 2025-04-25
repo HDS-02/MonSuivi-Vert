@@ -281,7 +281,8 @@ export default function PlantDetail() {
             className={displayTab === "calendar" ? "bg-primary text-white" : ""}
             onClick={() => setDisplayTab("calendar")}
           >
-            Calendrier
+            <span className="material-icons text-sm mr-1">event_available</span>
+            Quand planter ?
           </Button>
           <Button
             variant={displayTab === "history" ? "default" : "outline"}
