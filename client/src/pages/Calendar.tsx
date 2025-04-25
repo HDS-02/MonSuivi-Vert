@@ -20,8 +20,12 @@ export default function Calendar() {
   useEffect(() => {
     if (date && tasks) {
       console.log("La date a changé, recalcul des tâches pour:", formatDate(date));
+      
+      // Force le recalcul explicite des tâches pour cette date
+      const filtered = getTasksForDate(date);
+      console.log("Tâches trouvées pour cette date:", filtered.length);
     }
-  }, [date]);
+  }, [date, tasks]);
 
   function formatDate(date: Date | string | undefined): string {
     if (!date) return "";
@@ -32,12 +36,25 @@ export default function Calendar() {
     });
   }
 
-  // Fonction utilitaire pour normaliser une date (sans l'heure) en tenant compte du fuseau horaire
+  // Fonction utilitaire pour normaliser une date (en prenant juste la partie date, sans l'heure)
   const normalizeDate = (date: Date | string): string => {
+    // Créer un nouvel objet Date
     const d = new Date(date);
-    // Ajuster pour le fuseau horaire local (pour éviter les problèmes avec UTC)
-    const localDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+    
+    // Pour les dates stockées en UTC, ajoutons le décalage horaire pour obtenir la date locale correcte
+    // Mais seulement si la date est stockée avec un 'Z' ou '+' ou '-' (indiquant une date UTC)
+    const dateStr = date.toString();
+    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.includes('T')) {
+      // Ajuster pour le fuseau horaire correct
+      const userTimezoneOffset = new Date().getTimezoneOffset() * 60000;
+      const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
+      
+      // Format simple pour comparer uniquement les années, mois et jours
+      return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}-${String(adjustedDate.getDate()).padStart(2, '0')}`;
+    }
+    
+    // Si c'est déjà une date locale, pas besoin d'ajustement
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   const getTasksForDate = (date: Date | undefined) => {
