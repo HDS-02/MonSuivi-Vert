@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,20 +54,8 @@ export default function Calendar() {
     return filteredTasks;
   };
 
-  // Calcul des tâches pour la date sélectionnée chaque fois que la date change
-  // Utilisation de useEffect pour garantir que les tâches sont recalculées après chaque changement de date
-  const [tasksForSelectedDate, setTasksForSelectedDate] = useState<Task[]>([]);
-  
-  useEffect(() => {
-    console.log("useEffect - Date a changé:", date);
-    if (date && tasks) {
-      const filtered = getTasksForDate(date);
-      console.log("Mise à jour des tâches filtrées:", filtered);
-      setTasksForSelectedDate(filtered);
-    } else {
-      setTasksForSelectedDate([]);
-    }
-  }, [date, tasks]);
+  // Calcul direct des tâches pour la date sélectionnée
+  const tasksForSelectedDate = date && tasks ? getTasksForDate(date) : [];
 
   const getDotColorForDate = (date: Date) => {
     if (!tasks) return null;
