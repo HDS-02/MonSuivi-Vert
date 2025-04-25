@@ -56,6 +56,55 @@
     /* Info color */
     --info: 200 98% 56%;
     --info-foreground: 0 0% 100%;
+    
+    /* Custom color for Alert */
+    --alert: 35 100% 55%;
+    --alert-foreground: 210 40% 98%;
+    
+    /* Neutral color */
+    --neutral: 0 0% 98%;
+  }
+  
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --primary: 123 46% 34%;
+    --primary-light: 122 43% 57%;
+    --primary-dark: 124 49% 28%;
+    --primary-foreground: 211 100% 99%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 212.7 26.8% 83.9%;
+    
+    /* Charts */
+    --chart-1: 123 46% 45%;
+    --chart-2: 122 43% 65%;
+    --chart-3: 84 48% 65%;
+    --chart-4: 84 42% 75%;
+    --chart-5: 100 30% 20%;
+    
+    /* Info color */
+    --info: 200 98% 56%;
+    --info-foreground: 0 0% 100%;
+    
+    /* Custom color for Alert */
+    --alert: 35 100% 50%;
+    --alert-foreground: 210 40% 98%;
+    
+    /* Neutral color */
+    --neutral: 217.2 32.6% 10.5%;
 
     /* Warning color */
     --warning: 48 96% 53%;
@@ -75,28 +124,7 @@
     --sidebar-border: 122 43% 37%;
     --sidebar-ring: 0 0% 100%;
   }
-  .dark {
-    --background: 126 9% 5%;
-    --foreground: 0 0% 98%;
-    --muted: 120 7% 12%;
-    --muted-foreground: 240 5% 64.9%;
-    --popover: 120 6% 7%;
-    --popover-foreground: 0 0% 98%;
-    --card: 120 6% 7%;
-    --card-foreground: 0 0% 98%;
-    --border: 120 7% 15%;
-    --input: 120 7% 15%;
-    --primary: 123 46% 34%;
-    --primary-foreground: 211 100% 99%;
-    --secondary: 122 43% 37%;
-    --secondary-foreground: 0 0% 98%;
-    --accent: 84 32% 30%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --ring: 123 46% 34%;
-    --radius: 0.5rem;
-  }
+  /* Supprime ce bloc car il fait doublon avec celui au-dessus */
 }
 
 @layer base {

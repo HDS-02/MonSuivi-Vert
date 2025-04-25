@@ -184,6 +184,25 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                   className="data-[state=checked]:bg-primary"
                 />
               </div>
+              
+              {emailNotifications && (
+                <div className="mt-3 pl-10">
+                  <Label htmlFor="email-address" className="text-xs text-gray-600 mb-1 block">
+                    Votre adresse email pour les rappels
+                  </Label>
+                  <Input
+                    id="email-address"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    className="text-sm h-9"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Les rappels d'entretien seront envoyés à cette adresse
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
