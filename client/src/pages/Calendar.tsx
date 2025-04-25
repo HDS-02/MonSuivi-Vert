@@ -73,6 +73,28 @@ export default function Calendar() {
       });
     }
   };
+  
+  const deleteTask = async (taskId: number) => {
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      toast({
+        title: "Tâche supprimée",
+        description: "La tâche a été supprimée avec succès.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la tâche",
+        variant: "destructive",
+      });
+    }
+  };
 
   function getTaskIcon(type: string) {
     switch (type) {
@@ -107,11 +129,9 @@ export default function Calendar() {
   return (
     <div className="organic-bg min-h-screen pb-24">
       <div className="gradient-header bg-gradient-to-br from-primary/90 to-primary-light/90 text-white px-4 pt-6 pb-8 mb-6 shadow-md">
-        <Link href="/">
-          <a className="flex items-center text-white/90 mb-4 hover:text-white transition-colors">
-            <span className="material-icons mr-1">arrow_back</span>
-            Retour
-          </a>
+        <Link href="/" className="flex items-center text-white/90 mb-4 hover:text-white transition-colors">
+          <span className="material-icons mr-1">arrow_back</span>
+          Retour
         </Link>
         <h2 className="text-2xl font-raleway font-semibold">Calendrier d'entretien</h2>
         <p className="text-white/80 mt-1">Suivez les tâches d'entretien de vos plantes</p>
@@ -208,23 +228,35 @@ export default function Calendar() {
                           </span>
                         )}
                       </div>
-                      <Link href={`/plants/${task.plantId}`}>
-                        <a className="text-sm text-primary flex items-center mt-1 hover:underline">
-                          <span className="material-icons text-xs mr-1">visibility</span>
-                          Voir la plante
-                        </a>
+                      <Link href={`/plants/${task.plantId}`} className="text-sm text-primary flex items-center mt-1 hover:underline">
+                        <span className="material-icons text-xs mr-1">visibility</span>
+                        Voir la plante
                       </Link>
                     </div>
-                    {!task.completed && (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-0 sm:ml-2 w-full sm:w-auto">
+                      {!task.completed && (
+                        <Button
+                          variant="outline"
+                          className="p-2.5 rounded-full bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
+                          onClick={() => completeTask(task.id)}
+                        >
+                          <span className="material-icons text-primary mr-2 sm:mr-0">check_circle</span>
+                          <span className="sm:hidden">Terminer</span>
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
-                        className="mt-3 sm:mt-0 sm:ml-2 p-2.5 rounded-full bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors w-full sm:w-auto"
-                        onClick={() => completeTask(task.id)}
+                        className="p-2.5 rounded-full bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
+                        onClick={() => {
+                          if (window.confirm("Êtes-vous sûr de vouloir supprimer cette tâche ?")) {
+                            deleteTask(task.id);
+                          }
+                        }}
                       >
-                        <span className="material-icons text-primary mr-2 sm:mr-0">check_circle</span>
-                        <span className="sm:hidden">Marquer comme terminée</span>
+                        <span className="material-icons text-red-500 mr-2 sm:mr-0">delete</span>
+                        <span className="sm:hidden">Supprimer</span>
                       </Button>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
