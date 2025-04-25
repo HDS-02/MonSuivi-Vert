@@ -12,7 +12,7 @@ import NewTaskDialog from "@/components/NewTaskDialog";
 
 export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  console.log("Date initiale sélectionnée:", date);
+
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const { data: tasks, isLoading } = useTasks();
   const { toast } = useToast();
@@ -160,10 +160,7 @@ export default function Calendar() {
             <CalendarUI
               mode="single"
               selected={date}
-              onSelect={(selectedDate) => {
-                console.log("Nouvelle date sélectionnée:", selectedDate);
-                setDate(selectedDate);
-              }}
+              onSelect={setDate}
               locale={fr}
               modifiers={{
                 booked: (date) => {

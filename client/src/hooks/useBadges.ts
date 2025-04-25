@@ -86,9 +86,16 @@ export default function useBadges() {
     enabled: !!user,
     // La requête est autorisée à échouer silencieusement si l'utilisateur n'est pas connecté
     retry: 1,
+    refetchOnWindowFocus: true, // Refetch quand l'utilisateur revient sur l'onglet
+    refetchOnMount: true, // Refetch quand le composant est monté
     queryFn: async ({ queryKey }) => {
       try {
-        const response = await fetch(queryKey[0]);
+        const response = await fetch(queryKey[0], {
+          credentials: 'include', // Important pour envoyer les cookies d'authentification
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         if (!response.ok) {
           if (response.status === 401) {
             // Si non authentifié, retourner un tableau vide plutôt que de lancer une erreur

@@ -102,7 +102,42 @@ const availableBadges: Omit<Badge, "unlocked" | "unlockedAt">[] = [
 ];
 
 // Map pour stocker les badges des utilisateurs (dans une application réelle, cela serait en base de données)
+// On utilise un objet global pour persister les badges entre les redémarrages de l'application
+// Dans une application réelle, on utiliserait une base de données
 const userBadges: Map<number, Badge[]> = new Map();
+
+// Initialisation des badges pour l'utilisateur par défaut (pour la démonstration)
+// ID utilisateur = 1 pour l'utilisateur de démonstration
+const initDemoBadges = () => {
+  // Badge de bienvenue
+  const demoBadges = availableBadges.map(badge => {
+    // Débloquons un badge d'exemple pour l'utilisateur de démo
+    if (badge.id === "plant-collector-1") {
+      return {
+        ...badge,
+        unlocked: true,
+        unlockedAt: new Date(),
+        progress: badge.maxProgress
+      };
+    }
+    // Badge en progression
+    if (badge.id === "task-completion-5") {
+      return {
+        ...badge,
+        unlocked: false,
+        progress: 2
+      };
+    }
+    return {
+      ...badge,
+      unlocked: false
+    };
+  });
+  userBadges.set(1, demoBadges);
+};
+
+// Initialisation des badges de démo
+initDemoBadges();
 
 export class BadgeService {
   /**
