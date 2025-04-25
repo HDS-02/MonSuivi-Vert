@@ -42,12 +42,9 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
         videoElement.srcObject = stream;
         videoElement.play();
 
-        // Si aucune librairie de scan QR n'est disponible, simuler un scan après 3 secondes
-        setTimeout(() => {
-          // Simuler la détection d'un code QR pour démonstration
-          const demoPlantId = 11; // ID d'une plante existante
-          handleQRSuccess(`/plants/${demoPlantId}`);
-        }, 3000);
+        // Si aucune librairie de scan QR n'est disponible, ne pas simuler de scan automatique
+        // Nous allons plutôt attendre que l'utilisateur montre un code QR ou annule l'opération
+        console.log("Scanner QR prêt - en attente d'un code QR");
 
       } catch (err) {
         console.error('Erreur d\'accès à la caméra:', err);
@@ -134,6 +131,8 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
               <video 
                 id="qr-video" 
                 className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                muted
               ></video>
               <canvas 
                 id="qr-canvas" 
@@ -141,19 +140,39 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
               ></canvas>
               <div className="absolute inset-0 border-2 border-primary/70 rounded-lg"></div>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border-2 border-white/80 rounded-lg"></div>
+              
+              {/* Message explicatif important */}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-center text-sm">
+                <p>Cette version inclut uniquement l'interface du scanner.</p>
+                <p className="text-xs text-yellow-300">Un vrai QR code nécessite l'intégration d'une librairie comme jsQR.</p>
+              </div>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-3">
+              <div className="text-sm text-gray-500 mb-3 flex items-center justify-center gap-2">
+                <span className="animate-pulse inline-block h-2 w-2 rounded-full bg-green-500"></span>
                 Centrez le QR code dans le cadre...
-              </p>
-              <Button 
-                variant="outline"
-                onClick={() => setScanning(false)}
-                className="rounded-full"
-              >
-                <span className="material-icons mr-1">close</span>
-                Annuler
-              </Button>
+              </div>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Simuler un scan manuel avec bouton
+                    handleQRSuccess(`/plants/11`);
+                  }}
+                  className="rounded-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                >
+                  <span className="material-icons mr-1">done</span>
+                  Simuler un scan
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setScanning(false)}
+                  className="rounded-full"
+                >
+                  <span className="material-icons mr-1">close</span>
+                  Annuler
+                </Button>
+              </div>
             </div>
           </div>
         )}
