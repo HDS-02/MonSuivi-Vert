@@ -12,13 +12,20 @@ interface EmailOptions {
   html?: string;
 }
 
-// Configuration de Nodemailer
+// Configuration de Nodemailer avec des paramètres plus détaillés
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // true pour 465, false pour les autres ports
   auth: {
-    user: process.env.EMAIL_USER || 'votre-email@gmail.com', // Remplacez par votre email Gmail
-    pass: process.env.EMAIL_PASSWORD || 'votre-mot-de-passe-app' // Mot de passe d'application, pas votre mot de passe Gmail
-  }
+    user: process.env.EMAIL_USER || 'votre-email@gmail.com',
+    pass: process.env.EMAIL_PASSWORD || 'votre-mot-de-passe-app'
+  },
+  tls: {
+    // Ne pas échouer en cas de certificat invalide
+    rejectUnauthorized: false
+  },
+  debug: true // Activer le débogage
 });
 
 // Dossier de sauvegarde des emails (pour le fallback)
@@ -48,12 +55,15 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   try {
     // Tentative d'envoi d'email réel avec Nodemailer
     if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+      console.log(`Tentative d'envoi d'email à ${to} via Nodemailer...`);
+      console.log(`Utilisation du compte: ${process.env.EMAIL_USER}`);
+      
       try {
         const info = await transporter.sendMail(emailData);
-        console.log(`Email envoyé: ${info.messageId}`);
+        console.log(`Email envoyé avec succès: ${info.messageId}`);
         return true;
       } catch (mailError) {
-        console.error('Erreur Nodemailer:', mailError);
+        console.error('Erreur Nodemailer détaillée:', mailError);
         // Si l'envoi échoue, on utilise le fallback
       }
     } else {
