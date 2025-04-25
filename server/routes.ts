@@ -218,12 +218,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID invalide" });
       }
 
+      // Récupérer la plante avant la mise à jour pour détecter les changements
+      const existingPlant = await storage.getPlant(id);
+      if (!existingPlant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+
       // Partial validation of the request body
       const validatedData = insertPlantSchema.partial().parse(req.body);
+      
+      // Vérifier si l'état d'arrosage automatique change
+      const autoWateringChanged = 
+        'autoWatering' in validatedData && 
+        existingPlant.autoWatering !== validatedData.autoWatering;
       
       const updatedPlant = await storage.updatePlant(id, validatedData);
       if (!updatedPlant) {
         return res.status(404).json({ message: "Plante non trouvée" });
+      }
+
+      // Envoyer une notification par email si l'arrosage automatique a été modifié
+      if (autoWateringChanged && req.isAuthenticated() && req.user?.email) {
+        try {
+          // Envoi asynchrone pour ne pas bloquer la réponse
+          const isEnabled = Boolean(validatedData.autoWatering);
+          
+          const { sendAutoWateringStatusEmail } = await import('./email');
+          sendAutoWateringStatusEmail(req.user.email, updatedPlant, isEnabled)
+            .then(success => {
+              if (success) {
+                console.log(`Email de notification de changement d'arrosage automatique envoyé avec succès à ${req.user?.email}`);
+              }
+            })
+            .catch(emailError => {
+              console.error(`Erreur lors de l'envoi de l'email de notification de changement d'arrosage automatique:`, emailError);
+            });
+        } catch (emailError) {
+          // Ne pas bloquer la mise à jour si l'envoi d'email échoue
+          console.error('Erreur lors de l\'envoi de l\'email de notification de changement d\'arrosage automatique:', emailError);
+        }
       }
 
       res.json(updatedPlant);

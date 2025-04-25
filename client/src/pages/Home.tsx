@@ -123,11 +123,10 @@ export default function Home() {
               Votre collection contient{" "}
               <span className="font-semibold text-white">
                 {!plantsLoading ? plants?.length || 0 : "..."} plantes
-              </span>{" "}
+              </span>
               {!tasksLoading && tasks && tasks.filter(t => !t.completed).length > 0 && (
-                <>dont <span className="font-semibold text-white">{tasks.filter(t => !t.completed).length}</span> à entretenir aujourd'hui</>
-              )}
-              .
+                <>. <span className="font-semibold text-white">{tasks.filter(t => !t.completed).length}</span> tâche{tasks.filter(t => !t.completed).length > 1 ? 's' : ''} à accomplir aujourd'hui</>
+              )}.
             </p>
           </div>
         </div>
