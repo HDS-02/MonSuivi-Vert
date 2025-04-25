@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,16 @@ import NewTaskDialog from "@/components/NewTaskDialog";
 
 export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const { data: tasks, isLoading } = useTasks();
   const { toast } = useToast();
+  
+  // Effet pour forcer un recalcul des tâches quand la date change
+  useEffect(() => {
+    if (date && tasks) {
+      console.log("La date a changé, recalcul des tâches pour:", formatDate(date));
+    }
+  }, [date]);
 
   function formatDate(date: Date | string | undefined): string {
     if (!date) return "";
@@ -26,36 +32,49 @@ export default function Calendar() {
     });
   }
 
+  // Fonction utilitaire pour normaliser une date (sans l'heure)
+  const normalizeDate = (date: Date | string): string => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   const getTasksForDate = (date: Date | undefined) => {
     // Si pas de date ou pas de tâches, retourner tableau vide
     if (!date || !tasks) return [];
     
     console.log("Recherche de tâches pour la date:", date);
-    console.log("Toutes les tâches disponibles:", tasks);
+    
+    // Normaliser la date sélectionnée (sans l'heure)
+    const normalizedSelectedDate = normalizeDate(date);
     
     const filteredTasks = tasks.filter(task => {
       if (!task.dueDate) return false;
-      const taskDate = new Date(task.dueDate);
       
-      const sameDay = taskDate.getDate() === date.getDate();
-      const sameMonth = taskDate.getMonth() === date.getMonth();
-      const sameYear = taskDate.getFullYear() === date.getFullYear();
+      // Normaliser la date de la tâche (sans l'heure)
+      const normalizedTaskDate = normalizeDate(task.dueDate);
+      
+      // Comparer les dates normalisées
+      const match = normalizedTaskDate === normalizedSelectedDate;
       
       console.log(
-        `Tâche ${task.id}: ${task.description}, Date: ${new Date(task.dueDate).toLocaleDateString()}, ` +
-        `Comparaison avec ${date.toLocaleDateString()}: ` +
-        `Jour: ${sameDay}, Mois: ${sameMonth}, Année: ${sameYear}`
+        `Tâche ${task.id}: ${task.description}, ` +
+        `Date tâche: ${normalizedTaskDate}, ` +
+        `Date sélectionnée: ${normalizedSelectedDate}, ` +
+        `Correspond: ${match}`
       );
       
-      return sameDay && sameMonth && sameYear;
+      return match;
     });
     
     console.log("Tâches filtrées:", filteredTasks);
     return filteredTasks;
   };
 
-  // Calcul direct des tâches pour la date sélectionnée
-  const tasksForSelectedDate = date && tasks ? getTasksForDate(date) : [];
+  // Calcul des tâches pour la date sélectionnée avec mise à jour automatique
+  // On utilise useMemo pour recalculer uniquement si date ou tasks changent
+  const tasksForSelectedDate = useMemo(() => {
+    return date && tasks ? getTasksForDate(date) : [];
+  }, [date, tasks]);
 
   const getDotColorForDate = (date: Date) => {
     if (!tasks) return null;
