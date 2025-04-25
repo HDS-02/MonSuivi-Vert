@@ -909,6 +909,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour générer automatiquement les prochaines tâches d'arrosage pour les plantes avec arrosage automatique
+  app.post("/api/tasks/generate-auto-watering", async (req: Request, res: Response) => {
+    try {
+      // Récupérer toutes les plantes avec arrosage automatique activé
+      const allPlants = await storage.getPlants();
+      const plantsWithAutoWatering = allPlants.filter(plant => 
+        plant.autoWatering === true && 
+        plant.wateringFrequency !== null && 
+        plant.wateringFrequency > 0
+      );
+      
+      if (plantsWithAutoWatering.length === 0) {
+        return res.status(200).json({ message: "Aucune plante avec arrosage automatique activé" });
+      }
+      
+      console.log(`Génération des tâches d'arrosage pour ${plantsWithAutoWatering.length} plantes`);
+      
+      // Date de référence : aujourd'hui + 30 jours (on veut toujours avoir un mois d'avance)
+      const referenceDate = new Date();
+      referenceDate.setDate(referenceDate.getDate() + 30);
+      
+      const tasksCreated = [];
+      
+      // Pour chaque plante, vérifier les tâches existantes et créer les nouvelles si nécessaire
+      for (const plant of plantsWithAutoWatering) {
+        // Récupérer les tâches d'arrosage existantes pour cette plante
+        const existingTasks = await storage.getTasksByPlantId(plant.id);
+        const wateringTasks = existingTasks.filter(task => 
+          task.type === 'water' && !task.completed && new Date(task.dueDate) > new Date()
+        );
+        
+        // Trouver la dernière date d'arrosage programmée
+        let lastWateringDate = new Date();
+        if (wateringTasks.length > 0) {
+          // Trier les tâches par date décroissante pour trouver la plus éloignée
+          const sortedTasks = wateringTasks.sort((a, b) => 
+            new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+          );
+          lastWateringDate = new Date(sortedTasks[0].dueDate);
+        }
+        
+        // Calcul du nombre de tâches à créer pour couvrir la période jusqu'à la date de référence
+        const daysToReference = Math.ceil((referenceDate.getTime() - lastWateringDate.getTime()) / (1000 * 3600 * 24));
+        const numberOfTasksToCreate = Math.ceil(daysToReference / plant.wateringFrequency);
+        
+        console.log(`Plante ${plant.name} (ID: ${plant.id}): Dernier arrosage prévu le ${lastWateringDate.toLocaleDateString('fr-FR')}`);
+        console.log(`Création de ${numberOfTasksToCreate} nouvelles tâches d'arrosage`);
+        
+        // Créer les tâches nécessaires
+        for (let i = 1; i <= numberOfTasksToCreate; i++) {
+          const nextDate = new Date(lastWateringDate);
+          nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));
+          
+          const futureTask = {
+            plantId: plant.id,
+            type: 'water',
+            description: `Arrosage automatique de ${plant.name}`,
+            dueDate: nextDate,
+            completed: false
+          };
+          
+          const task = await storage.createTask(futureTask);
+          tasksCreated.push(task);
+          console.log(`✅ Arrosage programmé pour ${plant.name} le ${nextDate.toLocaleDateString('fr-FR')}`);
+        }
+      }
+      
+      res.status(200).json({ 
+        message: "Génération des tâches d'arrosage automatique terminée", 
+        tasksCreated: tasksCreated.length 
+      });
+    } catch (error: any) {
+      console.error("Erreur lors de la génération des tâches d'arrosage automatique:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // BADGES ROUTES
   app.get("/api/badges", isAuthenticated, async (req: Request, res: Response) => {
