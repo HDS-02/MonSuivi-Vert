@@ -61,15 +61,17 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   try {
     // Vérifier si les identifiants email sont configurés
     if (emailConfigured) {
-      console.log(`Tentative d'envoi d'email à ${to} via Outlook...`);
+      console.log(`Tentative d'envoi d'email à ${to} via Gmail...`);
       
       // Préparer le message
       const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: 'Mon Suivi Vert <monespacevertapp@gmail.com>',
         to,
         subject,
         text: text || 'Contenu non disponible en format texte',
-        html: html || '<p>Contenu non disponible en HTML</p>'
+        html: html || '<p>Contenu non disponible en HTML</p>',
+        // Options pour que Gmail accepte de l'envoyer
+        priority: 'high'
       };
 
       try {
@@ -78,7 +80,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         console.log(`Email envoyé avec succès à ${to}. ID: ${info.messageId}`);
         return true;
       } catch (emailError) {
-        console.error('Erreur lors de l\'envoi avec Outlook:', emailError);
+        console.error('Erreur lors de l\'envoi avec Gmail:', emailError);
         // On passe au fallback
       }
     } else {

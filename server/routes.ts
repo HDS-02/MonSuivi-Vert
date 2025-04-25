@@ -13,6 +13,7 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
+import { sendEmail, sendTaskReminder, sendWelcomeEmail } from "./email";
 import { pdfService } from "./pdfService";
 import { sendTaskReminder, sendWelcomeEmail } from "./email";
 
@@ -721,8 +722,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <p>Date et heure de l'envoi : ${new Date().toLocaleString('fr-FR')}</p>
               <div style="margin: 30px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #4CAF50;">
                 <p style="margin: 0;"><strong>Informations techniques :</strong></p>
-                <p style="margin: 5px 0 0;">Expéditeur : ${process.env.EMAIL_USER || 'notification@monsuivivert.fr'}</p>
-                <p style="margin: 5px 0 0;">Service d'envoi : Outlook</p>
+                <p style="margin: 5px 0 0;">Expéditeur : Mon Suivi Vert &lt;monespacevertapp@gmail.com&gt;</p>
+                <p style="margin: 5px 0 0;">Service d'envoi : Gmail (monespacevertapp@gmail.com)</p>
               </div>
               <p>Merci d'utiliser Mon Suivi Vert !</p>
             </div>
