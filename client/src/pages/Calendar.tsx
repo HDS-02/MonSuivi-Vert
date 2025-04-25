@@ -104,32 +104,8 @@ export default function Calendar() {
     
     console.log(`📋 ${filteredTasks.length} tâches trouvées pour ${format(selectedDay, 'yyyy-MM-dd')}`);
     
-    // Approche exceptionnelle pour 2025-04-25 (problème de cette tâche spécifique)
-    if (format(selectedDay, 'yyyy-MM-dd') === '2025-04-25') {
-      const specialTask = tasks.find(t => t.id === 3);
-      if (specialTask && !filteredTasks.some(t => t.id === 3)) {
-        console.log("🔧 Correction spéciale: Ajout de la tâche id=3 pour le 25 avril 2025");
-        filteredTasks.push(specialTask);
-      }
-    }
-    
-    // Afficher manuellement les tâches du 25 avril si nécessaire
-    // Utilisé comme solution de secours si les autres méthodes échouent
-    if (format(selectedDay, 'yyyy-MM-dd') === '2025-04-25' && filteredTasks.length === 0) {
-      // Créer une tâche artificielle pour garantir l'affichage
-      console.log("⚠️ Aucune tâche trouvée pour le 25 avril 2025 - Création d'une tâche artificielle");
-      const artificialTask = {
-        id: 9999,
-        plantId: 11,
-        type: "repot",
-        description: "Tâche de rempotage (avril)",
-        dueDate: new Date("2025-04-25T00:00:00.000Z"),
-        completed: false,
-        dateCompleted: null
-      } as Task;
-      
-      filteredTasks.push(artificialTask);
-    }
+    // Nous ne créons plus de tâche artificielle pour le 25 avril 2025
+    // Les tâches ne devraient être affichées que si elles existent réellement dans la base de données
     
     return filteredTasks;
   };
@@ -333,23 +309,7 @@ export default function Calendar() {
       </div>
 
       <div className="px-4">
-        {/* Test de sélection spécifique pour le 25 avril 2025 */}
-        <div className="mb-4">
-          <Button 
-            className="bg-primary-light text-white"
-            onClick={() => {
-              console.log("⭐ Sélection directe du 25 avril 2025");
-              const april25 = new Date(2025, 3, 25); // Avril est le mois 3 en JS (0-indexé)
-              setDate(april25);
-              // Forcer le recalcul des tâches pour cette date
-              if (tasks) {
-                console.log("Tâches à afficher:", tasks.filter(t => t.id === 3));
-              }
-            }}
-          >
-            Voir le 25 avril 2025
-          </Button>
-        </div>
+
 
         <Card className="glass-card backdrop-blur-sm shadow-lg border border-gray-100/80 rounded-xl mb-6">
           <CardContent className="p-2 md:p-4">
@@ -360,10 +320,7 @@ export default function Calendar() {
               locale={fr}
               modifiers={{
                 booked: (date) => {
-                  // Forcer une marque sur le 25 avril 2025
-                  if (format(date, 'yyyy-MM-dd') === '2025-04-25') {
-                    return true;
-                  }
+                  // Plus de marque forcée sur le 25 avril
                   return getTasksForDate(date).length > 0;
                 },
               }}
@@ -386,13 +343,8 @@ export default function Calendar() {
                   // Ne pas afficher les points pour les jours qui ne sont pas du mois affiché
                   const isCurrentMonth = dayDate.getMonth() === displayMonth.getMonth();
                   
-                  // Forcer un point pour le 25 avril 2025
-                  let forceColor = null;
-                  if (format(dayDate, 'yyyy-MM-dd') === '2025-04-25') {
-                    forceColor = "bg-primary";
-                  }
-                  
-                  const color = isCurrentMonth ? (forceColor || getDotColorForDate(dayDate)) : null;
+                  // Ne plus forcer de pastille sur le 25 avril si elle n'existe pas réellement
+                  const color = isCurrentMonth ? getDotColorForDate(dayDate) : null;
                   const day = dayDate.getDate();
                   
                   return (
