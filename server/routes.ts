@@ -911,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Route pour générer automatiquement les prochaines tâches d'arrosage pour les plantes avec arrosage automatique
-  app.post("/api/tasks/generate-auto-watering", async (req: Request, res: Response) => {
+  app.post("/api/tasks/generate-auto-watering", isAuthenticated, async (req: Request, res: Response) => {
     try {
       // Récupérer toutes les plantes avec arrosage automatique activé
       const allPlants = await storage.getPlants();
