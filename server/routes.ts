@@ -325,15 +325,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const plant = await storage.getPlant(validatedData.plantId);
           
           if (plant && plant.wateringFrequency && plant.wateringFrequency > 0) {
-            console.log(`Programmation d'arrosages automatiques pour la plante ${plant.name} (ID: ${plant.id}) tous les ${plant.wateringFrequency} jours`);
+            console.log(`Programmation d'arrosages automatiques continus pour la plante ${plant.name} (ID: ${plant.id}) tous les ${plant.wateringFrequency} jours`);
             
             // Récupérer la date de base (soit la date fournie, soit aujourd'hui)
             const baseDate = validatedData.dueDate ? new Date(validatedData.dueDate) : new Date();
             
-            // Créer 3 tâches futures maximum
-            const wateringDates: Date[] = [];
+            // Activer l'arrosage automatique pour cette plante en définissant un flag
+            // dans la base de données pour indiquer que cette plante a l'arrosage automatique activé
+            await storage.updatePlant(plant.id, { autoWatering: true });
             
-            for (let i = 1; i <= 3; i++) {
+            // Pour la notification email, nous allons créer et montrer les 6 prochains arrosages
+            // Cela aide l'utilisateur à visualiser la planification sans surcharger l'email
+            const wateringDates: Date[] = [];
+            const previewCount = 6;
+            
+            for (let i = 1; i <= previewCount; i++) {
               // Calculer la date du prochain arrosage
               const nextDate = new Date(baseDate);
               nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));

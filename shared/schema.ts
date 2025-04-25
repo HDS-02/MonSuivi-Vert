@@ -28,6 +28,7 @@ export const plants = pgTable("plants", {
   careNotes: text("care_notes"),
   potSize: text("pot_size"), // Taille du pot recommandée
   commonDiseases: json("common_diseases").default('[]'), // Maladies fréquentes (tableau)
+  autoWatering: boolean("auto_watering").default(false), // Arrosage automatique programmé
   userId: integer("user_id").notNull().default(1), // Foreign key to users table
 });
 
