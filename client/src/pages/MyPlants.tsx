@@ -296,9 +296,9 @@ export default function MyPlants() {
                       
                       {/* Badge arrosage automatique */}
                       {plant.autoWatering && (
-                        <div className="absolute bottom-2 left-2 glass-card backdrop-blur-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full p-1.5 shadow-md border border-blue-200/50 flex items-center justify-center animate-pulse-gentle" 
+                        <div className="absolute bottom-2 left-2 glass-card bg-white backdrop-blur-sm rounded-full p-1.5 shadow-md border border-blue-400 flex items-center justify-center animate-pulse-gentle" 
                              title="Arrosage automatique activé">
-                          <span className="material-icons text-sm">autorenew</span>
+                          <span className="material-icons text-blue-600 text-sm">autorenew</span>
                         </div>
                       )}
                       

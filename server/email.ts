@@ -509,3 +509,39 @@ function getTaskIcon(type: string): string {
       return '<span style="color: #4CAF50; font-size: 24px;">🌿</span>';
   }
 }
+
+/**
+ * Envoie une notification de changement de statut d'arrosage automatique
+ */
+export async function sendAutoWateringStatusEmail(email: string, plant: Plant, isEnabled: boolean): Promise<boolean> {
+  const actionText = isEnabled ? "activé" : "désactivé";
+  const actionColor = isEnabled ? "#4CAF50" : "#F44336";
+  const actionIcon = isEnabled ? "✅" : "❌";
+  
+  const content = `
+    <p>Bonjour,</p>
+    <p>L'arrosage automatique a été <strong>${actionText}</strong> pour votre plante "${plant.name}".</p>
+    <div style="padding: 15px; border-radius: 5px; background-color: #f5f5f5; margin: 15px 0;">
+      <div style="display: flex; align-items: center;">
+        <span style="background-color: ${actionColor}; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; margin-right: 15px;">
+          <span style="font-size: 16px;">${actionIcon}</span>
+        </span>
+        <div>
+          <strong style="color: ${actionColor};">Arrosage automatique ${actionText}</strong>
+          <p style="margin: 5px 0 0; font-size: 14px;">
+            ${isEnabled 
+              ? "Des tâches d'arrosage seront désormais créées automatiquement selon la fréquence recommandée." 
+              : "Les tâches d'arrosage ne seront plus créées automatiquement. Vous devrez les ajouter manuellement."}
+          </p>
+        </div>
+      </div>
+    </div>
+    <p>Vous pouvez modifier ce paramètre à tout moment depuis la fiche de votre plante.</p>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `Arrosage automatique ${actionText} pour ${plant.name}`,
+    html: emailTemplate(`Arrosage automatique ${actionText}`, content)
+  });
+}
