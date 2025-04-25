@@ -165,8 +165,26 @@ export default function NewTaskDialog({
       // Rafraîchir les données de tâches dans le cache
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
-      // Message de succès différent si des arrosages automatiques ont été programmés
+      // Si l'option d'arrosage automatique est activée, mettre à jour la propriété autoWatering de la plante
       if (data.type === "water" && data.scheduleFuture) {
+        // Mettre à jour l'attribut autoWatering de la plante
+        const plantUpdateResponse = await fetch(`/api/plants/${data.plantId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ autoWatering: true }),
+          credentials: "include"
+        });
+        
+        if (!plantUpdateResponse.ok) {
+          console.error("Erreur lors de l'activation de l'arrosage automatique");
+        } else {
+          // Rafraîchir les données de la plante dans le cache
+          queryClient.invalidateQueries({ queryKey: [`/api/plants/${data.plantId}`] });
+          console.log("Arrosage automatique activé pour la plante", data.plantId);
+        }
+        
         toast({
           title: "Arrosage automatique activé",
           description: "Les arrosages seront programmés en continu selon la fréquence recommandée pour cette plante.",

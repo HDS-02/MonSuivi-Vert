@@ -238,16 +238,51 @@ export default function PlantDetail() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="text-center">
-              <div className="bg-blue-50 rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-1">
+            <div className="text-center relative">
+              <div className={`bg-blue-50 rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-1 ${plant.autoWatering ? "ring-2 ring-blue-400" : ""}`}>
                 <span className="material-icons text-blue-500">opacity</span>
+                {plant.autoWatering && (
+                  <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center">
+                    <span className="material-icons text-white text-[10px]">autorenew</span>
+                  </div>
+                )}
               </div>
-              <div className="text-xs font-medium">Arrosage</div>
+              <div className="text-xs font-medium flex items-center justify-center gap-1">
+                Arrosage
+                {plant.autoWatering && (
+                  <span className="inline-flex items-center bg-blue-100 text-blue-800 text-[9px] font-semibold px-1.5 py-0.5 rounded">
+                    Auto
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-gray-500">
                 {plant.wateringFrequency 
                   ? `Tous les ${plant.wateringFrequency} jours` 
                   : "Non défini"}
               </div>
+              
+              {/* Options d'arrosage automatique */}
+              <button 
+                onClick={() => {
+                  // Basculer l'état d'arrosage automatique
+                  updatePlantMutation.mutate({
+                    id: plant.id,
+                    updates: { autoWatering: !plant.autoWatering }
+                  }, {
+                    onSuccess: () => {
+                      toast({
+                        title: plant.autoWatering ? "Arrosage automatique désactivé" : "Arrosage automatique activé",
+                        description: plant.autoWatering 
+                          ? "Les tâches d'arrosage ne seront plus créées automatiquement" 
+                          : "Les tâches d'arrosage seront créées automatiquement"
+                      });
+                    }
+                  });
+                }}
+                className="text-[9px] text-blue-600 hover:text-blue-800 mt-1 underline"
+              >
+                {plant.autoWatering ? "Désactiver l'auto" : "Activer l'auto"}
+              </button>
             </div>
             <div className="text-center">
               <div className="bg-yellow-50 rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-1">

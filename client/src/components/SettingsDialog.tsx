@@ -8,8 +8,6 @@ import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AdminPanel } from "./AdminPanel";
-import { useAuth } from "@/hooks/use-auth";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -392,26 +390,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
           </div>
         </motion.div>
 
-        {/* Section d'administration - uniquement pour l'administrateur */}
-        {useAuth().user?.username === "Anteen" && (
-          <>
-            <Separator className="my-4" />
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 }}
-              className="mb-5"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="material-icons text-yellow-600 text-lg">admin_panel_settings</span>
-                <h3 className="text-base font-medium text-yellow-700">Outils d'administration</h3>
-              </div>
-              
-              <AdminPanel />
-            </motion.div>
-          </>
-        )}
+
       </div>
       
       <Separator className="my-4" />
