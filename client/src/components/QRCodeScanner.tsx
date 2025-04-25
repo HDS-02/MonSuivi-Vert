@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { StableDialog } from "./StableDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import jsQR from "jsqr";
 
 interface QRCodeScannerProps {
   open: boolean;
@@ -15,36 +15,83 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Références pour la vidéo et le canvas
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
+  // Fonction pour traiter la frame vidéo actuelle
+  const processVideoFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx || video.videoWidth === 0) {
+      // Vidéo pas encore prête
+      animationFrameRef.current = requestAnimationFrame(processVideoFrame);
+      return;
+    }
+    
+    // Ajuster la taille du canvas à celle de la vidéo
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dessiner la frame vidéo sur le canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Obtenir les données d'image du canvas
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    try {
+      // Analyser l'image pour détecter un QR code
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+      
+      if (code) {
+        // Un QR code a été trouvé!
+        console.log("QR Code trouvé:", code.data);
+        handleQRSuccess(code.data);
+        return; // Arrêter l'analyse quand un code est trouvé
+      }
+    } catch (e) {
+      console.error("Erreur lors de l'analyse QR:", e);
+    }
+    
+    // Continuer l'analyse avec la prochaine frame
+    animationFrameRef.current = requestAnimationFrame(processVideoFrame);
+  };
+
   // Récupération de la caméra et analyse du QR code
   useEffect(() => {
     if (!open || !scanning) return;
 
-    let videoElement: HTMLVideoElement | null = null;
-    let canvasElement: HTMLCanvasElement | null = null;
-    let animationFrame: number | null = null;
-    let stream: MediaStream | null = null;
-
     const setupScanner = async () => {
       try {
-        videoElement = document.getElementById('qr-video') as HTMLVideoElement;
-        canvasElement = document.getElementById('qr-canvas') as HTMLCanvasElement;
-        
-        if (!videoElement || !canvasElement) {
+        if (!videoRef.current) {
           setError("Éléments vidéo non trouvés");
           return;
         }
 
-        // Accéder à la caméra
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" } 
+        // Accéder à la caméra (arrière si possible)
+        streamRef.current = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
         });
         
-        videoElement.srcObject = stream;
-        videoElement.play();
-
-        // Si aucune librairie de scan QR n'est disponible, ne pas simuler de scan automatique
-        // Nous allons plutôt attendre que l'utilisateur montre un code QR ou annule l'opération
-        console.log("Scanner QR prêt - en attente d'un code QR");
+        videoRef.current.srcObject = streamRef.current;
+        await videoRef.current.play();
+        
+        // Démarrer l'analyse de la vidéo frame par frame
+        processVideoFrame();
+        
+        console.log("Scanner QR opérationnel - en attente d'un QR code");
 
       } catch (err) {
         console.error('Erreur d\'accès à la caméra:', err);
@@ -53,11 +100,16 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
     };
 
     const cleanup = () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      // Arrêter l'animation
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
-      if (animationFrame !== null) {
-        cancelAnimationFrame(animationFrame);
+      
+      // Arrêter la caméra
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
     };
 
@@ -129,50 +181,40 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
           <div className="relative py-2">
             <div className="relative aspect-square w-full max-w-sm mx-auto overflow-hidden rounded-lg mb-4 bg-black">
               <video 
-                id="qr-video" 
+                ref={videoRef}
                 className="absolute inset-0 w-full h-full object-cover"
                 playsInline
                 muted
+                autoPlay
               ></video>
               <canvas 
-                id="qr-canvas" 
+                ref={canvasRef}
                 className="absolute inset-0 w-full h-full"
               ></canvas>
               <div className="absolute inset-0 border-2 border-primary/70 rounded-lg"></div>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border-2 border-white/80 rounded-lg"></div>
               
-              {/* Message explicatif important */}
+              {/* Message d'attente */}
               <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-center text-sm">
-                <p>Cette version inclut uniquement l'interface du scanner.</p>
-                <p className="text-xs text-yellow-300">Un vrai QR code nécessite l'intégration d'une librairie comme jsQR.</p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="animate-pulse inline-block h-3 w-3 rounded-full bg-green-500"></span>
+                  <p>Scanner actif - Montrez un QR code</p>
+                </div>
               </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-500 mb-3 flex items-center justify-center gap-2">
-                <span className="animate-pulse inline-block h-2 w-2 rounded-full bg-green-500"></span>
-                Centrez le QR code dans le cadre...
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                Centrez le QR code dans le cadre pour un scan automatique
               </div>
-              <div className="flex gap-3 justify-center">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    // Simuler un scan manuel avec bouton
-                    handleQRSuccess(`/plants/11`);
-                  }}
-                  className="rounded-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                >
-                  <span className="material-icons mr-1">done</span>
-                  Simuler un scan
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setScanning(false)}
-                  className="rounded-full"
-                >
-                  <span className="material-icons mr-1">close</span>
-                  Annuler
-                </Button>
-              </div>
+              <Button 
+                variant="outline"
+                onClick={() => setScanning(false)}
+                className="rounded-full"
+              >
+                <span className="material-icons mr-1">close</span>
+                Annuler
+              </Button>
             </div>
           </div>
         )}
