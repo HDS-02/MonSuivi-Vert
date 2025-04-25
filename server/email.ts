@@ -12,73 +12,87 @@ interface EmailOptions {
   html?: string;
 }
 
-// Configuration de Nodemailer avec des paramètres plus détaillés
+// Configuration de Nodemailer avec Gmail
+// Création du transporteur
+console.log('Configuration du service email avec Nodemailer et Gmail...');
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // true pour 465, false pour les autres ports
+  service: 'gmail',     // Nom du service prédéfini
   auth: {
-    user: process.env.EMAIL_USER || 'votre-email@gmail.com',
-    pass: process.env.EMAIL_PASSWORD || 'votre-mot-de-passe-app'
+    user: process.env.EMAIL_USER || 'votre_email@gmail.com',
+    pass: process.env.EMAIL_PASSWORD || 'votre_mot_de_passe_app'
   },
   tls: {
-    // Ne pas échouer en cas de certificat invalide
-    rejectUnauthorized: false
-  },
-  debug: true // Activer le débogage
+    rejectUnauthorized: false  // Accepter les certificats auto-signés
+  }
 });
 
-// Dossier de sauvegarde des emails (pour le fallback)
+// Vérifier la configuration de l'email
+const emailConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASSWORD;
+if (emailConfigured) {
+  console.log(`Service email configuré avec l'adresse: ${process.env.EMAIL_USER}`);
+  
+  // Vérifier la connexion
+  transporter.verify((error) => {
+    if (error) {
+      console.error('Erreur de vérification de la configuration email:', error);
+    } else {
+      console.log('Serveur prêt à envoyer des emails');
+    }
+  });
+} else {
+  console.warn('Configuration email incomplète. Les identifiants EMAIL_USER et EMAIL_PASSWORD sont nécessaires.');
+}
+
+// Dossier pour les emails de secours si l'envoi échoue
 const emailFolderPath = path.join('.', 'emails_simules');
 try {
   if (!fs.existsSync(emailFolderPath)) {
     fs.mkdirSync(emailFolderPath, { recursive: true });
   }
 } catch (err) {
-  console.error('Impossible de créer le dossier pour les emails simulés:', err);
+  console.error('Impossible de créer le dossier pour les emails de secours:', err);
 }
-
-console.log('Service email configuré avec Nodemailer');
 
 /**
  * Envoie un email via Nodemailer avec fallback
  */
 export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<boolean> {
-  const emailData = {
-    from: process.env.EMAIL_USER || 'notification@monsuivivert.fr',
-    to,
-    subject,
-    text: text || 'Contenu non disponible en format texte',
-    html: html || '<p>Contenu non disponible en HTML</p>'
-  };
-
   try {
-    // Tentative d'envoi d'email réel avec Nodemailer
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-      console.log(`Tentative d'envoi d'email à ${to} via Nodemailer...`);
-      console.log(`Utilisation du compte: ${process.env.EMAIL_USER}`);
+    // Vérifier si les identifiants email sont configurés
+    if (emailConfigured) {
+      console.log(`Tentative d'envoi d'email à ${to} via Gmail...`);
       
+      // Préparer le message
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        text: text || 'Contenu non disponible en format texte',
+        html: html || '<p>Contenu non disponible en HTML</p>'
+      };
+
       try {
-        const info = await transporter.sendMail(emailData);
-        console.log(`Email envoyé avec succès: ${info.messageId}`);
+        // Envoyer l'email
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email envoyé avec succès à ${to}. ID: ${info.messageId}`);
         return true;
-      } catch (mailError) {
-        console.error('Erreur Nodemailer détaillée:', mailError);
-        // Si l'envoi échoue, on utilise le fallback
+      } catch (emailError) {
+        console.error('Erreur lors de l\'envoi avec Gmail:', emailError);
+        // On passe au fallback
       }
     } else {
       console.warn('Identifiants email non configurés. Utilisation du mode de secours.');
     }
     
-    // Fallback: Sauvegarde locale + log console
-    console.log('------ EMAIL (MODE SECOURS) ------');
-    console.log(`À: ${emailData.to}`);
-    console.log(`De: ${emailData.from}`);
-    console.log(`Sujet: ${emailData.subject}`);
+    // Mode de secours si l'envoi échoue ou si les identifiants ne sont pas configurés
+    console.log(`------ EMAIL (MODE DE SECOURS) ------`);
+    console.log(`À: ${to}`);
+    console.log(`De: ${process.env.EMAIL_USER || 'notification@monsuivivert.fr'}`);
+    console.log(`Sujet: ${subject}`);
     console.log(`Date: ${new Date().toLocaleString('fr-FR')}`);
     console.log('------------------------');
     
-    // Sauvegarde dans un fichier HTML
+    // Sauvegarde dans un fichier HTML pour référence
     const timestamp = Date.now();
     const fileName = `email_${timestamp}.html`;
     const filePath = path.join(emailFolderPath, fileName);
@@ -100,16 +114,16 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     <body>
       <div class="email-container">
         <div class="email-header">
-          <div><strong>À:</strong> ${emailData.to}</div>
-          <div><strong>De:</strong> ${emailData.from}</div>
-          <div><strong>Sujet:</strong> ${emailData.subject}</div>
+          <div><strong>À:</strong> ${to}</div>
+          <div><strong>De:</strong> ${process.env.EMAIL_USER || 'notification@monsuivivert.fr'}</div>
+          <div><strong>Sujet:</strong> ${subject}</div>
           <div><strong>Date:</strong> ${new Date().toLocaleString('fr-FR')}</div>
         </div>
         <div class="email-content">
-          ${emailData.html}
+          ${html || text || 'Aucun contenu'}
         </div>
         <div class="email-footer">
-          <p>Email sauvegardé par l'application Mon Suivi Vert</p>
+          <p>Email sauvegardé par l'application Mon Suivi Vert (mode de secours)</p>
         </div>
       </div>
     </body>
@@ -119,6 +133,8 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     fs.writeFileSync(filePath, emailContent);
     console.log(`Email sauvegardé dans ${filePath}`);
     
+    // En mode de secours, on considère que l'opération est réussie
+    // car l'email a bien été enregistré
     return true;
   } catch (error) {
     console.error('Erreur lors de l\'envoi d\'email:', error);
