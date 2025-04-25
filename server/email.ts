@@ -12,14 +12,14 @@ interface EmailOptions {
   html?: string;
 }
 
-// Logo de l'application pour les emails
-// Version encodée en base64 pour maximiser la compatibilité avec les clients email
-// Ce logo est une image réelle avec un fond vert vif et notre logo en blanc
-const APP_LOGO_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAGK0lEQVR4nO3dPW8cxxnH4Zkd7r1XwJUbVSlVu3CbDxA3/sYp/BXUpnQTF3YRCFKRIi4UpBHkWhCQF3wROaREUrw9d7szE7hQCgIBAvr5Ps3e3pC7f+7s7M7urJoOlnYJ4yJhWkT+3gYMx5eR5ftMr96U5nAXBuAjGLqEYZGYrxL2ZwkPD8M82gB8JLMq0a0y7y4T9mYJh4fMq2IC8BEN64S9dcLbVcLubuZ5ERHgd/BJzF5EmrWZL8P9y4A7gE/oxW1m/bSZz74L43iXgAHgE1tPM8tPMt9+nal3E+kbAD6xi0VC32bmLxLXe4kwLjMeAj6xqhcJVX0WCfcnAfcpflbdbSQ0NxHZ0wB+EREFu/ovQgD5BQQI4EF9HynGVSYMAP9Xu47EcBspBuD/2r3LTPuZU/x/zYd+A/CLqi4jqkUkE6niL7LqboD/4OLkIqJ+EUlH0Rlgc9rYu4tc/Hby0W/cAHBP9H20f/2n5r/zN+kZgCHDV3VEfRoR5TAD8DANbcTwrI4YTzKlMLnDwzXcZA7/cJhp3JvgFw/X0GZun56uZp8OgI+Ah8oSgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOIJgOJ94wA0/Q8QPrk6IuqI5EzE3gxw/3Vv3kZcvzqLmTMAP9/QZUZ/FulnEdWzCC+B+NlcvXod87NZLKefDNbX3/1msfzxcJN2e+B+GzL9zZPF/MlpvvoHeyCJwVx32p8AAAAASUVORK5CYII=";
-
-// Version HTML du logo qui sera utilisée dans les emails
+// Logo de l'application pour les emails en version texte stylisé
+// Cette approche est plus compatible avec tous les clients email
+// et évite les problèmes d'espace blanc
 const APP_LOGO = `
-<img src="data:image/png;base64,${APP_LOGO_BASE64}" alt="Mon Suivi Vert" width="120" height="120" style="display:block; margin:0; padding:0; border:0;">
+<div style="background-color: #4CAF50; color: white; padding: 30px 0; text-align: center; font-family: Arial, sans-serif; font-weight: bold; margin: 0;">
+  <div style="font-size: 28px; margin: 0;">MON SUIVI VERT</div>
+  <div style="font-size: 14px; margin: 5px 0 0;">Votre assistant pour le jardinage</div>
+</div>
 `;
 
 // Template d'email réutilisable
@@ -31,33 +31,49 @@ function emailTemplate(title: string, content: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
+  <style type="text/css">
+    /* Règles pour assurer la compatibilité maximum */
+    body, html { margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; line-height: 1.4; }
+    .email-container { max-width: 600px; margin: 0 auto; }
+    .header-logo { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+    .header-title { font-size: 22px; font-weight: bold; margin: 0; }
+    .header-subtitle { font-size: 14px; margin: 5px 0 0; }
+    .content-section { padding: 20px; background-color: white; }
+    @media only screen and (max-width: 480px) {
+      .email-container { width: 100% !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f8f8;">
-  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f8f8;">
+<body bgcolor="#f8f8f8" style="margin: 0; padding: 0;">
+  <!-- Wrapper principal -->
+  <table width="100%" bgcolor="#f8f8f8" border="0" cellpadding="0" cellspacing="0" style="min-width: 100%;">
     <tr>
-      <td align="center" style="padding: 0;">
-        <table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color: white; margin: 0 auto; max-width: 600px;">
-          <!-- Logo en haut sans espace - le logo a un fond vert donc pas d'espace blanc -->
+      <td align="center" valign="top" style="padding: 0;">
+        <!-- Container email -->
+        <table width="600" bgcolor="#ffffff" border="0" cellpadding="0" cellspacing="0" class="email-container" style="max-width: 600px; margin: 0 auto;">
+          <!-- En-tête / Logo -->
           <tr>
-            <td align="center" style="padding: 0;">
-              ${APP_LOGO}
+            <td bgcolor="#4CAF50" style="padding: 20px 0; text-align: center; color: white;">
+              <p style="font-size: 24px; font-weight: bold; margin: 0; line-height: 1.2;">MON SUIVI VERT</p>
+              <p style="font-size: 14px; margin: 5px 0 0;">Votre assistant pour le jardinage</p>
             </td>
           </tr>
           <!-- Bannière titre -->
           <tr>
-            <td align="center" style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">${title}</h1>
+            <td bgcolor="#8BC34A" style="padding: 15px; text-align: center; color: white;">
+              <p style="font-size: 20px; font-weight: bold; margin: 0;">${title}</p>
             </td>
           </tr>
           <!-- Contenu -->
           <tr>
-            <td style="padding: 30px 20px; border: 1px solid #e0e0e0; border-top: none;">
+            <td style="padding: 30px 20px; background-color: white; border: 1px solid #e0e0e0; border-top: none;">
               ${content}
             </td>
           </tr>
           <!-- Pied de page -->
           <tr>
-            <td align="center" style="padding: 20px; font-size: 12px; color: #666;">
+            <td style="padding: 20px; font-size: 12px; color: #666; text-align: center;">
               <p style="margin: 5px 0;">© 2025 Mon Suivi Vert - Tous droits réservés</p>
               <p style="margin: 5px 0; font-size: 11px;">Si vous ne souhaitez plus recevoir nos emails, vous pouvez désactiver les notifications dans les paramètres de l'application.</p>
             </td>
