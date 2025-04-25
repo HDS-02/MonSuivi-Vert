@@ -807,6 +807,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Route pour envoyer des rappels d'arrosage
+  app.post("/api/email/watering-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // L'utilisateur doit être authentifié et avoir configuré son email
+      if (!req.user?.email) {
+        return res.status(400).json({ message: "Aucune adresse email configurée pour l'utilisateur" });
+      }
+      
+      // Récupérer toutes les plantes de l'utilisateur qui ont besoin d'être arrosées aujourd'hui
+      const plants = await storage.getPlants();
+      const plantsNeedingWater = plants.filter(plant => {
+        // Vérifier si la plante a besoin d'être arrosée
+        if (!plant.lastWatering) return true; // Si jamais arrosée
+        
+        const lastWateringDate = new Date(plant.lastWatering);
+        const today = new Date();
+        const daysSinceLastWatering = Math.floor((today.getTime() - lastWateringDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return daysSinceLastWatering >= plant.wateringFrequency;
+      });
+      
+      if (plantsNeedingWater.length === 0) {
+        return res.json({ message: "Aucune plante n'a besoin d'être arrosée aujourd'hui" });
+      }
+      
+      // Envoyer l'email de rappel d'arrosage
+      const success = await sendWateringReminderEmail(req.user.email, plantsNeedingWater);
+      
+      if (success) {
+        console.log(`Email de rappel d'arrosage envoyé avec succès à ${req.user.email} pour ${plantsNeedingWater.length} plantes`);
+        res.json({ 
+          message: "Email de rappel d'arrosage envoyé avec succès",
+          plantsCount: plantsNeedingWater.length,
+          plants: plantsNeedingWater.map(p => p.name)
+        });
+      } else {
+        console.error(`Échec de l'envoi de l'email de rappel d'arrosage à ${req.user.email}`);
+        res.status(500).json({ message: "Échec de l'envoi de l'email de rappel d'arrosage" });
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi de l'email de rappel d'arrosage:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // BADGES ROUTES
   app.get("/api/badges", isAuthenticated, async (req: Request, res: Response) => {
