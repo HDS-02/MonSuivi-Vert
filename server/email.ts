@@ -12,38 +12,66 @@ interface EmailOptions {
   html?: string;
 }
 
-// Logo de l'application encodé en base64 pour l'inclure dans les emails
-// Une version simplifiée du logo pour les emails
+// Logo de l'application pour les emails
+// Version SVG avec des couleurs vives et un fond contrasté
 const APP_LOGO = `
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
-  <rect width="100" height="100" rx="20" fill="#4CAF50" fill-opacity="0.1"/>
-  <path d="M50 15C56.6304 15 62.9893 17.6339 67.6777 22.3223C72.3661 27.0107 75 33.3696 75 40C75 70 30 70 30 40C30 33.3696 32.6339 27.0107 37.3223 22.3223C42.0107 17.6339 48.3696 15 55 15" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
-  <path d="M50 25C45 35 45 55 50 70" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
-  <path d="M50 25C55 35 55 55 50 70" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
-  <path d="M36 40H64" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
-  <path d="M33 50H67" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
-  <path d="M36 60H64" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none" style="display:block; margin:0 auto;">
+  <rect width="120" height="120" rx="20" fill="#4CAF50"/>
+  <path d="M60 20C68.2843 20 76.2843 23.1607 82.1421 29.0184C87.9998 34.8762 91.1605 42.8761 91.1605 51.1604C91.1605 88.3209 28.8395 88.3209 28.8395 51.1604C28.8395 42.8761 32.0002 34.8762 37.8579 29.0184C43.7157 23.1607 51.7157 20 60 20" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <path d="M60 32C53.3333 44.6667 53.3333 69.3333 60 88" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <path d="M60 32C66.6667 44.6667 66.6667 69.3333 60 88" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <path d="M40 52H80" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <path d="M36 64H84" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <path d="M40 76H80" stroke="white" stroke-width="5" stroke-linecap="round"/>
 </svg>
 `;
 
 // Template d'email réutilisable
 function emailTemplate(title: string, content: string): string {
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        ${APP_LOGO}
-      </div>
-      <div style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0;">${title}</h1>
-      </div>
-      <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-        ${content}
-      </div>
-      <div style="text-align: center; padding: 10px; font-size: 12px; color: #666; margin-top: 20px;">
-        <p>© 2025 Mon Suivi Vert - Tous droits réservés</p>
-        <p style="font-size: 11px;">Si vous ne souhaitez plus recevoir nos emails, vous pouvez désactiver les notifications dans les paramètres de l'application.</p>
-      </div>
-    </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f8f8;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f8f8;">
+    <tr>
+      <td align="center" style="padding: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color: white; margin: 0 auto; max-width: 600px;">
+          <!-- Logo en haut sans espace - le logo a un fond vert donc pas d'espace blanc -->
+          <tr>
+            <td align="center" style="padding: 0;">
+              ${APP_LOGO}
+            </td>
+          </tr>
+          <!-- Bannière titre -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">${title}</h1>
+            </td>
+          </tr>
+          <!-- Contenu -->
+          <tr>
+            <td style="padding: 30px 20px; border: 1px solid #e0e0e0; border-top: none;">
+              ${content}
+            </td>
+          </tr>
+          <!-- Pied de page -->
+          <tr>
+            <td align="center" style="padding: 20px; font-size: 12px; color: #666;">
+              <p style="margin: 5px 0;">© 2025 Mon Suivi Vert - Tous droits réservés</p>
+              <p style="margin: 5px 0; font-size: 11px;">Si vous ne souhaitez plus recevoir nos emails, vous pouvez désactiver les notifications dans les paramètres de l'application.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
   `;
 }
 
