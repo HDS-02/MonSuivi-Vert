@@ -208,6 +208,84 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                   <p className="text-xs text-gray-500 mt-1">
                     Les rappels d'entretien seront envoyés à cette adresse
                   </p>
+                  
+                  <div className="grid grid-cols-1 gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="text-xs"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/email/task-reminder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Rappel envoyé",
+                              description: "Le rappel des tâches a été envoyé à votre adresse email.",
+                            });
+                          } else {
+                            const data = await response.json();
+                            toast({
+                              title: "Erreur",
+                              description: data.message || "Impossible d'envoyer le rappel",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erreur",
+                            description: "Une erreur s'est produite lors de l'envoi",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      <span className="material-icons text-xs mr-1">send</span>
+                      Envoyer un rappel des tâches
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="text-xs"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/email/welcome', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Email envoyé",
+                              description: "L'email de bienvenue a été envoyé à votre adresse.",
+                            });
+                          } else {
+                            const data = await response.json();
+                            toast({
+                              title: "Erreur",
+                              description: data.message || "Impossible d'envoyer l'email",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erreur",
+                            description: "Une erreur s'est produite lors de l'envoi",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      <span className="material-icons text-xs mr-1">chat</span>
+                      Recevoir l'email de bienvenue
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
