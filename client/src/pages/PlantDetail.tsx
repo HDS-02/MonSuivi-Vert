@@ -458,6 +458,12 @@ export default function PlantDetail() {
         </>
       )}
 
+      {displayTab === "calendar" && (
+        <div className="mb-6">
+          <PlantingCalendar plant={plant} />
+        </div>
+      )}
+      
       {displayTab === "history" && (
         <Card className="bg-white rounded-lg shadow-md p-4 mb-6">
           <CardContent className="p-0">

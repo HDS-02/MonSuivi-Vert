@@ -14,6 +14,7 @@ import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plant
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
 import { pdfService } from "./pdfService";
+import { sendTaskReminder, sendWelcomeEmail } from "./email";
 
 // Configure multer for in-memory file storage
 const upload = multer({
@@ -623,6 +624,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(plant);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // EMAIL NOTIFICATION ROUTES
+  app.post("/api/email/task-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      if (!user || !user.email) {
+        return res.status(400).json({
+          message: "L'utilisateur n'a pas d'adresse email configurée"
+        });
+      }
+
+      // Récupérer les tâches à effectuer dans les prochains jours
+      const pendingTasks = await storage.getPendingTasks();
+      if (pendingTasks.length === 0) {
+        return res.status(200).json({
+          message: "Aucune tâche en attente à rappeler"
+        });
+      }
+
+      // Récupérer les noms des plantes pour les tâches
+      const plantIds = [...new Set(pendingTasks.map(task => task.plantId))];
+      const plantsMap: Record<number, string> = {};
+      
+      for (const plantId of plantIds) {
+        const plant = await storage.getPlant(plantId);
+        if (plant) {
+          plantsMap[plantId] = plant.name;
+        }
+      }
+
+      // Envoyer l'email
+      const success = await sendTaskReminder(user.email, pendingTasks, plantsMap);
+      
+      if (success) {
+        res.status(200).json({ message: "Rappel de tâches envoyé avec succès" });
+      } else {
+        res.status(500).json({ message: "Échec de l'envoi du rappel" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/email/welcome", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      if (!user || !user.email) {
+        return res.status(400).json({
+          message: "L'utilisateur n'a pas d'adresse email configurée"
+        });
+      }
+
+      const success = await sendWelcomeEmail(user.email, user.firstName || '');
+      
+      if (success) {
+        res.status(200).json({ message: "Email de bienvenue envoyé avec succès" });
+      } else {
+        res.status(500).json({ message: "Échec de l'envoi de l'email de bienvenue" });
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

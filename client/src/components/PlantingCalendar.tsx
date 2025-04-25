@@ -35,6 +35,7 @@ const months = [
 // Base de données des périodes de semis/plantation/récolte
 // Ces informations seraient idéalement stockées dans une base de données
 const plantingPeriods: Record<string, PlantingCalendarData> = {
+  // Légumes
   "Tomate": {
     seeding: { start: 3, end: 4 },
     planting: { start: 5, end: 6 },
@@ -83,6 +84,96 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
   "Pomme de terre": {
     planting: { start: 3, end: 5 },
     harvesting: { start: 6, end: 9 }
+  },
+  "Haricot": {
+    seeding: { start: 4, end: 7 },
+    planting: { start: 5, end: 7 },
+    harvesting: { start: 7, end: 10 }
+  },
+  "Pois": {
+    seeding: { start: 2, end: 4 },
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 6, end: 8 }
+  },
+  "Oignon": {
+    seeding: { start: 2, end: 3 },
+    planting: { start: 3, end: 4 },
+    harvesting: { start: 7, end: 9 }
+  },
+  "Ail": {
+    planting: { start: 10, end: 11 },
+    harvesting: { start: 6, end: 8 }
+  },
+  
+  // Arbres fruitiers
+  "Pommier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 8, end: 11 }
+  },
+  "Poirier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 8, end: 10 }
+  },
+  "Cerisier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 5, end: 7 }
+  },
+  "Prunier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 7, end: 9 }
+  },
+  "Pêcher": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 7, end: 9 }
+  },
+  "Abricotier": {
+    planting: { start: 11, end: 3 },
+    harvesting: { start: 6, end: 8 }
+  },
+  "Framboisier": {
+    planting: { start: 10, end: 4 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Fraisier": {
+    planting: { start: 3, end: 4 },
+    harvesting: { start: 5, end: 9 }
+  },
+  "Avocatier": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 9, end: 2 }
+  },
+  "Citronnier": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 11, end: 4 }
+  },
+  "Olivier": {
+    planting: { start: 3, end: 5 },
+    harvesting: { start: 9, end: 12 }
+  },
+  
+  // Plantes aromatiques
+  "Basilic": {
+    seeding: { start: 3, end: 5 },
+    planting: { start: 5, end: 6 },
+    harvesting: { start: 6, end: 9 }
+  },
+  "Persil": {
+    seeding: { start: 3, end: 8 },
+    planting: { start: 4, end: 9 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Thym": {
+    seeding: { start: 3, end: 5 },
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 6, end: 10 }
+  },
+  "Romarin": {
+    planting: { start: 3, end: 10 },
+    harvesting: { start: 5, end: 10 }
+  },
+  "Menthe": {
+    planting: { start: 4, end: 6 },
+    harvesting: { start: 6, end: 10 }
   }
 };
 
