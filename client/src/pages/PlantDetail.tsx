@@ -239,10 +239,10 @@ export default function PlantDetail() {
           </div>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center relative">
-              <div className={`bg-blue-50 rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-1 ${plant.autoWatering ? "ring-2 ring-blue-400" : ""}`}>
+              <div className={`bg-blue-50 rounded-full p-2 w-10 h-10 flex items-center justify-center mx-auto mb-1 ${plant.autoWatering ? "ring-2 ring-blue-500" : ""} relative`}>
                 <span className="material-icons text-blue-500">opacity</span>
                 {plant.autoWatering && (
-                  <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full w-5 h-5 flex items-center justify-center shadow-sm border border-blue-200">
                     <span className="material-icons text-white text-[10px]">autorenew</span>
                   </div>
                 )}
@@ -250,7 +250,7 @@ export default function PlantDetail() {
               <div className="text-xs font-medium flex items-center justify-center gap-1">
                 Arrosage
                 {plant.autoWatering && (
-                  <span className="inline-flex items-center bg-blue-100 text-blue-800 text-[9px] font-semibold px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
                     Auto
                   </span>
                 )}
@@ -279,7 +279,11 @@ export default function PlantDetail() {
                     }
                   });
                 }}
-                className="text-[9px] text-blue-600 hover:text-blue-800 mt-1 underline"
+                className={`text-xs mt-1 py-1 px-2 rounded-full ${
+                  plant.autoWatering
+                    ? "bg-red-100 text-red-700 hover:bg-red-200"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                } transition-colors`}
               >
                 {plant.autoWatering ? "Désactiver l'auto" : "Activer l'auto"}
               </button>
