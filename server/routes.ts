@@ -632,10 +632,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // EMAIL NOTIFICATION ROUTES
   app.post("/api/email/task-reminder", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user;
-      if (!user || !user.email) {
+      // Récupérer l'adresse email depuis la requête ou utiliser celle de l'utilisateur connecté
+      const { email } = req.body;
+      const userEmail = email || (req.user?.email || '');
+      
+      if (!userEmail) {
         return res.status(400).json({
-          message: "L'utilisateur n'a pas d'adresse email configurée"
+          message: "Adresse email requise. Veuillez fournir une adresse email dans la requête ou configurer votre profil."
         });
       }
 
@@ -659,10 +662,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Envoyer l'email
-      const success = await sendTaskReminder(user.email, pendingTasks, plantsMap);
+      const success = await sendTaskReminder(userEmail, pendingTasks, plantsMap);
       
       if (success) {
-        res.status(200).json({ message: "Rappel de tâches envoyé avec succès" });
+        res.status(200).json({ message: "Rappel de tâches envoyé avec succès à " + userEmail });
       } else {
         res.status(500).json({ message: "Échec de l'envoi du rappel" });
       }
@@ -673,17 +676,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/email/welcome", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user;
-      if (!user || !user.email) {
+      // Récupérer l'adresse email depuis la requête ou utiliser celle de l'utilisateur connecté
+      const { email } = req.body;
+      const userEmail = email || (req.user?.email || '');
+      
+      if (!userEmail) {
         return res.status(400).json({
-          message: "L'utilisateur n'a pas d'adresse email configurée"
+          message: "Adresse email requise. Veuillez fournir une adresse email dans la requête ou configurer votre profil."
         });
       }
 
-      const success = await sendWelcomeEmail(user.email, user.firstName || '');
+      // Récupérer le prénom de l'utilisateur s'il est disponible
+      const firstName = req.user?.firstName || '';
+      
+      const success = await sendWelcomeEmail(userEmail, firstName);
       
       if (success) {
-        res.status(200).json({ message: "Email de bienvenue envoyé avec succès" });
+        res.status(200).json({ message: "Email de bienvenue envoyé avec succès à " + userEmail });
       } else {
         res.status(500).json({ message: "Échec de l'envoi de l'email de bienvenue" });
       }
