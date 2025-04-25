@@ -15,7 +15,6 @@ import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
 import { sendEmail, sendTaskReminder, sendWelcomeEmail } from "./email";
 import { pdfService } from "./pdfService";
-import { sendTaskReminder, sendWelcomeEmail } from "./email";
 
 // Configure multer for in-memory file storage
 const upload = multer({
@@ -693,8 +692,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Route pour tester l'envoi d'emails
-  app.post("/api/email/test", isAuthenticated, async (req: Request, res: Response) => {
+  // Route pour tester l'envoi d'emails (accessible sans authentification pour les tests)
+  app.post("/api/email/test", async (req: Request, res: Response) => {
     try {
       // Récupérer l'adresse email depuis la requête ou utiliser celle de l'utilisateur connecté
       const { to, subject } = req.body;

@@ -71,7 +71,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         text: text || 'Contenu non disponible en format texte',
         html: html || '<p>Contenu non disponible en HTML</p>',
         // Options pour que Gmail accepte de l'envoyer
-        priority: 'high'
+        priority: 'high' as 'high'
       };
 
       try {

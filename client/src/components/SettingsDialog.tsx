@@ -217,9 +217,19 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                       className="text-xs"
                       onClick={async () => {
                         try {
+                          if (!emailAddress) {
+                            toast({
+                              title: "Adresse manquante",
+                              description: "Veuillez saisir une adresse email valide",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           const response = await fetch('/api/email/task-reminder', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: emailAddress })
                           });
                           
                           if (response.ok) {
@@ -255,9 +265,19 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                       className="text-xs"
                       onClick={async () => {
                         try {
+                          if (!emailAddress) {
+                            toast({
+                              title: "Adresse manquante",
+                              description: "Veuillez saisir une adresse email valide",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           const response = await fetch('/api/email/welcome', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: emailAddress })
                           });
                           
                           if (response.ok) {
@@ -284,6 +304,57 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                     >
                       <span className="material-icons text-xs mr-1">chat</span>
                       Recevoir l'email de bienvenue
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="text-xs text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"
+                      onClick={async () => {
+                        try {
+                          if (!emailAddress) {
+                            toast({
+                              title: "Adresse manquante",
+                              description: "Veuillez saisir une adresse email valide",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
+                          const response = await fetch('/api/email/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              to: emailAddress,
+                              subject: "Test du service d'emails de Mon Suivi Vert" 
+                            })
+                          });
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Email de test envoyé",
+                              description: "Un email de test a été envoyé à votre adresse.",
+                            });
+                          } else {
+                            const data = await response.json();
+                            toast({
+                              title: "Erreur",
+                              description: data.message || "Impossible d'envoyer l'email de test",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erreur",
+                            description: "Une erreur s'est produite lors de l'envoi",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      <span className="material-icons text-xs mr-1">email</span>
+                      Envoyer un email de test
                     </Button>
                   </div>
                 </div>
