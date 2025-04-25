@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
-import { sendWelcomeEmail } from "./email";
+import { sendWelcomeEmail, sendLoginEmail } from "./email";
 
 declare global {
   namespace Express {
@@ -125,6 +125,26 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
+        
+        // Envoyer l'email de connexion si l'utilisateur a une adresse email
+        if (user.email) {
+          try {
+            // Envoi asynchrone pour ne pas bloquer la réponse
+            sendLoginEmail(user.email, user.firstName || undefined)
+              .then(success => {
+                if (success) {
+                  console.log(`Email de connexion envoyé avec succès à ${user.email}`);
+                }
+              })
+              .catch(emailError => {
+                console.error(`Erreur lors de l'envoi de l'email de connexion:`, emailError);
+              });
+          } catch (emailError) {
+            // Ne pas bloquer la connexion si l'envoi d'email échoue
+            console.error('Erreur lors de l\'envoi de l\'email de connexion:', emailError);
+          }
+        }
+        
         res.status(200).json(user);
       });
     })(req, res, next);

@@ -13,7 +13,7 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
-import { sendEmail, sendTaskReminder, sendWelcomeEmail } from "./email";
+import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail } from "./email";
 import { pdfService } from "./pdfService";
 
 // Configure multer for in-memory file storage
@@ -182,6 +182,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const plant = await storage.createPlant(validatedData);
+      
+      // Envoyer un email de notification si l'utilisateur est authentifié et a configuré son email
+      if (req.isAuthenticated() && req.user?.email) {
+        try {
+          // Envoi asynchrone pour ne pas bloquer la réponse
+          sendPlantAddedEmail(req.user.email, plant)
+            .then(success => {
+              if (success) {
+                console.log(`Email de notification d'ajout de plante envoyé avec succès à ${req.user?.email}`);
+              }
+            })
+            .catch(emailError => {
+              console.error(`Erreur lors de l'envoi de l'email de notification d'ajout de plante:`, emailError);
+            });
+        } catch (emailError) {
+          // Ne pas bloquer l'ajout de plante si l'envoi d'email échoue
+          console.error('Erreur lors de l\'envoi de l\'email de notification d\'ajout de plante:', emailError);
+        }
+      }
+      
       res.status(201).json(plant);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -221,10 +241,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "ID invalide" });
       }
-
+      
+      // Récupérer les informations de la plante avant de la supprimer
+      const plantToDelete = await storage.getPlant(id);
+      if (!plantToDelete) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      const plantName = plantToDelete.name;
+      
       const success = await storage.deletePlant(id);
       if (!success) {
         return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Envoyer un email de notification si l'utilisateur est authentifié et a configuré son email
+      if (req.isAuthenticated() && req.user?.email) {
+        try {
+          // Envoi asynchrone pour ne pas bloquer la réponse
+          sendPlantRemovedEmail(req.user.email, plantName)
+            .then(success => {
+              if (success) {
+                console.log(`Email de notification de suppression de plante envoyé avec succès à ${req.user?.email}`);
+              }
+            })
+            .catch(emailError => {
+              console.error(`Erreur lors de l'envoi de l'email de notification de suppression de plante:`, emailError);
+            });
+        } catch (emailError) {
+          // Ne pas bloquer la suppression de plante si l'envoi d'email échoue
+          console.error('Erreur lors de l\'envoi de l\'email de notification de suppression de plante:', emailError);
+        }
       }
 
       res.status(204).end();
