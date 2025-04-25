@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import NewTaskDialog from "@/components/NewTaskDialog";
 
 export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  console.log("Date initiale sélectionnée:", date);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const { data: tasks, isLoading } = useTasks();
   const { toast } = useToast();
@@ -26,19 +27,47 @@ export default function Calendar() {
   }
 
   const getTasksForDate = (date: Date | undefined) => {
+    // Si pas de date ou pas de tâches, retourner tableau vide
     if (!date || !tasks) return [];
-    return tasks.filter(task => {
+    
+    console.log("Recherche de tâches pour la date:", date);
+    console.log("Toutes les tâches disponibles:", tasks);
+    
+    const filteredTasks = tasks.filter(task => {
       if (!task.dueDate) return false;
       const taskDate = new Date(task.dueDate);
-      return (
-        taskDate.getDate() === date.getDate() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getFullYear() === date.getFullYear()
+      
+      const sameDay = taskDate.getDate() === date.getDate();
+      const sameMonth = taskDate.getMonth() === date.getMonth();
+      const sameYear = taskDate.getFullYear() === date.getFullYear();
+      
+      console.log(
+        `Tâche ${task.id}: ${task.description}, Date: ${new Date(task.dueDate).toLocaleDateString()}, ` +
+        `Comparaison avec ${date.toLocaleDateString()}: ` +
+        `Jour: ${sameDay}, Mois: ${sameMonth}, Année: ${sameYear}`
       );
+      
+      return sameDay && sameMonth && sameYear;
     });
+    
+    console.log("Tâches filtrées:", filteredTasks);
+    return filteredTasks;
   };
 
-  const tasksForSelectedDate = date ? getTasksForDate(date) : [];
+  // Calcul des tâches pour la date sélectionnée chaque fois que la date change
+  // Utilisation de useEffect pour garantir que les tâches sont recalculées après chaque changement de date
+  const [tasksForSelectedDate, setTasksForSelectedDate] = useState<Task[]>([]);
+  
+  useEffect(() => {
+    console.log("useEffect - Date a changé:", date);
+    if (date && tasks) {
+      const filtered = getTasksForDate(date);
+      console.log("Mise à jour des tâches filtrées:", filtered);
+      setTasksForSelectedDate(filtered);
+    } else {
+      setTasksForSelectedDate([]);
+    }
+  }, [date, tasks]);
 
   const getDotColorForDate = (date: Date) => {
     if (!tasks) return null;
@@ -143,7 +172,10 @@ export default function Calendar() {
             <CalendarUI
               mode="single"
               selected={date}
-              onSelect={setDate}
+              onSelect={(selectedDate) => {
+                console.log("Nouvelle date sélectionnée:", selectedDate);
+                setDate(selectedDate);
+              }}
               locale={fr}
               modifiers={{
                 booked: (date) => {
