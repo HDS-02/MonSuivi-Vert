@@ -168,8 +168,8 @@ export default function NewTaskDialog({
       // Message de succès différent si des arrosages automatiques ont été programmés
       if (data.type === "water" && data.scheduleFuture) {
         toast({
-          title: "Tâches d'arrosage programmées",
-          description: "La tâche a été créée et les prochains arrosages ont été programmés automatiquement.",
+          title: "Arrosage automatique activé",
+          description: "Les arrosages seront programmés en continu selon la fréquence recommandée pour cette plante.",
         });
       } else {
         toast({
@@ -329,10 +329,10 @@ export default function NewTaskDialog({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        Programmer les arrosages futurs
+                        Activer l'arrosage automatique continu
                       </FormLabel>
                       <p className="text-sm text-muted-foreground">
-                        Créer automatiquement 3 tâches d'arrosage basées sur la fréquence de la plante
+                        Programmer automatiquement les arrosages futurs basés sur la fréquence recommandée, sans limite de temps
                       </p>
                     </div>
                   </FormItem>
