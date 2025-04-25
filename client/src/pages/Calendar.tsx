@@ -216,14 +216,31 @@ export default function Calendar() {
     });
     
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      console.log(`🗑️ Suppression de la tâche ${taskId} - Début du processus DELETE`);
+      
+      // Utiliser l'API Fetch avec promise et timeout pour gérer les problèmes de réseau
+      const fetchPromise = fetch(`/api/tasks/${taskId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: {
+          'Cache-Control': 'no-cache', // Éviter les problèmes de cache
+          'Pragma': 'no-cache'
+        }
       });
+      
+      // Créer un timeout pour abandonner la requête si elle prend trop de temps
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('La requête a expiré')), 10000);
+      });
+      
+      // Attendre la première des deux promesses à terminer
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
       
       if (!response.ok) {
         throw new Error(`Erreur lors de la suppression: ${response.status}`);
       }
+      
+      console.log(`✅ Tâche ${taskId} supprimée avec succès!`);
       
       // Afficher confirmation de succès
       toast({
@@ -235,20 +252,23 @@ export default function Calendar() {
       // Forcer l'invalidation du cache pour recharger les tâches
       await queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
-      // Attendre un peu puis forcer un nouveau rendu pour s'assurer que l'UI est à jour
-      setTimeout(() => {
-        // Force un nouveau rendu en mettant à jour la date (même si c'est la même)
-        if (date) {
-          setDate(new Date(date.getTime()));
-        }
-      }, 500);
+      // Pour éviter les problèmes de race condition, on attend un peu avant de continuer
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Forcer un nouveau rendu pour mettre à jour l'interface
+      if (date) {
+        setDate(new Date(date.getTime()));
+      }
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
+      console.error("❌ Erreur lors de la suppression:", error);
+      
+      // Approche de secours - Essayer de forcer l'invalidation du cache quand même
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
       // Afficher l'erreur
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer la tâche. Veuillez réessayer.",
+        description: `Impossible de supprimer la tâche ${taskId}. Réessayez dans quelques instants.`,
         variant: "destructive",
       });
     }

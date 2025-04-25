@@ -56,6 +56,13 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     localStorage.setItem('notifications', JSON.stringify(notifications));
     localStorage.setItem('emailNotifications', JSON.stringify(emailNotifications));
     localStorage.setItem('userEmail', emailAddress);
+    
+    // Appliquer le mode sombre immédiatement
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   const handleSave = () => {
