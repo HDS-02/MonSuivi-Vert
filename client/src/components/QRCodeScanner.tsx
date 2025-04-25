@@ -42,20 +42,69 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
     // Dessiner la frame vidéo sur le canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Obtenir les données d'image du canvas
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Dessiner une zone de scan visible pour l'utilisateur
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const scanSize = Math.min(canvas.width, canvas.height) * 0.5; // Taille de la zone de scan
+    
+    // Zone semi-transparente autour de la zone de scan
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Zone claire au centre (zone de scan)
+    ctx.clearRect(
+      centerX - scanSize / 2, 
+      centerY - scanSize / 2, 
+      scanSize, 
+      scanSize
+    );
+    
+    // Pour l'analyse QR, on se concentre sur la zone au centre (meilleure performance)
+    // on utilise la zone définie par le carré central
+    const scanImageData = ctx.getImageData(
+      centerX - scanSize / 2, 
+      centerY - scanSize / 2, 
+      scanSize, 
+      scanSize
+    );
     
     try {
       // Analyser l'image pour détecter un QR code
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      const code = jsQR(scanImageData.data, scanImageData.width, scanImageData.height, {
         inversionAttempts: "dontInvert",
       });
       
-      if (code) {
-        // Un QR code a été trouvé!
+      if (code && code.data && code.data.trim() !== "") {
+        // Un QR code valide a été trouvé!
         console.log("QR Code trouvé:", code.data);
-        handleQRSuccess(code.data);
-        return; // Arrêter l'analyse quand un code est trouvé
+        
+        // Dessiner un rectangle autour du QR code détecté
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#00FF00';
+        ctx.beginPath();
+        // Dessiner un rectangle autour du code en utilisant ses points
+        ctx.moveTo(code.location.topLeftCorner.x, code.location.topLeftCorner.y);
+        ctx.lineTo(code.location.topRightCorner.x, code.location.topRightCorner.y);
+        ctx.lineTo(code.location.bottomRightCorner.x, code.location.bottomRightCorner.y);
+        ctx.lineTo(code.location.bottomLeftCorner.x, code.location.bottomLeftCorner.y);
+        ctx.lineTo(code.location.topLeftCorner.x, code.location.topLeftCorner.y);
+        ctx.stroke();
+        
+        // Vérifier si le contenu du QR suit un format valide
+        // Par exemple, pour les liens de plantes, on s'attend à un format particulier
+        if (code.data.startsWith('/plants/') || 
+            code.data.startsWith('http://') || 
+            code.data.startsWith('https://')) {
+          
+          // Attendre un peu avant de considérer le scan comme valide (évite les faux positifs)
+          setTimeout(() => {
+            handleQRSuccess(code.data);
+          }, 500);
+          return; // Arrêter l'analyse quand un code valide est trouvé
+        } else {
+          // QR code détecté mais format non valide - continuer la détection
+          console.log("QR Code détecté mais format non valide:", code.data);
+        }
       }
     } catch (e) {
       console.error("Erreur lors de l'analyse QR:", e);
