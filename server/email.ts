@@ -1,4 +1,4 @@
-import { Task } from '@shared/schema';
+import { Task, Plant } from '@shared/schema';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import nodemailer from 'nodemailer';
@@ -10,6 +10,41 @@ interface EmailOptions {
   subject: string;
   text?: string;
   html?: string;
+}
+
+// Logo de l'application encodé en base64 pour l'inclure dans les emails
+// Une version simplifiée du logo pour les emails
+const APP_LOGO = `
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="20" fill="#4CAF50" fill-opacity="0.1"/>
+  <path d="M50 15C56.6304 15 62.9893 17.6339 67.6777 22.3223C72.3661 27.0107 75 33.3696 75 40C75 70 30 70 30 40C30 33.3696 32.6339 27.0107 37.3223 22.3223C42.0107 17.6339 48.3696 15 55 15" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M50 25C45 35 45 55 50 70" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M50 25C55 35 55 55 50 70" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M36 40H64" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M33 50H67" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M36 60H64" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+</svg>
+`;
+
+// Template d'email réutilisable
+function emailTemplate(title: string, content: string): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        ${APP_LOGO}
+      </div>
+      <div style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0;">${title}</h1>
+      </div>
+      <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+        ${content}
+      </div>
+      <div style="text-align: center; padding: 10px; font-size: 12px; color: #666; margin-top: 20px;">
+        <p>© 2025 Mon Suivi Vert - Tous droits réservés</p>
+        <p style="font-size: 11px;">Si vous ne souhaitez plus recevoir nos emails, vous pouvez désactiver les notifications dans les paramètres de l'application.</p>
+      </div>
+    </div>
+  `;
 }
 
 // Configuration de Nodemailer avec Gmail
@@ -151,38 +186,57 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
 export async function sendWelcomeEmail(email: string, firstName: string = ''): Promise<boolean> {
   const name = firstName || 'jardinier';
   
+  const content = `
+    <p>Bonjour ${name},</p>
+    <p>Nous sommes ravis de vous accueillir sur <strong>Mon Suivi Vert</strong>, votre assistant personnel pour prendre soin de vos plantes !</p>
+    <p>Grâce à notre application, vous pourrez :</p>
+    <ul>
+      <li>Suivre l'entretien de vos plantes</li>
+      <li>Recevoir des rappels personnalisés</li>
+      <li>Obtenir des conseils adaptés à chaque espèce</li>
+      <li>Diagnostiquer les problèmes de santé de vos plantes</li>
+    </ul>
+    <p>N'hésitez pas à ajouter vos premières plantes et à explorer toutes les fonctionnalités de l'application.</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder à mon espace</a>
+    </div>
+    <p>À très bientôt sur Mon Suivi Vert !</p>
+    <p style="font-style: italic; margin-top: 30px; font-size: 14px; color: #666;">
+      Si vous n'êtes pas à l'origine de cette inscription, veuillez ignorer cet email.
+    </p>
+  `;
+  
   return sendEmail({
     to: email,
     subject: 'Bienvenue sur Mon Suivi Vert 🌱',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0;">Bienvenue sur Mon Suivi Vert</h1>
-        </div>
-        <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-          <p>Bonjour ${name},</p>
-          <p>Nous sommes ravis de vous accueillir sur <strong>Mon Suivi Vert</strong>, votre assistant personnel pour prendre soin de vos plantes !</p>
-          <p>Grâce à notre application, vous pourrez :</p>
-          <ul>
-            <li>Suivre l'entretien de vos plantes</li>
-            <li>Recevoir des rappels personnalisés</li>
-            <li>Obtenir des conseils adaptés à chaque espèce</li>
-            <li>Diagnostiquer les problèmes de santé de vos plantes</li>
-          </ul>
-          <p>N'hésitez pas à ajouter vos premières plantes et à explorer toutes les fonctionnalités de l'application.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="https://monsuivivert.fr" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder à mon espace</a>
-          </div>
-          <p>À très bientôt sur Mon Suivi Vert !</p>
-          <p style="font-style: italic; margin-top: 30px; font-size: 14px; color: #666;">
-            Si vous n'êtes pas à l'origine de cette inscription, veuillez ignorer cet email.
-          </p>
-        </div>
-        <div style="text-align: center; padding: 10px; font-size: 12px; color: #666;">
-          <p>© 2025 Mon Suivi Vert - Tous droits réservés</p>
-        </div>
-      </div>
-    `
+    html: emailTemplate('Bienvenue sur Mon Suivi Vert', content)
+  });
+}
+
+/**
+ * Envoie un email de connexion
+ */
+export async function sendLoginEmail(email: string, firstName: string = ''): Promise<boolean> {
+  const name = firstName || 'jardinier';
+  const date = new Date().toLocaleString('fr-FR');
+  
+  const content = `
+    <p>Bonjour ${name},</p>
+    <p>Nous avons détecté une nouvelle connexion à votre compte <strong>Mon Suivi Vert</strong>.</p>
+    <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #4CAF50; border-radius: 4px;">
+      <p style="margin: 0;"><strong>Date et heure :</strong> ${date}</p>
+    </div>
+    <p>Si c'est bien vous qui venez de vous connecter, vous pouvez ignorer cet email.</p>
+    <p>Si vous n'êtes pas à l'origine de cette connexion, nous vous recommandons de changer immédiatement votre mot de passe.</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/settings" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Gérer mon compte</a>
+    </div>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: 'Nouvelle connexion à votre compte Mon Suivi Vert',
+    html: emailTemplate('Nouvelle connexion', content)
   });
 }
 
@@ -215,33 +269,130 @@ export async function sendTaskReminder(email: string, tasks: Task[], plantNames:
     `;
   }).join('');
   
+  const content = `
+    <p>Bonjour,</p>
+    <p>Voici un rappel pour les tâches d'entretien à effectuer prochainement :</p>
+    
+    <div style="margin: 25px 0;">
+      ${tasksHtml}
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/calendar" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+    </div>
+    
+    <p>Pour ne plus recevoir ces rappels, vous pouvez désactiver les notifications par email dans les paramètres de l'application.</p>
+  `;
+  
   return sendEmail({
     to: email,
     subject: `🌱 Rappel d'entretien pour vos plantes`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-        <div style="background: linear-gradient(135deg, #4CAF50, #8BC34A); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0;">Rappel d'entretien</h1>
-        </div>
-        <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-          <p>Bonjour,</p>
-          <p>Voici un rappel pour les tâches d'entretien à effectuer prochainement :</p>
-          
-          <div style="margin: 25px 0;">
-            ${tasksHtml}
+    html: emailTemplate('Rappel d\'entretien', content)
+  });
+}
+
+/**
+ * Notifie l'ajout d'une nouvelle plante
+ */
+export async function sendPlantAddedEmail(email: string, plant: Plant): Promise<boolean> {
+  const plantDate = format(new Date(), 'dd MMMM yyyy', { locale: fr });
+  
+  const content = `
+    <p>Bonjour,</p>
+    <p>Félicitations ! Vous venez d'ajouter une nouvelle plante à votre collection :</p>
+    
+    <div style="margin: 25px 0; padding: 15px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+      <h3 style="margin-top: 0; color: #2e7d32;">${plant.name}</h3>
+      <p><strong>Espèce :</strong> ${plant.species}</p>
+      <p><strong>Date d'ajout :</strong> ${plantDate}</p>
+      <p><strong>Fréquence d'arrosage :</strong> Tous les ${plant.wateringFrequency} jours</p>
+    </div>
+    
+    <p>Nous vous enverrons des rappels pour prendre soin de votre ${plant.name}.</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/plants/${plant.id}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir ma plante</a>
+    </div>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `🌿 Nouvelle plante ajoutée : ${plant.name}`,
+    html: emailTemplate('Nouvelle plante ajoutée', content)
+  });
+}
+
+/**
+ * Notifie la suppression d'une plante
+ */
+export async function sendPlantRemovedEmail(email: string, plantName: string): Promise<boolean> {
+  const content = `
+    <p>Bonjour,</p>
+    <p>Nous vous confirmons que la plante suivante a été supprimée de votre collection :</p>
+    
+    <div style="margin: 25px 0; padding: 15px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0; text-align: center;">
+      <h3 style="margin-top: 0; color: #2e7d32;">${plantName}</h3>
+      <p>Cette plante et toutes les tâches associées ont été supprimées de votre compte.</p>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/plants" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mes plantes</a>
+    </div>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `Plante supprimée : ${plantName}`,
+    html: emailTemplate('Plante supprimée', content)
+  });
+}
+
+/**
+ * Envoie un rappel d'arrosage spécifique
+ */
+export async function sendWateringReminderEmail(email: string, plants: Plant[]): Promise<boolean> {
+  if (plants.length === 0) return true;
+  
+  // Formater les plantes pour l'email
+  const plantsHtml = plants.map(plant => {
+    return `
+      <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #2196F3; background-color: #f9f9f9;">
+        <div style="display: flex; align-items: center;">
+          <div style="margin-right: 15px; background-color: #e3f2fd; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <span style="color: #2196F3; font-size: 24px;">💧</span>
           </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="https://monsuivivert.fr/calendar" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+          <div>
+            <p style="margin: 0; font-weight: bold;">${plant.name}</p>
+            <p style="margin: 5px 0 0; font-size: 14px; color: #666;">
+              ${plant.species}
+            </p>
           </div>
-          
-          <p>Pour ne plus recevoir ces rappels, vous pouvez désactiver les notifications par email dans les paramètres de l'application.</p>
-        </div>
-        <div style="text-align: center; padding: 10px; font-size: 12px; color: #666;">
-          <p>© 2025 Mon Suivi Vert - Tous droits réservés</p>
         </div>
       </div>
-    `
+    `;
+  }).join('');
+  
+  const content = `
+    <p>Bonjour,</p>
+    <p>Il est temps d'arroser les plantes suivantes :</p>
+    
+    <div style="margin: 25px 0;">
+      ${plantsHtml}
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; background-color: #e3f2fd; border-radius: 8px;">
+      <p style="margin: 0;"><strong>Conseil :</strong> Pour un arrosage optimal, arrosez tôt le matin ou en fin de journée pour limiter l'évaporation.</p>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+    </div>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `💧 Rappel d'arrosage - Vos plantes ont soif !`,
+    html: emailTemplate('Rappel d\'arrosage', content)
   });
 }
 
