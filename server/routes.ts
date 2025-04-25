@@ -317,6 +317,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(validatedData);
+      
+      // Si la tâche est de type arrosage, on peut configurer les arrosages futurs automatiques
+      if (validatedData.type === 'water' && req.body.scheduleFuture === true) {
+        try {
+          // Récupérer les informations de la plante pour connaître la fréquence d'arrosage
+          const plant = await storage.getPlant(validatedData.plantId);
+          
+          if (plant && plant.wateringFrequency && plant.wateringFrequency > 0) {
+            console.log(`Programmation d'arrosages automatiques pour la plante ${plant.name} (ID: ${plant.id}) tous les ${plant.wateringFrequency} jours`);
+            
+            // Récupérer la date de base (soit la date fournie, soit aujourd'hui)
+            const baseDate = validatedData.dueDate ? new Date(validatedData.dueDate) : new Date();
+            
+            // Créer 3 tâches futures maximum
+            for (let i = 1; i <= 3; i++) {
+              // Calculer la date du prochain arrosage
+              const nextDate = new Date(baseDate);
+              nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));
+              
+              const futureTask = {
+                plantId: validatedData.plantId,
+                type: 'water',
+                description: `Arrosage automatique de ${plant.name}`,
+                dueDate: nextDate,
+                completed: false
+              };
+              
+              await storage.createTask(futureTask);
+              console.log(`✅ Arrosage programmé pour le ${nextDate.toLocaleDateString('fr-FR')}`);
+            }
+            
+            // Si l'utilisateur a configuré un email, programmer l'envoi de notifications
+            if (req.isAuthenticated() && req.user?.email) {
+              console.log(`Configuration des notifications email pour ${req.user.email}`);
+              // Aucune action immédiate nécessaire ici car les rappels sont envoyés via une route dédiée
+              // qui vérifie régulièrement les tâches en attente
+            }
+          }
+        } catch (schedulingError) {
+          console.error("Erreur lors de la programmation des arrosages futurs:", schedulingError);
+          // Continue without failing - the main task was still created successfully
+        }
+      }
+      
       res.status(201).json(task);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
