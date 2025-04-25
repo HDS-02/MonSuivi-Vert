@@ -169,12 +169,13 @@ export default function QRCodeScanner({ open, onOpenChange }: QRCodeScannerProps
             </p>
             <div className="flex flex-col gap-3 sm:flex-row justify-center">
               {result.startsWith('/plants/') ? (
-                <Link href={result}>
-                  <a className="rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-md hover:shadow-lg px-5 py-2 flex items-center justify-center">
-                    <span className="material-icons mr-2">visibility</span>
-                    Voir la plante
-                  </a>
-                </Link>
+                <Button
+                  onClick={() => window.location.href = result}
+                  className="rounded-full bg-gradient-to-r from-primary to-primary-light text-white shadow-md hover:shadow-lg px-5 py-2"
+                >
+                  <span className="material-icons mr-2">visibility</span>
+                  Voir la plante
+                </Button>
               ) : (
                 <Button
                   onClick={() => window.open(result, '_blank')}
