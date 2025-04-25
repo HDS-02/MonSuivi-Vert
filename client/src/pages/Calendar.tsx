@@ -42,8 +42,13 @@ export default function Calendar() {
       // Pour les dates en format string, extraire uniquement la partie date
       return date.split('T')[0];
     } else {
-      // Pour les objets Date, formatter en YYYY-MM-DD
-      return date.toISOString().split('T')[0];
+      // Pour les objets Date, on doit normaliser la date en UTC pour éviter les problèmes de fuseaux horaires
+      // On crée une nouvelle date avec uniquement année, mois, jour en UTC
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      const normalizedDate = new Date(Date.UTC(year, month, day));
+      return normalizedDate.toISOString().split('T')[0];
     }
   };
 
@@ -53,6 +58,11 @@ export default function Calendar() {
     
     console.log("Recherche de tâches pour la date:", date);
     
+    // On doit considérer la date sans l'heure et en UTC pour éviter les problèmes de fuseau horaire
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
     // Extraire seulement la partie date au format YYYY-MM-DD
     const selectedDateStr = getDateString(date);
     console.log("Date sélectionnée (YYYY-MM-DD):", selectedDateStr);
@@ -60,17 +70,31 @@ export default function Calendar() {
     const filteredTasks = tasks.filter(task => {
       if (!task.dueDate) return false;
       
-      // Extraire seulement la partie date au format YYYY-MM-DD
-      const taskDateStr = getDateString(task.dueDate);
+      // Convertir la date de la tâche en date locale
+      const taskDate = new Date(task.dueDate);
       
-      // Comparer simplement les chaînes de caractères YYYY-MM-DD
-      const match = taskDateStr === selectedDateStr;
+      // Trois méthodes de comparaison pour être sûr :
+      
+      // 1. Méthode avec les chaînes au format YYYY-MM-DD
+      const taskDateStr = getDateString(task.dueDate);
+      const method1Match = taskDateStr === selectedDateStr;
+      
+      // 2. Méthode avec année, mois, jour
+      const taskYear = taskDate.getFullYear();
+      const taskMonth = taskDate.getMonth();
+      const taskDay = taskDate.getDate();
+      const method2Match = taskYear === year && taskMonth === month && taskDay === day;
+      
+      // Si l'une des méthodes trouve une correspondance, c'est une tâche pour cette date
+      const match = method1Match || method2Match;
       
       console.log(
         `Tâche ${task.id}: ${task.description}, ` +
         `Date tâche: ${taskDateStr}, ` +
         `Date sélectionnée: ${selectedDateStr}, ` +
-        `Correspond: ${match}`
+        `Match méthode 1: ${method1Match}, ` +
+        `Match méthode 2: ${method2Match}, ` +
+        `Correspond final: ${match}`
       );
       
       return match;
