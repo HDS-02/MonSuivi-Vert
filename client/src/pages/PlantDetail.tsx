@@ -15,12 +15,13 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import NewTaskDialog from "@/components/NewTaskDialog";
 import useBadges from "@/hooks/useBadges";
+import PlantingCalendar from "@/components/PlantingCalendar";
 
 export default function PlantDetail() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [displayTab, setDisplayTab] = useState<"overview" | "history" | "growth-journal">("overview");
+  const [displayTab, setDisplayTab] = useState<"overview" | "calendar" | "history" | "growth-journal">("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -274,6 +275,13 @@ export default function PlantDetail() {
             onClick={() => setDisplayTab("overview")}
           >
             Aperçu
+          </Button>
+          <Button
+            variant={displayTab === "calendar" ? "default" : "outline"}
+            className={displayTab === "calendar" ? "bg-primary text-white" : ""}
+            onClick={() => setDisplayTab("calendar")}
+          >
+            Calendrier
           </Button>
           <Button
             variant={displayTab === "history" ? "default" : "outline"}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlantEntry } from '@shared/schema';
+import { Plant } from '@shared/schema';
 
 interface PlantingPeriod {
   start: number; // Mois de début (1-12)
@@ -13,7 +13,7 @@ interface PlantingCalendarData {
 }
 
 interface PlantingCalendarProps {
-  plant: PlantEntry;
+  plant: Plant;
   calendarData?: PlantingCalendarData;
 }
 
@@ -81,7 +81,6 @@ const plantingPeriods: Record<string, PlantingCalendarData> = {
     harvesting: { start: 4, end: 10 }
   },
   "Pomme de terre": {
-    seeding: null,
     planting: { start: 3, end: 5 },
     harvesting: { start: 6, end: 9 }
   }
@@ -102,7 +101,7 @@ const getColorForPeriodType = (type: 'seeding' | 'planting' | 'harvesting'): str
 };
 
 // Récupérer les données pour une plante spécifique
-const getPlantData = (plant: PlantEntry): PlantingCalendarData => {
+const getPlantData = (plant: Plant): PlantingCalendarData => {
   // Rechercher par nom exact
   if (plantingPeriods[plant.name]) {
     return plantingPeriods[plant.name];
