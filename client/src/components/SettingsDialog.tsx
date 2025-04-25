@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { StableDialog } from "./StableDialog";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -14,17 +15,58 @@ interface SettingsDialogProps {
 }
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(false);
+  // Récupérer les paramètres depuis localStorage
+  const [darkMode, setDarkMode] = useState(() => {
+    const storedValue = localStorage.getItem('darkMode');
+    return storedValue ? JSON.parse(storedValue) : false;
+  });
+  
+  const [notifications, setNotifications] = useState(() => {
+    const storedValue = localStorage.getItem('notifications');
+    return storedValue ? JSON.parse(storedValue) : true;
+  });
+  
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    const storedValue = localStorage.getItem('emailNotifications');
+    return storedValue ? JSON.parse(storedValue) : false;
+  });
+  
+  const [emailAddress, setEmailAddress] = useState(() => {
+    const storedValue = localStorage.getItem('userEmail');
+    return storedValue || '';
+  });
+  
   const { toast } = useToast();
+  
+  // Effet pour appliquer le mode sombre
+  useEffect(() => {
+    const rootElement = document.documentElement;
+    if (darkMode) {
+      rootElement.classList.add('dark');
+      document.body.classList.add('dark');
+    } else {
+      rootElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Sauvegarder les paramètres dans localStorage
+  const saveSettings = () => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+    localStorage.setItem('emailNotifications', JSON.stringify(emailNotifications));
+    localStorage.setItem('userEmail', emailAddress);
+  };
 
   const handleSave = () => {
     // Sauvegarde des paramètres
+    saveSettings();
+    
     toast({
       title: "Paramètres sauvegardés",
       description: "Vos préférences ont été mises à jour",
     });
+    
     onOpenChange(false);
   };
 

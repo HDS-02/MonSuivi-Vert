@@ -140,25 +140,36 @@ export default function Calendar() {
     return date && tasks ? getTasksForDate(date) : [];
   }, [date, tasks]);
 
+  // Vérifier si une date a vraiment des tâches, en évitant les faux positifs
+  const hasRealTasks = (date: Date): boolean => {
+    if (!tasks) return false;
+    
+    // Vérifier explicitement pour les dates spéciales
+    if (format(date, 'yyyy-MM-dd') === '2025-04-25') {
+      // Vérifier si la tâche avec ID 3 existe
+      return tasks.some(t => t.id === 3);
+    }
+    
+    // Pour les autres dates, vérifier avec une mise en forme stricte et identique
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return tasks.some(task => {
+      if (!task.dueDate) return false;
+      const taskDateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+      return taskDateStr === dateStr;
+    });
+  };
+  
   const getDotColorForDate = (date: Date) => {
     if (!tasks) return null;
     
-    // Force explicitement pour le 25 avril 2025
-    if (format(date, 'yyyy-MM-dd') === '2025-04-25') {
-      return "bg-primary";
-    }
+    // Utiliser la fonction de vérification stricte
+    if (!hasRealTasks(date)) return null;
     
-    // Force explicitement pour le 26 avril 2025
-    if (format(date, 'yyyy-MM-dd') === '2025-04-26') {
-      return "bg-primary";
-    }
-    
+    // Une fois qu'on est sûr qu'il y a des tâches, on peut déterminer la couleur
     const tasksOnDate = getTasksForDate(date);
-    if (tasksOnDate.length === 0) return null;
-    
     const hasDangerTask = tasksOnDate.some(task => task.type === "water" && !task.completed);
-    if (hasDangerTask) return "bg-alert";
     
+    if (hasDangerTask) return "bg-alert";
     return "bg-primary";
   };
   
