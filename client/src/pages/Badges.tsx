@@ -14,13 +14,15 @@ export default function Badges() {
   // Nous ne faisons plus de vérification automatique des badges au chargement de la page
   // Pour éviter les appels en boucle et les problèmes d'authentification
 
-  // Fonction de démonstration pour simuler l'obtention d'un badge
-  const simulateUnlockBadge = () => {
-    toast({
-      title: "🏆 Nouveau badge débloqué !",
-      description: "Premier pas vert - Ajoutez votre première plante à l'application"
-    });
-  };
+  // Mettre à jour les badges au chargement de la page
+  useEffect(() => {
+    if (user) {
+      // Mettre à jour les badges en fonction de la collection de plantes
+      updatePlantCollectionBadges.mutate();
+      // Mettre à jour les badges en fonction des tâches complétées
+      updateTaskBadges.mutate();
+    }
+  }, [user]);
 
   // Afficher un message si l'utilisateur n'est pas connecté
   if (!user) {
@@ -62,15 +64,7 @@ export default function Badges() {
       </div>
 
       <div className="px-4">
-        {/* Bouton de simulation - ne serait pas présent en production */}
-        <Button
-          variant="outline"
-          onClick={simulateUnlockBadge}
-          className="hidden" // Caché pour l'instant
-        >
-          <span className="material-icons mr-2">emoji_events</span>
-          Simuler badge
-        </Button>
+
 
         <div className="glass-card backdrop-blur-sm border border-gray-100/80 shadow-lg rounded-xl p-6 mb-8">
           <BadgeCollection />

@@ -206,11 +206,11 @@ export default function ProfileDialog({ open, onOpenChange, onLogout }: ProfileD
                     <FormLabel className="text-sm font-medium">Email (optionnel)</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                           <span className="material-icons text-base">email</span>
                         </span>
                         <Input 
-                          className="pl-9 rounded-md border-gray-200 focus:border-primary/40" 
+                          className="pl-9 rounded-md border-gray-300 shadow-sm bg-white focus:border-primary-light focus:ring-1 focus:ring-primary-light h-10 text-gray-800" 
                           type="email" 
                           placeholder="Votre email" 
                           {...field} 
