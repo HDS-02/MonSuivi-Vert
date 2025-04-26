@@ -644,6 +644,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour envoyer un email de rappel d'arrosage à l'heure spécifiée
+  app.post("/api/plants/send-watering-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { plantId, reminderTime } = req.body;
+      
+      if (!plantId) {
+        return res.status(400).json({ message: "ID de plante manquant" });
+      }
+      
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Vérifier que l'utilisateur est bien le propriétaire de la plante
+      if (req.user?.id !== plant.userId) {
+        return res.status(403).json({ message: "Vous n'êtes pas autorisé à effectuer cette action" });
+      }
+      
+      // Récupérer l'email de l'utilisateur
+      const user = await storage.getUser(req.user.id);
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "Adresse email de l'utilisateur manquante" });
+      }
+      
+      // Envoyer un email de test pour confirmer les rappels d'arrosage
+      await sendWateringReminderEmail(user.email, [plant]);
+      
+      // Ajouter un message dans les logs
+      console.log(`Email de rappel d'arrosage pour ${plant.name} envoyé à ${user.email}, programmé à ${reminderTime || plant.reminderTime || "08:00"}`);
+      
+      return res.status(200).json({ 
+        message: "Email de rappel envoyé avec succès", 
+        reminderTime: reminderTime || plant.reminderTime || "08:00"
+      });
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du rappel d'arrosage:", error);
+      return res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
   // Route pour mettre à jour l'heure de rappel d'arrosage d'une plante
   app.patch("/api/plants/:id/reminder-time", isAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -1103,6 +1144,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Erreur lors de la mise à jour du badge de connexion:", error);
       res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
+  // Route pour déclencher les rappels d'arrosage (peut être utilisée pour un cron job)
+  app.post("/api/system/trigger-watering-reminders", async (req: Request, res: Response) => {
+    try {
+      // Vérifier si on a un code secret dans la requête (pour sécuriser l'appel)
+      const { secret } = req.body;
+      if (secret !== process.env.CRON_SECRET && !req.isAuthenticated()) {
+        return res.status(403).json({ message: "Non autorisé" });
+      }
+      
+      console.log("Déclenchement des rappels d'arrosage à l'heure programmée");
+      
+      // Obtenir l'heure actuelle au format HH:MM
+      const now = new Date();
+      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      console.log(`Heure actuelle: ${currentTime}`);
+      
+      // Récupérer toutes les plantes qui ont une heure de rappel correspondant à l'heure actuelle
+      // et qui ont l'arrosage automatique activé
+      const allPlants = await storage.getPlants();
+      const plantsToNotify = allPlants.filter(plant => 
+        plant.reminderTime === currentTime && 
+        plant.autoWatering === true
+      );
+      
+      console.log(`Nombre de plantes à notifier: ${plantsToNotify.length}`);
+      
+      if (plantsToNotify.length === 0) {
+        return res.json({ 
+          message: "Aucune plante à notifier à cette heure",
+          time: currentTime
+        });
+      }
+      
+      // Regrouper les plantes par utilisateur
+      const plantsByUser = new Map<number, any[]>();
+      for (const plant of plantsToNotify) {
+        if (!plantsByUser.has(plant.userId)) {
+          plantsByUser.set(plant.userId, []);
+        }
+        plantsByUser.get(plant.userId)?.push(plant);
+      }
+      
+      // Pour chaque utilisateur, envoyer un email avec ses plantes à arroser
+      const emailPromises = [];
+      let emailsSent = 0;
+      
+      for (const [userId, plants] of plantsByUser.entries()) {
+        // Récupérer l'utilisateur
+        const user = await storage.getUser(userId);
+        if (user && user.email) {
+          // Envoyer l'email à l'utilisateur
+          console.log(`Envoi d'un email de rappel d'arrosage à ${user.email} pour ${plants.length} plantes`);
+          emailPromises.push(
+            sendWateringReminderEmail(user.email, plants)
+              .then(success => {
+                if (success) {
+                  emailsSent++;
+                  console.log(`Email de rappel envoyé avec succès à ${user.email}`);
+                }
+                return success;
+              })
+              .catch(error => {
+                console.error(`Erreur lors de l'envoi de l'email à ${user.email}:`, error);
+                return false;
+              })
+          );
+        }
+      }
+      
+      // Attendre que tous les emails soient envoyés
+      await Promise.all(emailPromises);
+      
+      return res.json({
+        message: "Rappels d'arrosage envoyés",
+        plantsCount: plantsToNotify.length,
+        usersCount: plantsByUser.size,
+        emailsSent,
+        time: currentTime
+      });
+    } catch (error: any) {
+      console.error("Erreur lors du déclenchement des rappels d'arrosage:", error);
+      return res.status(500).json({ message: error.message || "Erreur serveur" });
     }
   });
 
