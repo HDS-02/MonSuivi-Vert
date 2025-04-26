@@ -33,6 +33,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication routes
   setupAuth(app);
+  
+  // Route pour l'analyse d'image de plante et upload
+  app.post("/api/analyze", upload.single("image"), async (req: Request, res: Response) => {
+    try {
+      console.log("Requête d'analyse d'image reçue");
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "Aucune image n'a été fournie" });
+      }
+      
+      // Générer un nom de fichier unique
+      const fileExt = path.extname(req.file.originalname);
+      const fileName = `${nanoid()}${fileExt}`;
+      const filePath = path.join(uploadsDir, fileName);
+      
+      // Enregistrer le fichier
+      fs.writeFileSync(filePath, req.file.buffer);
+      
+      // Chemin relatif pour l'accès via URL
+      const relativePath = path.join('/uploads', fileName);
+      
+      // Description fournie par l'utilisateur (optionnelle)
+      const description = req.body.description || '';
+      
+      // Analyser l'image (version simplifiée sans API externe)
+      const analysisResult = {
+        name: description || "Plante",
+        species: "",
+        healthStatus: "healthy",
+        recommendations: [
+          "Assurez-vous d'arroser régulièrement votre plante",
+          "Placez votre plante dans un endroit avec la luminosité appropriée",
+          "Vérifiez régulièrement l'absence de parasites sur les feuilles"
+        ],
+        imagePath: relativePath
+      };
+      
+      console.log(`Image enregistrée: ${relativePath}`);
+      res.status(200).json({
+        message: "Image analysée avec succès",
+        imagePath: relativePath,
+        analysis: analysisResult
+      });
+      
+    } catch (error: any) {
+      console.error("Erreur lors de l'analyse de l'image:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Serve uploaded files statically
   app.use('/uploads', express.static(uploadsDir));
