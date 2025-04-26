@@ -16,6 +16,7 @@ import { X } from "lucide-react";
 import NewTaskDialog from "@/components/NewTaskDialog";
 import useBadges from "@/hooks/useBadges";
 import PlantingCalendar from "@/components/PlantingCalendar";
+import ReminderTimeSelector from "@/components/ReminderTimeSelector";
 
 export default function PlantDetail() {
   const { id } = useParams();
@@ -260,6 +261,9 @@ export default function PlantDetail() {
                   ? `Tous les ${plant.wateringFrequency} jours` 
                   : "Non défini"}
               </div>
+              
+              {/* Sélecteur d'heure de rappel pour l'arrosage */}
+              {plant.autoWatering && <ReminderTimeSelector plant={plant} />}
               
               {/* Options d'arrosage automatique */}
               <button 
