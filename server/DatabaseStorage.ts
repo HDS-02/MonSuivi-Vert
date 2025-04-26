@@ -66,6 +66,17 @@ export class DatabaseStorage implements IStorage {
   async getPlantsByUserId(userId: number): Promise<Plant[]> {
     return await db.select().from(plants).where(eq(plants.userId, userId));
   }
+  
+  async getPlantsByIds(ids: number[]): Promise<Plant[]> {
+    // Si la liste est vide, retourner un tableau vide
+    if (ids.length === 0) return [];
+    
+    // Utiliser la clause "in" pour récupérer les plantes correspondant aux IDs
+    return await db.select().from(plants).where(
+      // @ts-ignore - Le type n'est pas correctement reconnu mais l'opération est valide
+      plants.id.in(ids)
+    );
+  }
 
   async getPlant(id: number): Promise<Plant | undefined> {
     const [plant] = await db.select().from(plants).where(eq(plants.id, id));
@@ -98,6 +109,20 @@ export class DatabaseStorage implements IStorage {
 
   async getTasksByPlantId(plantId: number): Promise<Task[]> {
     return await db.select().from(tasks).where(eq(tasks.plantId, plantId));
+  }
+  
+  async getTasksByDateRange(startDate: Date, endDate: Date): Promise<Task[]> {
+    return await db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          // Les tâches dont la date d'échéance est >= startDate
+          tasks.dueDate.gte(startDate),
+          // ET dont la date d'échéance est < endDate
+          tasks.dueDate.lt(endDate)
+        )
+      );
   }
   
   async getPendingTasks(): Promise<Task[]> {
