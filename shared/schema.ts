@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   email: text("email"),
   createdAt: timestamp("created_at").defaultNow(),
+  reminderTime: text("reminder_time").default("08:00"), // Heure à laquelle envoyer les rappels (format HH:MM)
 });
 
 // Plant table

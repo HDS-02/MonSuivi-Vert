@@ -484,6 +484,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour gérer l'activation/désactivation de l'arrosage automatique et générer des tâches
+  app.post("/api/plants/:id/toggle-auto-watering", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Récupérer les données de la requête
+      const { enabled } = req.body;
+      console.log(`Demande de modification de l'arrosage automatique pour la plante ${plantId}: ${enabled ? 'Activation' : 'Désactivation'}`);
+      
+      // Récupérer les informations de la plante
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Mettre à jour le statut d'arrosage automatique
+      const updatedPlant = await storage.updatePlant(plantId, { autoWatering: enabled });
+      
+      // Si on active l'arrosage automatique, générer les tâches
+      if (enabled) {
+        // Vérifier si la plante a une fréquence d'arrosage définie
+        if (!plant.wateringFrequency || plant.wateringFrequency <= 0) {
+          return res.status(400).json({ 
+            message: "Impossible d'activer l'arrosage automatique: fréquence d'arrosage non définie" 
+          });
+        }
+        
+        console.log(`Génération de tâches d'arrosage automatique pour la plante ${plant.name} (ID: ${plant.id})`);
+        
+        // Date de référence : aujourd'hui + 30 jours (on veut toujours avoir un mois d'avance)
+        const baseDate = new Date();
+        const referenceDate = new Date();
+        referenceDate.setDate(referenceDate.getDate() + 30);
+        
+        // Récupérer les tâches d'arrosage existantes pour cette plante
+        const existingTasks = await storage.getTasksByPlantId(plantId);
+        const wateringTasks = existingTasks.filter(task => 
+          task.type === 'water' && !task.completed && new Date(task.dueDate) > new Date()
+        );
+        
+        // Trouver la dernière date d'arrosage programmée
+        let lastWateringDate = new Date();
+        if (wateringTasks.length > 0) {
+          // Trier les tâches par date décroissante pour trouver la plus éloignée
+          const sortedTasks = wateringTasks.sort((a, b) => {
+            if (!a.dueDate || !b.dueDate) return 0;
+            return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+          });
+          
+          if (sortedTasks[0].dueDate) {
+            lastWateringDate = new Date(sortedTasks[0].dueDate);
+          }
+        }
+        
+        // Calculer le nombre de tâches à créer pour couvrir la période jusqu'à la date de référence
+        const daysToReference = Math.ceil((referenceDate.getTime() - lastWateringDate.getTime()) / (1000 * 3600 * 24));
+        const numberOfTasksToCreate = Math.max(1, Math.ceil(daysToReference / plant.wateringFrequency));
+        
+        console.log(`Création de ${numberOfTasksToCreate} nouvelles tâches d'arrosage automatique`);
+        
+        // Tableau pour stocker les dates d'arrosage (pour l'email)
+        const wateringDates: Date[] = [];
+        const tasksCreated = [];
+        
+        // Créer les tâches nécessaires
+        for (let i = 1; i <= numberOfTasksToCreate; i++) {
+          // Ajouter une vérification supplémentaire
+          if (!plant.wateringFrequency) continue;
+          
+          const nextDate = new Date(lastWateringDate);
+          nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));
+          wateringDates.push(nextDate);
+          
+          const futureTask = {
+            plantId: plantId,
+            type: 'water',
+            description: `Arrosage automatique de ${plant.name}`,
+            dueDate: nextDate,
+            completed: false
+          };
+          
+          const task = await storage.createTask(futureTask);
+          tasksCreated.push(task);
+          console.log(`✅ Arrosage programmé pour ${plant.name} le ${nextDate.toLocaleDateString('fr-FR')}`);
+        }
+        
+        // Envoyer un email de notification avec les dates d'arrosage programmées
+        if (req.user?.email) {
+          try {
+            await sendScheduledWateringNotification(req.user.email, plant, wateringDates);
+            console.log(`Email de notification d'arrosages programmés envoyé à ${req.user.email}`);
+          } catch (emailError) {
+            console.error("Erreur lors de l'envoi de l'email de notification d'arrosages programmés:", emailError);
+          }
+        }
+        
+        return res.status(200).json({
+          message: "Arrosage automatique activé et tâches générées avec succès",
+          plant: updatedPlant,
+          tasksCreated: tasksCreated.length,
+          nextWateringDates: wateringDates.map(date => date.toISOString())
+        });
+      } else {
+        // Si désactivation, juste confirmer la mise à jour
+        return res.status(200).json({
+          message: "Arrosage automatique désactivé avec succès",
+          plant: updatedPlant
+        });
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la modification de l'arrosage automatique:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // ENDPOINT POUR OBTENIR DES INFORMATIONS SUR UNE PLANTE PAR SON NOM
   app.get("/api/plant-info", async (req: Request, res: Response) => {

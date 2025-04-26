@@ -161,4 +161,45 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+  
+  // Route pour mettre à jour l'heure des rappels
+  app.patch("/api/user/reminder-time", (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Vous devez être connecté pour effectuer cette action" });
+      }
+      
+      const { reminderTime } = req.body;
+      
+      // Valider le format de l'heure (HH:MM)
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+      if (!timeRegex.test(reminderTime)) {
+        return res.status(400).json({ 
+          message: "Format d'heure invalide. Veuillez utiliser le format HH:MM (ex: 08:00)." 
+        });
+      }
+      
+      // Mise à jour de l'heure de rappel de l'utilisateur
+      storage.updateUser(req.user.id, { reminderTime })
+        .then(updatedUser => {
+          if (!updatedUser) {
+            return res.status(404).json({ message: "Utilisateur non trouvé" });
+          }
+          
+          console.log(`Heure de rappel mise à jour pour l'utilisateur ${updatedUser.username}: ${reminderTime}`);
+          
+          res.json({ 
+            message: "Heure de rappel mise à jour avec succès",
+            reminderTime: updatedUser.reminderTime
+          });
+        })
+        .catch(error => {
+          console.error("Erreur lors de la mise à jour de l'heure de rappel:", error);
+          res.status(500).json({ message: error.message });
+        });
+    } catch (error: any) {
+      console.error("Erreur lors de la mise à jour de l'heure de rappel:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 }
