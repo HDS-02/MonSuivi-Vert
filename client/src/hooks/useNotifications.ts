@@ -273,6 +273,5 @@ export default function useNotifications() {
     clearNotifications,
     requestPermission,
     permission,
-    createTaskNotifications,
   };
 }
