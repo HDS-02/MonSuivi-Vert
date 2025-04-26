@@ -99,6 +99,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour récupérer les plantes par catégorie
+  app.get("/api/plant-database/category/:category", async (req: Request, res: Response) => {
+    try {
+      const category = req.params.category;
+      // Valider que la catégorie est bien une catégorie valide
+      if (!['interieur', 'exterieur', 'fruitier', 'fleurs', 'legumes'].includes(category)) {
+        return res.status(400).json({ message: "Catégorie invalide" });
+      }
+      
+      // Importer la fonction depuis le module de base de données
+      const { getPlantsByCategory } = await import('./plantDatabase');
+      
+      // Récupérer les plantes de la catégorie
+      const plants = getPlantsByCategory(category as any);
+      console.log(`Envoi de ${plants.length} plantes de la catégorie ${category}`);
+      
+      res.json(plants);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des plantes par catégorie:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   app.get("/api/plants", async (_req: Request, res: Response) => {
     try {

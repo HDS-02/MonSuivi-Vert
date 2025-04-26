@@ -1158,6 +1158,18 @@ export function searchPlants(query: string): PlantEntry[] {
   return results;
 }
 
+/**
+ * Recherche des plantes par catégorie
+ * @param category Catégorie de plantes à retourner
+ * @returns Liste des plantes dans la catégorie spécifiée
+ */
+export function getPlantsByCategory(category: PlantCategory): PlantEntry[] {
+  console.log(`Recherche des plantes dans la catégorie: ${category}`);
+  const results = plantDatabase.filter(plant => plant.category === category);
+  console.log(`${results.length} plantes trouvées dans la catégorie ${category}`);
+  return results;
+}
+
 export function getPlantByName(name: string): PlantEntry | undefined {
   const normalizedName = name.toLowerCase().trim();
   return plantDatabase.find(plant => 
