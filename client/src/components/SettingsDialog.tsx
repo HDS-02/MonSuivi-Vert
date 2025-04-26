@@ -204,8 +204,8 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               </div>
               
               {emailNotifications && (
-                <div className="mt-4 pt-3 pb-2 px-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <Label htmlFor="email-address" className="text-sm text-gray-800 font-medium mb-2 block">
+                <div className="mt-4 pt-3 pb-2 px-4 bg-primary/5 rounded-lg border border-primary/20 shadow-md">
+                  <Label htmlFor="email-address" className="text-sm text-gray-800 font-semibold mb-2 block">
                     Votre adresse email pour les rappels
                   </Label>
                   <Input
@@ -214,7 +214,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                     placeholder="votre@email.com"
                     value={emailAddress}
                     onChange={(e) => setEmailAddress(e.target.value)}
-                    className="text-sm h-10 bg-white border-gray-300 shadow-sm"
+                    className="text-sm h-10 bg-white border-gray-300 shadow-sm focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 text-gray-800 font-medium"
                   />
                   <p className="text-xs text-gray-600 mt-2">
                     Les rappels d'entretien seront envoyés à cette adresse
