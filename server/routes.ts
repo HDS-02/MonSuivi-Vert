@@ -116,7 +116,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/plants", async (req: Request, res: Response) => {
     try {
-      let validatedData = insertPlantSchema.parse(req.body);
+      console.log("Requête d'ajout de plante reçue:", JSON.stringify(req.body));
+      
+      // Initialiser les valeurs par défaut pour les champs essentiels
+      const plantData = {
+        ...req.body,
+        autoWatering: req.body.autoWatering !== undefined ? req.body.autoWatering : false,
+        reminderTime: req.body.reminderTime || "08:00"
+      };
+      
+      console.log("Données normalisées pour l'ajout:", JSON.stringify(plantData));
+      
+      let validatedData = insertPlantSchema.parse(plantData);
       
       // Ajouter des informations par défaut pour les maladies fréquentes et la taille de pot
       // si elles ne sont pas déjà définies
@@ -188,6 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.isAuthenticated() && req.user?.email) {
         try {
           // Envoi asynchrone pour ne pas bloquer la réponse
+          const { sendPlantAddedEmail } = await import('./email');
           sendPlantAddedEmail(req.user.email, plant)
             .then(success => {
               if (success) {
@@ -302,6 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.isAuthenticated() && req.user?.email) {
         try {
           // Envoi asynchrone pour ne pas bloquer la réponse
+          const { sendPlantRemovedEmail } = await import('./email');
           sendPlantRemovedEmail(req.user.email, plantName)
             .then(success => {
               if (success) {
@@ -456,10 +469,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Inverser l'état de l'arrosage automatique
       const newAutoWateringState = !plant.autoWatering;
       
-      // Mettre à jour la plante en base de données
+      console.log(`État actuel de l'arrosage automatique pour la plante ${plantId}: ${plant.autoWatering}`);
+      console.log(`Nouvel état demandé: ${newAutoWateringState}`);
+      
+      // Mettre à jour la plante en base de données avec une valeur explicite pour éviter les ambiguïtés
       const updatedPlant = await storage.updatePlant(plantId, {
-        autoWatering: newAutoWateringState
+        autoWatering: Boolean(newAutoWateringState)
       });
+      
+      console.log(`État après mise à jour: ${updatedPlant.autoWatering}`);
       
       console.log(`Demande de modification de l'arrosage automatique pour la plante ${plantId}: ${newAutoWateringState ? 'Activation' : 'Désactivation'}`);
       
