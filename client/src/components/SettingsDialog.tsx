@@ -41,9 +41,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     return storedValue || '';
   });
   
-  // État pour l'heure des rappels d'arrosage
-  const [reminderTime, setReminderTime] = useState(user?.reminderTime || "08:00");
-  const [isUpdatingTime, setIsUpdatingTime] = useState(false);
+  // L'état pour l'heure des rappels d'arrosage a été supprimé
   
   const { toast } = useToast();
   
@@ -397,51 +395,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                 </div>
               )}
               
-              {emailNotifications && user && (
-                <div className="mt-4 bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                      <span className="material-icons text-blue-600 text-sm">schedule</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium">Heure des rappels d'arrosage</span>
-                      <span className="block text-xs text-gray-500">Personnalisez l'heure de réception</span>
-                    </div>
-                  </div>
-                  
-                  <div className="pl-10">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="reminder-time"
-                        type="time"
-                        value={reminderTime}
-                        onChange={(e) => setReminderTime(e.target.value)}
-                        className="text-sm h-9 w-32"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        disabled={isUpdatingTime || reminderTime === (user?.reminderTime || "08:00")}
-                        className={`text-xs ${
-                          isUpdatingTime ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
-                        onClick={updateReminderTime}
-                      >
-                        {isUpdatingTime ? (
-                          <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></span>
-                        ) : (
-                          <span className="material-icons text-xs mr-1">update</span>
-                        )}
-                        Appliquer
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Les emails de rappel d'arrosage seront envoyés à {reminderTime}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Section de personnalisation de l'heure de réception supprimée */}
             </div>
           </div>
         </motion.div>
