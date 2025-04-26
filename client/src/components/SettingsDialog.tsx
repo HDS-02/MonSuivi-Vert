@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -15,6 +17,9 @@ interface SettingsDialogProps {
 }
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+  // Récupérer les informations de l'utilisateur authentifié
+  const { user } = useAuth();
+
   // Récupérer les paramètres depuis localStorage
   const [darkMode, setDarkMode] = useState(() => {
     const storedValue = localStorage.getItem('darkMode');
@@ -35,6 +40,10 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     const storedValue = localStorage.getItem('userEmail');
     return storedValue || '';
   });
+  
+  // État pour l'heure des rappels d'arrosage
+  const [reminderTime, setReminderTime] = useState(user?.reminderTime || "08:00");
+  const [isUpdatingTime, setIsUpdatingTime] = useState(false);
   
   const { toast } = useToast();
   
@@ -65,9 +74,37 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     }
   };
 
+  // Fonction pour mettre à jour l'heure de rappel sur le serveur
+  const updateReminderTime = async () => {
+    if (!user) return;
+    
+    setIsUpdatingTime(true);
+    try {
+      await apiRequest("PATCH", `/api/users/${user.id}/reminder-time`, { reminderTime });
+      toast({
+        title: "Heure de rappel mise à jour",
+        description: `Vous recevrez désormais vos rappels d'arrosage à ${reminderTime}`,
+      });
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de l'heure:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour l'heure de rappel",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingTime(false);
+    }
+  };
+
   const handleSave = () => {
     // Sauvegarde des paramètres
     saveSettings();
+    
+    // Si l'utilisateur est connecté et que l'heure de rappel a changé
+    if (user && user.reminderTime !== reminderTime) {
+      updateReminderTime();
+    }
     
     toast({
       title: "Paramètres sauvegardés",
