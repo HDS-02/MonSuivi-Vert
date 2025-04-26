@@ -785,6 +785,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // BADGES ROUTES
+  // Route pour récupérer tous les badges d'un utilisateur
+  app.get("/api/badges", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      const badges = badgeService.getBadgesByUserId(userId);
+      res.json(badges);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des badges:", error);
+      res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
+  // Route pour mettre à jour les badges liés à la collection de plantes
+  app.post("/api/badges/update-plant-collection", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      // Récupérer le nombre de plantes de l'utilisateur
+      const userPlants = await storage.getPlantsByUserId(userId);
+      const plantCount = userPlants.length;
+      
+      // Mettre à jour les badges en fonction du nombre de plantes
+      const unlockedBadges = badgeService.checkPlantCollectionBadges(userId, plantCount);
+      
+      res.json({ unlockedBadges });
+    } catch (error: any) {
+      console.error("Erreur lors de la mise à jour des badges de collection:", error);
+      res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
+  // Route pour mettre à jour les badges liés aux tâches
+  app.post("/api/badges/update-tasks", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      // Récupérer toutes les tâches pour calculer le nombre total et complétées
+      const userPlants = await storage.getPlantsByUserId(userId);
+      const plantIds = userPlants.map(p => p.id);
+      let completedTaskCount = 0;
+      
+      for (const plantId of plantIds) {
+        const tasks = await storage.getTasksByPlantId(plantId);
+        completedTaskCount += tasks.filter(t => t.completed).length;
+      }
+      
+      // Mettre à jour les badges en fonction du nombre de tâches complétées
+      const unlockedBadges = badgeService.checkTaskCompletionBadges(userId, completedTaskCount);
+      
+      res.json({ unlockedBadges });
+    } catch (error: any) {
+      console.error("Erreur lors de la mise à jour des badges de tâches:", error);
+      res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
+  // Route pour mettre à jour le badge de connexion consécutive
+  app.post("/api/badges/login-streak", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Utilisateur non authentifié" });
+      }
+      
+      // Valider le nombre de jours de connexion consécutifs
+      const daysSchema = z.object({
+        days: z.number().int().positive()
+      });
+      
+      const { days } = daysSchema.parse(req.body);
+      
+      // Mettre à jour le badge de connexion consécutive
+      const updatedBadge = badgeService.updateConsecutiveLoginBadge(userId, days);
+      
+      res.json({ 
+        updatedBadge,
+        unlockedBadges: updatedBadge && updatedBadge.unlocked ? [updatedBadge] : []
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de la mise à jour du badge de connexion:", error);
+      res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
