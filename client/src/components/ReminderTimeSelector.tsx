@@ -53,6 +53,16 @@ export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Affichage d'un message pour indiquer que l'arrosage automatique sera conservé
+    if (plant.autoWatering) {
+      toast({
+        title: "Modification en cours...",
+        description: "L'état d'arrosage automatique sera conservé",
+        duration: 2000
+      });
+    }
+    
     updateReminderTimeMutation.mutate(reminderTime);
   };
 
