@@ -1114,10 +1114,15 @@ export const plantDatabase: PlantEntry[] = assignCategories(allPlantsWithoutCate
 
 /**
  * Recherche des plantes par catégorie
+ * @param category Catégorie de plantes à retourner
+ * @returns Liste des plantes dans la catégorie spécifiée
  */
 export function getPlantsByCategory(category: PlantCategory): PlantEntry[] {
-  return plantDatabase.filter((plant) => plant.category === category)
+  console.log(`Recherche des plantes dans la catégorie: ${category}`);
+  const results = plantDatabase.filter((plant) => plant.category === category)
     .sort((a, b) => a.name.localeCompare(b.name));
+  console.log(`${results.length} plantes trouvées dans la catégorie ${category}`);
+  return results;
 }
 
 export function searchPlants(query: string): PlantEntry[] {
@@ -1155,18 +1160,6 @@ export function searchPlants(query: string): PlantEntry[] {
     .map(item => item.plant);
     
   console.log(`${results.length} plantes trouvées pour "${query}"`);
-  return results;
-}
-
-/**
- * Recherche des plantes par catégorie
- * @param category Catégorie de plantes à retourner
- * @returns Liste des plantes dans la catégorie spécifiée
- */
-export function getPlantsByCategory(category: PlantCategory): PlantEntry[] {
-  console.log(`Recherche des plantes dans la catégorie: ${category}`);
-  const results = plantDatabase.filter(plant => plant.category === category);
-  console.log(`${results.length} plantes trouvées dans la catégorie ${category}`);
   return results;
 }
 
