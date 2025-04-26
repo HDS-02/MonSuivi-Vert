@@ -20,6 +20,7 @@ export interface IStorage {
   // Plant CRUD methods
   getPlants(): Promise<Plant[]>;
   getPlantsByUserId(userId: number): Promise<Plant[]>;
+  getPlantsByIds(ids: number[]): Promise<Plant[]>;
   getPlant(id: number): Promise<Plant | undefined>;
   createPlant(plant: InsertPlant): Promise<Plant>;
   updatePlant(id: number, plant: Partial<Plant>): Promise<Plant | undefined>;
@@ -28,6 +29,7 @@ export interface IStorage {
   // Task CRUD methods
   getTasks(): Promise<Task[]>;
   getTasksByPlantId(plantId: number): Promise<Task[]>;
+  getTasksByDateRange(startDate: Date, endDate: Date): Promise<Task[]>;
   getPendingTasks(): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task | undefined>;
@@ -201,6 +203,20 @@ export class MemStorage implements IStorage {
   async getTasksByPlantId(plantId: number): Promise<Task[]> {
     return Array.from(this.tasks.values())
       .filter(task => task.plantId === plantId);
+  }
+  
+  async getTasksByDateRange(startDate: Date, endDate: Date): Promise<Task[]> {
+    return Array.from(this.tasks.values())
+      .filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        return taskDate >= startDate && taskDate < endDate;
+      });
+  }
+  
+  async getPlantsByIds(ids: number[]): Promise<Plant[]> {
+    return Array.from(this.plants.values())
+      .filter(plant => ids.includes(plant.id));
   }
   
   async getPendingTasks(): Promise<Task[]> {

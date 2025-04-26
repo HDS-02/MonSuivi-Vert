@@ -388,6 +388,71 @@ export async function sendPlantRemovedEmail(email: string, plantName: string): P
 }
 
 /**
+ * Envoie un email de rappel pour les tâches d'arrosage prévues aujourd'hui
+ */
+export async function sendTodayWateringReminderEmail(email: string, tasks: Task[], plantNames: Record<number, string>): Promise<boolean> {
+  if (tasks.length === 0) return true;
+  
+  // Date d'aujourd'hui formatée
+  const todayFormatted = format(new Date(), 'EEEE d MMMM yyyy', { locale: fr });
+  
+  // Formater les tâches pour l'email
+  const tasksHtml = tasks.map(task => {
+    const plantName = plantNames[task.plantId] || 'Plante';
+    
+    return `
+      <div style="margin-bottom: 15px; padding: 15px; border-radius: 8px; background-color: #e3f2fd; border-left: 5px solid #2196F3;">
+        <div style="display: flex; align-items: center;">
+          <div style="margin-right: 15px; background-color: #2196F3; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: white;">
+            <span style="font-size: 24px;">💧</span>
+          </div>
+          <div>
+            <h3 style="margin: 0 0 5px; color: #1976D2; font-size: 16px;">${task.description}</h3>
+            <p style="margin: 0; font-size: 14px; color: #333;">
+              <strong>${plantName}</strong> - Aujourd'hui
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  const content = `
+    <p>Bonjour,</p>
+    <p>Voici les arrosages prévus <strong>aujourd'hui ${todayFormatted}</strong> :</p>
+    
+    <div style="margin: 25px 0;">
+      ${tasksHtml}
+    </div>
+    
+    <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 8px; border-left: 4px solid #4CAF50;">
+      <h4 style="margin-top: 0; color: #2E7D32; font-size: 16px;">Conseils pour un arrosage optimal</h4>
+      <ul style="margin: 10px 0 0; padding-left: 20px;">
+        <li style="margin-bottom: 8px;">Arrosez tôt le matin ou en fin de journée pour limiter l'évaporation</li>
+        <li style="margin-bottom: 8px;">Vérifiez que l'eau s'écoule bien par les trous de drainage</li>
+        <li style="margin-bottom: 8px;">Adaptez la quantité d'eau selon la taille du pot et l'espèce</li>
+      </ul>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+        Voir mon calendrier
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666;">
+      Pour ne plus recevoir ces rappels, vous pouvez désactiver les notifications dans les paramètres de l'application.
+    </p>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: `💧 Rappel : Arrosages prévus aujourd'hui`,
+    html: emailTemplate('Arrosages du jour', content)
+  });
+}
+
+/**
  * Envoie un rappel d'arrosage spécifique
  */
 export async function sendWateringReminderEmail(email: string, plants: Plant[]): Promise<boolean> {
@@ -517,31 +582,77 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
   const actionText = isEnabled ? "activé" : "désactivé";
   const actionColor = isEnabled ? "#4CAF50" : "#F44336";
   const actionIcon = isEnabled ? "✅" : "❌";
+  const waterEmoji = "💧";
+  
+  // Calcul des prochaines dates d'arrosage si activé
+  let wateringDatesHtml = '';
+  if (isEnabled && plant.wateringFrequency) {
+    const dates = [];
+    const today = new Date();
+    
+    // Générer les 4 prochaines dates d'arrosage
+    for (let i = 1; i <= 4; i++) {
+      const nextDate = new Date(today);
+      nextDate.setDate(nextDate.getDate() + (plant.wateringFrequency * i));
+      dates.push(format(nextDate, 'EEEE d MMMM yyyy', { locale: fr }));
+    }
+    
+    // Créer le bloc HTML pour les dates
+    wateringDatesHtml = `
+      <div style="margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #e3f2fd; border-left: 4px solid #2196F3;">
+        <h4 style="margin-top: 0; color: #1976D2; font-size: 16px;">Prochains arrosages programmés</h4>
+        <ul style="margin: 10px 0 0; padding-left: 20px;">
+          ${dates.map(date => `<li style="margin-bottom: 8px; color: #333;">${waterEmoji} ${date}</li>`).join('')}
+        </ul>
+        <p style="margin: 15px 0 0; font-size: 13px; color: #666; font-style: italic;">
+          Des rappels vous seront envoyés le jour prévu pour chaque arrosage.
+        </p>
+      </div>
+    `;
+  }
   
   const content = `
-    <p>Bonjour,</p>
-    <p>L'arrosage automatique a été <strong>${actionText}</strong> pour votre plante "${plant.name}".</p>
-    <div style="padding: 15px; border-radius: 5px; background-color: #f5f5f5; margin: 15px 0;">
-      <div style="display: flex; align-items: center;">
-        <span style="background-color: ${actionColor}; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; margin-right: 15px;">
-          <span style="font-size: 16px;">${actionIcon}</span>
-        </span>
-        <div>
-          <strong style="color: ${actionColor};">Arrosage automatique ${actionText}</strong>
-          <p style="margin: 5px 0 0; font-size: 14px;">
-            ${isEnabled 
-              ? "Des tâches d'arrosage seront désormais créées automatiquement selon la fréquence recommandée." 
-              : "Les tâches d'arrosage ne seront plus créées automatiquement. Vous devrez les ajouter manuellement."}
-          </p>
+    <p style="font-size: 16px;">Bonjour,</p>
+    
+    <div style="margin: 25px 0; padding: 20px; border-radius: 8px; background-color: ${isEnabled ? '#e8f5e9' : '#ffebee'}; border: 1px solid ${actionColor};">
+      <div style="text-align: center; margin-bottom: 15px;">
+        <div style="background-color: ${actionColor}; color: white; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          <span style="font-size: 28px;">${isEnabled ? '💧' : '🚫'}</span>
         </div>
+        <h3 style="margin: 10px 0; color: ${actionColor}; font-size: 18px;">
+          Arrosage automatique ${actionText}
+        </h3>
+      </div>
+      
+      <p style="margin: 0; text-align: center; font-size: 15px;">
+        <strong style="color: #333;">${plant.name}</strong> (${plant.species || 'Plante'})
+      </p>
+      
+      <div style="margin-top: 15px; padding: 12px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+        <p style="margin: 0; font-size: 14px; line-height: 1.5;">
+          ${isEnabled 
+            ? `Des tâches d'arrosage seront désormais créées automatiquement tous les <strong>${plant.wateringFrequency} jours</strong>.` 
+            : "Les tâches d'arrosage ne seront plus créées automatiquement. Vous devrez les ajouter manuellement."}
+        </p>
       </div>
     </div>
-    <p>Vous pouvez modifier ce paramètre à tout moment depuis la fiche de votre plante.</p>
+    
+    ${isEnabled ? wateringDatesHtml : ''}
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://monsuivivert.fr/plants/${plant.id}" style="background-color: ${actionColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+        Voir ma plante
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666;">
+      Vous pouvez modifier ce paramètre à tout moment depuis la fiche de votre plante.
+    </p>
   `;
   
   return sendEmail({
     to: email,
-    subject: `Arrosage automatique ${actionText} pour ${plant.name}`,
+    subject: `${isEnabled ? '💧' : '🚫'} Arrosage automatique ${actionText} pour ${plant.name}`,
     html: emailTemplate(`Arrosage automatique ${actionText}`, content)
   });
 }

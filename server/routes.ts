@@ -898,6 +898,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Route pour envoyer les rappels d'arrosage prévus pour aujourd'hui
+  app.post("/api/email/today-watering-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // L'utilisateur doit être authentifié et avoir configuré son email
+      if (!req.user?.email) {
+        return res.status(400).json({ message: "Aucune adresse email configurée pour l'utilisateur" });
+      }
+      
+      // Récupérer toutes les tâches d'arrosage de l'utilisateur prévues pour aujourd'hui
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      // Récupérer les tâches d'arrosage pour aujourd'hui qui ne sont pas encore complétées
+      const tasks = await storage.getTasksByDateRange(today, tomorrow);
+      const wateringTasks = tasks.filter(task => 
+        task.type === 'water' && 
+        !task.completed && 
+        task.plantId && 
+        task.userId === req.user?.id
+      );
+      
+      if (wateringTasks.length === 0) {
+        return res.status(200).json({ message: "Aucun arrosage prévu aujourd'hui" });
+      }
+      
+      // Récupérer les noms des plantes pour chaque tâche
+      const plantIds = wateringTasks.map(task => task.plantId);
+      const plants = await storage.getPlantsByIds(plantIds);
+      
+      // Créer un mapping plantId -> plantName
+      const plantNames: Record<number, string> = {};
+      plants.forEach(plant => {
+        if (plant.id) {
+          plantNames[plant.id] = plant.name;
+        }
+      });
+      
+      // Envoyer l'email de rappel
+      const emailSent = await sendTodayWateringReminderEmail(req.user.email, wateringTasks, plantNames);
+      
+      if (emailSent) {
+        console.log(`Email de rappel d'arrosage du jour envoyé à ${req.user.email}`);
+        res.status(200).json({ 
+          message: "Email de rappel d'arrosage du jour envoyé avec succès",
+          tasksCount: wateringTasks.length
+        });
+      } else {
+        res.status(500).json({ message: "Échec de l'envoi de l'email de rappel d'arrosage du jour" });
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du rappel d'arrosage du jour:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // Route pour envoyer des rappels d'arrosage
   app.post("/api/email/watering-reminder", isAuthenticated, async (req: Request, res: Response) => {
     try {
