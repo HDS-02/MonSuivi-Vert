@@ -560,9 +560,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const oldReminderTime = plant.reminderTime || "08:00";
       
-      // Mettre à jour l'heure de rappel
+      // Mettre à jour l'heure de rappel en conservant l'état d'arrosage automatique
       const updatedPlant = await storage.updatePlant(plantId, { 
-        reminderTime 
+        reminderTime,
+        autoWatering: plant.autoWatering // Conserver l'état d'arrosage automatique
       });
       
       if (!updatedPlant) {
@@ -577,15 +578,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Créer un modèle d'email personnalisé pour la notification de changement d'heure
           const emailContent = `
             <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
-              <h2 style="color: #2e7d32; text-align: center;">🕒 Heure de rappel modifiée</h2>
-              <p>Bonjour,</p>
-              <p>L'heure de rappel d'arrosage pour votre plante <strong>${plant.name}</strong> a été modifiée.</p>
-              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                <p style="margin: 5px 0;"><strong>Ancienne heure :</strong> ${oldReminderTime}</p>
-                <p style="margin: 5px 0;"><strong>Nouvelle heure :</strong> ${reminderTime}</p>
+              <div style="text-align: center; margin-bottom: 20px;">
+                <div style="display: inline-block; background-color: #2196F3; border-radius: 50%; width: 70px; height: 70px; line-height: 70px; text-align: center; margin-bottom: 10px;">
+                  <span style="color: white; font-size: 36px;">🕒</span>
+                </div>
+                <h2 style="color: #2196F3; margin: 10px 0 0;">Heure de rappel modifiée</h2>
               </div>
-              <p>Vous recevrez désormais les rappels d'arrosage à ${reminderTime} si cette plante a l'arrosage automatique activé.</p>
-              <p style="font-style: italic; color: #757575; margin-top: 20px; font-size: 0.9em;">Cet email est envoyé automatiquement par Mon Suivi Vert.</p>
+              
+              <p style="font-size: 16px; color: #333; line-height: 1.5;">Bonjour,</p>
+              <p style="font-size: 16px; color: #333; line-height: 1.5;">
+                L'heure de rappel d'arrosage pour votre plante <strong style="color: #2196F3;">${plant.name}</strong> a été modifiée avec succès.
+              </p>
+              
+              <div style="margin: 25px 0; padding: 20px; border-radius: 8px; background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%); border-left: 4px solid #2196F3;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                      <strong style="font-size: 15px; color: #455A64;">Ancienne heure :</strong>
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: right;">
+                      <span style="font-size: 15px; color: #78909C; font-family: monospace; background-color: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 4px;">
+                        ${oldReminderTime}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px;">
+                      <strong style="font-size: 15px; color: #455A64;">Nouvelle heure :</strong>
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                      <span style="font-size: 15px; font-weight: bold; color: #2196F3; font-family: monospace; background-color: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid #BBDEFB;">
+                        ${reminderTime}
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              
+              <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #4CAF50;">
+                <p style="margin: 0; font-size: 15px; color: #2E7D32;">
+                  <strong>✅ Modification effectuée :</strong> Vous recevrez désormais les rappels d'arrosage à <strong>${reminderTime}</strong> les jours prévus.
+                </p>
+                ${plant.autoWatering ? 
+                  `<p style="margin: 8px 0 0; font-size: 14px; color: #388E3C;">
+                    <span style="display: inline-block; background-color: #4CAF50; color: white; border-radius: 4px; padding: 2px 6px; font-size: 12px; margin-right: 5px;">AUTO</span>
+                    L'arrosage automatique est activé pour cette plante.
+                  </p>` : 
+                  `<p style="margin: 8px 0 0; font-size: 14px; color: #F44336;">
+                    <span style="display: inline-block; background-color: #F44336; color: white; border-radius: 4px; padding: 2px 6px; font-size: 12px; margin-right: 5px;">INFO</span>
+                    Cette modification prendra effet lorsque vous activerez l'arrosage automatique.
+                  </p>`
+                }
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://monsuivivert.fr/plants/${plant.id}" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                  Voir ma plante
+                </a>
+              </div>
+              
+              <p style="font-style: italic; color: #757575; margin-top: 30px; font-size: 0.9em; text-align: center; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                Cet email est envoyé automatiquement par Mon Suivi Vert.
+              </p>
             </div>
           `;
           
