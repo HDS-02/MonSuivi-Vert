@@ -278,27 +278,34 @@ export default function PlantDetail() {
                     return;
                   }
                   
-                  // Basculer l'état d'arrosage automatique
-                  updatePlantMutation.mutate({
-                    id: plant.id,
-                    updates: { autoWatering: !plant.autoWatering }
-                  }, {
-                    onSuccess: () => {
-                      // Notification visuelle dans l'interface
-                      toast({
-                        title: plant.autoWatering ? "Arrosage automatique désactivé" : "Arrosage automatique activé",
-                        description: plant.autoWatering 
-                          ? "Les tâches d'arrosage ne seront plus créées automatiquement" 
-                          : "Les tâches d'arrosage seront créées automatiquement"
-                      });
-                      
-                      // Notification par email - appel API spécifique pour cela
-                      apiRequest('POST', `/api/plants/${plant.id}/toggle-auto-watering`, {
-                        enabled: !plant.autoWatering
-                      }).catch(error => {
-                        console.error("Erreur lors de l'envoi de la notification par email:", error);
-                      });
+                  // Utiliser la route spécifique pour basculer l'arrosage automatique
+                  // Cette approche permet d'éviter le double envoi d'emails de notification
+                  apiRequest('POST', `/api/plants/${plant.id}/toggle-auto-watering`, {
+                    enabled: !plant.autoWatering
+                  }).then(response => {
+                    if (response.ok) {
+                      return response.json();
+                    } else {
+                      throw new Error("Erreur lors de la modification de l'arrosage automatique");
                     }
+                  }).then(() => {
+                    // Mettre à jour les données et l'interface
+                    queryClient.invalidateQueries({ queryKey: [`/api/plants/${plant.id}`] });
+                    
+                    // Notification visuelle dans l'interface
+                    toast({
+                      title: plant.autoWatering ? "Arrosage automatique désactivé" : "Arrosage automatique activé",
+                      description: plant.autoWatering 
+                        ? "Les tâches d'arrosage ne seront plus créées automatiquement" 
+                        : "Les tâches d'arrosage seront créées automatiquement"
+                    });
+                  }).catch(error => {
+                    console.error("Erreur lors de la modification de l'arrosage automatique:", error);
+                    toast({
+                      title: "Erreur",
+                      description: "Une erreur est survenue lors de la modification de l'arrosage automatique",
+                      variant: "destructive"
+                    });
                   });
                 }}
                 className={`text-xs mt-1 py-1 px-2 rounded-full ${
