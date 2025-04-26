@@ -204,28 +204,39 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               </div>
               
               {emailNotifications && (
-                <div className="mt-4 pt-3 pb-2 px-4 bg-primary/5 rounded-lg border border-primary/20 shadow-md">
-                  <Label htmlFor="email-address" className="text-sm text-gray-800 font-semibold mb-2 block">
+                <div className="mt-4 pt-3 pb-2 px-4 bg-primary/10 rounded-lg border border-primary/30 shadow-md">
+                  <Label htmlFor="email-address" className="text-base text-primary-dark font-semibold mb-2 block flex items-center">
+                    <span className="material-icons text-primary mr-1 text-base">mail_outline</span>
                     Votre adresse email pour les rappels
                   </Label>
-                  <Input
-                    id="email-address"
-                    type="email"
-                    placeholder="votre@email.com"
-                    value={emailAddress}
-                    onChange={(e) => setEmailAddress(e.target.value)}
-                    className="text-sm h-10 bg-white border-gray-300 shadow-sm focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 text-gray-800 font-medium"
-                  />
-                  <p className="text-xs text-gray-600 mt-2">
+                  <div className="relative">
+                    <Input
+                      id="email-address"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      className="text-sm h-11 pl-10 pr-4 bg-white border-primary/30 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/30 text-gray-800 font-medium"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="material-icons text-primary text-sm">alternate_email</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-primary-dark/80 mt-2 flex items-center">
+                    <span className="material-icons text-amber-500 mr-1 text-sm">info</span>
                     Les rappels d'entretien seront envoyés à cette adresse
                   </p>
                   
-                  <div className="grid grid-cols-1 gap-3 mt-4">
+                  <div className="grid grid-cols-1 gap-3 mt-6">
+                    <h4 className="text-sm font-semibold text-primary-dark flex items-center mb-1">
+                      <span className="material-icons text-primary mr-1 text-sm">touch_app</span>
+                      Tester vos notifications
+                    </h4>
+                    
                     <Button
-                      variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs bg-white border-gray-300 hover:bg-gray-50 text-gray-800 h-9 font-medium"
+                      className="text-sm bg-gradient-to-r from-green-600 to-green-500 text-white hover:shadow-md h-10 font-medium transition-all"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -265,15 +276,14 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         }
                       }}
                     >
-                      <span className="material-icons text-xs mr-1">send</span>
-                      Envoyer un rappel des tâches
+                      <span className="material-icons mr-2">water_drop</span>
+                      Envoyer un rappel d'arrosage
                     </Button>
                     
                     <Button
-                      variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs bg-white border-gray-300 hover:bg-gray-50 text-gray-800 h-9 font-medium"
+                      className="text-sm bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:shadow-md h-10 font-medium transition-all"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -313,15 +323,14 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         }
                       }}
                     >
-                      <span className="material-icons text-xs mr-1">chat</span>
+                      <span className="material-icons mr-2">waving_hand</span>
                       Recevoir l'email de bienvenue
                     </Button>
                     
                     <Button
-                      variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 h-9 font-medium shadow-sm"
+                      className="text-sm bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:shadow-md h-10 font-medium transition-all"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -364,7 +373,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         }
                       }}
                     >
-                      <span className="material-icons text-xs mr-1">email</span>
+                      <span className="material-icons mr-2">send</span>
                       Envoyer un email de test
                     </Button>
                   </div>
