@@ -30,6 +30,7 @@ export const plants = pgTable("plants", {
   potSize: text("pot_size"), // Taille du pot recommandée
   commonDiseases: json("common_diseases").default('[]'), // Maladies fréquentes (tableau)
   autoWatering: boolean("auto_watering").default(false), // Arrosage automatique programmé
+  reminderTime: text("reminder_time").default("08:00"), // Heure de rappel personnalisée (format HH:MM)
   userId: integer("user_id").notNull().default(1), // Foreign key to users table
 });
 
