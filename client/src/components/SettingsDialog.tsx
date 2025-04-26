@@ -72,43 +72,19 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     }
   };
 
-  // Fonction pour mettre à jour l'heure de rappel sur le serveur
-  const updateReminderTime = async () => {
-    if (!user) return;
-    
-    setIsUpdatingTime(true);
-    try {
-      await apiRequest("PATCH", `/api/users/${user.id}/reminder-time`, { reminderTime });
-      toast({
-        title: "Heure de rappel mise à jour",
-        description: `Vous recevrez désormais vos rappels d'arrosage à ${reminderTime}`,
-      });
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de l'heure:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour l'heure de rappel",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingTime(false);
-    }
-  };
+  // La fonction updateReminderTime a été supprimée avec la section de personnalisation de l'heure
 
   const handleSave = () => {
     // Sauvegarde des paramètres
     saveSettings();
     
-    // Si l'utilisateur est connecté et que l'heure de rappel a changé
-    if (user && user.reminderTime !== reminderTime) {
-      updateReminderTime();
-    }
-    
+    // Notification de confirmation
     toast({
       title: "Paramètres sauvegardés",
       description: "Vos préférences ont été mises à jour",
     });
     
+    // Fermer la boîte de dialogue
     onOpenChange(false);
   };
 
