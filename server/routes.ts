@@ -228,11 +228,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Partial validation of the request body
       const validatedData = insertPlantSchema.partial().parse(req.body);
       
+      // Si on met à jour l'heure de rappel et qu'aucune valeur pour autoWatering n'est explicitement fournie,
+      // on préserve l'état d'arrosage automatique existant
+      if ('reminderTime' in validatedData && !('autoWatering' in validatedData)) {
+        console.log(`Mise à jour de l'heure de rappel sans modification de l'arrosage automatique. Préservation de l'état: ${existingPlant.autoWatering}`);
+        validatedData.autoWatering = existingPlant.autoWatering;
+      }
+      
       // Vérifier si l'état d'arrosage automatique change
       const autoWateringChanged = 
         'autoWatering' in validatedData && 
         existingPlant.autoWatering !== validatedData.autoWatering;
       
+      console.log("Données de mise à jour:", JSON.stringify(validatedData));
       const updatedPlant = await storage.updatePlant(id, validatedData);
       if (!updatedPlant) {
         return res.status(404).json({ message: "Plante non trouvée" });

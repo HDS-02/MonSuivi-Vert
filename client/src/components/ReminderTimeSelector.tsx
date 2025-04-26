@@ -23,24 +23,34 @@ export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProp
     mutationFn: async (newTime: string) => {
       const response = await apiRequest("PATCH", `/api/plants/${plant.id}/reminder-time`, {
         reminderTime: newTime,
+        // On ne fait pas de mise à jour de l'état d'arrosage automatique ici
+        // Cela est géré par la route d'API qui préserve l'état existant
       });
       
       const data = await response.json();
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalider les requêtes pour rafraîchir les données
       queryClient.invalidateQueries({ queryKey: [`/api/plants/${plant.id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/plants"] });
       
+      // Notification de réussite
       toast({
         title: "Heure de rappel mise à jour",
         description: `Les rappels pour ${plant.name} seront envoyés à ${reminderTime}`,
       });
       
-      setIsEditing(false);
+      // Si la plante a l'arrosage automatique activé, afficher un message supplémentaire
+      if (plant.autoWatering) {
+        toast({
+          title: "Arrosage automatique conservé",
+          description: "L'arrosage automatique reste activé avec la nouvelle heure",
+          duration: 3000
+        });
+      }
       
-      // Si l'arrosage automatique n'était pas activé, on ne touche pas à cette option
-      // Ce n'est pas le but de ce composant
+      setIsEditing(false);
     },
     onError: (error: Error) => {
       toast({
