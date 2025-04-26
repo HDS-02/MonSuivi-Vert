@@ -112,17 +112,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getTasksByDateRange(startDate: Date, endDate: Date): Promise<Task[]> {
-    return await db
-      .select()
-      .from(tasks)
-      .where(
-        and(
-          // Les tâches dont la date d'échéance est >= startDate
-          tasks.dueDate.gte(startDate),
-          // ET dont la date d'échéance est < endDate
-          tasks.dueDate.lt(endDate)
-        )
-      );
+    // Pour éviter l'erreur de compilation, utiliser la syntaxe SQL brute ou une comparaison directe 
+    // car les opérateurs .gte() et .lt() ne sont pas disponibles dans cette version de Drizzle
+    // Utiliser une approche alternative pour filtrer les tâches basées sur les dates
+    // En récupérant toutes les tâches et en filtrant manuellement
+    const allTasks = await db.select().from(tasks);
+    return allTasks.filter(task => {
+      if (!task.dueDate) return false;
+      const taskDate = new Date(task.dueDate);
+      return taskDate >= startDate && taskDate < endDate;
+    });
   }
   
   async getPendingTasks(): Promise<Task[]> {

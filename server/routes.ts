@@ -13,7 +13,7 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
-import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification } from "./email";
+import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification, sendTodayWateringReminderEmail, sendAutoWateringStatusEmail } from "./email";
 import { pdfService } from "./pdfService";
 
 // Configure multer for in-memory file storage
@@ -917,8 +917,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const wateringTasks = tasks.filter(task => 
         task.type === 'water' && 
         !task.completed && 
-        task.plantId && 
-        task.userId === req.user?.id
+        task.plantId
+        // Remarque: Le champ userId n'existe pas dans le schéma Task, nous filtrons par plantId
+        // qui appartient à l'utilisateur actuel plus tard
       );
       
       if (wateringTasks.length === 0) {
