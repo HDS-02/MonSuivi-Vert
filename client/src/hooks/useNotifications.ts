@@ -198,28 +198,64 @@ export default function useNotifications() {
 
   // Marquer une notification comme lue
   const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
+    setNotifications(prev => {
+      const updatedNotifications = prev.map(notification =>
         notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+      );
+      
+      // Sauvegarder dans localStorage
+      try {
+        localStorage.setItem('msv_notifications', JSON.stringify(updatedNotifications));
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des notifications:", error);
+      }
+      
+      return updatedNotifications;
+    });
   };
 
   // Marquer toutes les notifications comme lues
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+    setNotifications(prev => {
+      const updatedNotifications = prev.map(notification => ({ ...notification, read: true }));
+      
+      // Sauvegarder dans localStorage
+      try {
+        localStorage.setItem('msv_notifications', JSON.stringify(updatedNotifications));
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des notifications:", error);
+      }
+      
+      return updatedNotifications;
+    });
   };
 
   // Supprimer une notification
   const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+    setNotifications(prev => {
+      const updatedNotifications = prev.filter(notification => notification.id !== id);
+      
+      // Sauvegarder dans localStorage
+      try {
+        localStorage.setItem('msv_notifications', JSON.stringify(updatedNotifications));
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des notifications:", error);
+      }
+      
+      return updatedNotifications;
+    });
   };
 
   // Supprimer toutes les notifications
   const clearNotifications = () => {
     setNotifications([]);
+    
+    // Effacer dans localStorage
+    try {
+      localStorage.removeItem('msv_notifications');
+    } catch (error) {
+      console.error("Erreur lors de la suppression des notifications:", error);
+    }
   };
 
   // Obtenir les notifications non lues

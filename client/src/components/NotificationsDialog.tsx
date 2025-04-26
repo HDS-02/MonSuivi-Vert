@@ -21,6 +21,7 @@ export default function NotificationsDialog({ open, onOpenChange }: Notification
     removeNotification,
     requestPermission,
     permission,
+    addNotification,
   } = useNotifications();
   
   const tasksQuery = useTasks();
@@ -30,10 +31,35 @@ export default function NotificationsDialog({ open, onOpenChange }: Notification
   // Vérifier les notifications de tâches lorsque le dialogue s'ouvre
   useEffect(() => {
     if (open && tasks.length > 0 && !isTasksLoading) {
-      // Ici, nous utiliserions createTaskNotifications, mais comme c'est un prototype,
-      // nous ne voulons pas générer de notifications à chaque ouverture du dialogue
+      // Vérifier les tâches dues aujourd'hui et créer des notifications
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const dueTasks = tasks.filter(task => {
+        if (task.completed) return false;
+        if (!task.dueDate) return false;
+        
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        return dueDate.getTime() === today.getTime();
+      });
+      
+      // Créer des notifications pour les tâches dues
+      dueTasks.forEach(task => {
+        // Éviter les notifications dupliquées
+        const existingNotif = notifications.find(n => n.taskId === task.id);
+        if (!existingNotif) {
+          addNotification({
+            title: 'Rappel d\'entretien',
+            message: `N'oubliez pas : ${task.description}`,
+            type: 'info',
+            taskId: task.id,
+          });
+        }
+      });
     }
-  }, [open, tasks, isTasksLoading]);
+  }, [open, tasks, isTasksLoading, addNotification, notifications]);
 
   const formatDate = (date: Date) => {
     const now = new Date();
