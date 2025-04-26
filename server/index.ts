@@ -1,6 +1,80 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import fetch from "node-fetch";
+
+/**
+ * Configure un vérificateur périodique pour les rappels d'arrosage
+ * Cette fonction simule un cron job qui vérifie chaque minute si des rappels
+ * d'arrosage doivent être envoyés aux utilisateurs selon l'heure programmée
+ */
+function setupWateringReminderChecker(port: number) {
+  const CHECK_INTERVAL = 60 * 1000; // Vérifier toutes les minutes
+  
+  log("Configuration du vérificateur de rappels d'arrosage...");
+  
+  // Première vérification immédiate
+  setTimeout(async () => {
+    try {
+      await checkWateringReminders(port);
+    } catch (error) {
+      console.error("[reminder-checker] Erreur lors de la vérification initiale:", error);
+    }
+    
+    // Puis vérification périodique
+    setInterval(async () => {
+      try {
+        await checkWateringReminders(port);
+      } catch (error) {
+        console.error("[reminder-checker] Erreur lors de la vérification périodique:", error);
+      }
+    }, CHECK_INTERVAL);
+  }, 5000); // Attendre 5 secondes avant la première vérification
+  
+  log("Vérificateur de rappels d'arrosage configuré (intervalle: 1 minute)");
+}
+
+/**
+ * Déclenche la vérification des rappels d'arrosage via l'API
+ */
+async function checkWateringReminders(port: number) {
+  // Obtenir l'heure actuelle pour les logs
+  const now = new Date();
+  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  
+  try {
+    // Créer une requête interne pour déclencher les rappels
+    const response = await fetch(`http://localhost:${port}/api/system/trigger-watering-reminders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: process.env.CRON_SECRET || 'internal-cron' })
+    });
+    
+    if (response.ok) {
+      const result = await response.json() as { 
+        emailsSent: number; 
+        plantsCount: number;
+        usersCount: number;
+        time: string;
+        message: string;
+      };
+      
+      if (result.emailsSent > 0) {
+        log(`[watering-reminder] ${result.emailsSent} emails de rappel d'arrosage envoyés à ${currentTime}`);
+      } else {
+        // Logs détaillés uniquement en développement
+        if (process.env.NODE_ENV === 'development') {
+          log(`[watering-reminder] Aucun rappel d'arrosage à envoyer à ${currentTime}`);
+        }
+      }
+    } else {
+      const errorText = await response.text();
+      console.error(`[watering-reminder] Erreur (${response.status}): ${errorText}`);
+    }
+  } catch (error) {
+    console.error('[watering-reminder] Erreur lors de la vérification:', error);
+  }
+}
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -71,5 +145,8 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Mettre en place un mécanisme pour vérifier les rappels d'arrosage programmés
+    setupWateringReminderChecker(port);
   });
 })();

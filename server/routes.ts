@@ -1151,8 +1151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/system/trigger-watering-reminders", async (req: Request, res: Response) => {
     try {
       // Vérifier si on a un code secret dans la requête (pour sécuriser l'appel)
+      // Pour les appels internes depuis le serveur, on accepte 'internal-cron' comme valeur par défaut
       const { secret } = req.body;
-      if (secret !== process.env.CRON_SECRET && !req.isAuthenticated()) {
+      const internalSecret = process.env.CRON_SECRET || 'internal-cron';
+      if (secret !== internalSecret && !req.isAuthenticated()) {
         return res.status(403).json({ message: "Non autorisé" });
       }
       
