@@ -59,11 +59,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier ce compte" });
       }
 
-      // Validation des données d'entrée - on accepte seulement username, firstName et email
+      // Validation des données d'entrée - on accepte seulement username, firstName, email et reminderTime
       const userUpdateSchema = z.object({
         username: z.string().min(3).optional(),
         firstName: z.string().min(2).optional(),
         email: z.string().email().optional().or(z.literal("")),
+        reminderTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
       });
 
       const validatedData = userUpdateSchema.parse(req.body);
