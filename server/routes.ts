@@ -869,6 +869,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour générer un PDF pour une plante
+  app.get("/api/plants/:id/pdf", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier que la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Générer le PDF
+      const pdfBuffer = await pdfService.generatePlantPDF(plantId);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="plante-${plantId}-${plant.name}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Erreur lors de la génération du PDF:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Route pour mettre à jour l'heure de rappel globale d'un utilisateur
   app.patch("/api/users/:id/reminder-time", isAuthenticated, async (req: Request, res: Response) => {
     try {
