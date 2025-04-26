@@ -422,7 +422,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         variant="outline"
                         size="sm"
                         type="button"
-                        disabled={isUpdatingTime || reminderTime === user.reminderTime}
+                        disabled={isUpdatingTime || reminderTime === (user?.reminderTime || "08:00")}
                         className={`text-xs ${
                           isUpdatingTime ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
