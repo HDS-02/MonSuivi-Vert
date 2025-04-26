@@ -262,6 +262,53 @@ export default function useNotifications() {
   const getUnreadNotifications = () => {
     return notifications.filter(notification => !notification.read);
   };
+  
+  // Fonctions spécifiques pour différents types de notifications
+  
+  // Notification d'arrosage
+  const notifyWatering = (plantName: string) => {
+    return addNotification({
+      title: 'Rappel d\'arrosage',
+      message: `N'oubliez pas d'arroser votre ${plantName} aujourd'hui !`,
+      type: 'info',
+    });
+  };
+  
+  // Notification d'ajout de plante
+  const notifyPlantAdded = (plantName: string) => {
+    return addNotification({
+      title: 'Nouvelle plante ajoutée',
+      message: `${plantName} a été ajoutée à votre collection avec succès !`,
+      type: 'success',
+    });
+  };
+  
+  // Notification de suppression de plante
+  const notifyPlantRemoved = (plantName: string) => {
+    return addNotification({
+      title: 'Plante supprimée',
+      message: `${plantName} a été retirée de votre collection.`,
+      type: 'info',
+    });
+  };
+  
+  // Notification de tâche d'entretien
+  const notifyTask = (taskDescription: string) => {
+    return addNotification({
+      title: 'Tâche d\'entretien',
+      message: taskDescription,
+      type: 'info',
+    });
+  };
+  
+  // Notification de badge gagné
+  const notifyBadgeUnlocked = (badgeName: string) => {
+    return addNotification({
+      title: 'Nouveau badge débloqué !',
+      message: `Félicitations ! Vous avez obtenu le badge "${badgeName}".`,
+      type: 'success',
+    });
+  };
 
   return {
     notifications,
@@ -273,5 +320,11 @@ export default function useNotifications() {
     clearNotifications,
     requestPermission,
     permission,
+    // Fonctions spécifiques pour différents types de notifications
+    notifyWatering,
+    notifyPlantAdded,
+    notifyPlantRemoved,
+    notifyTask,
+    notifyBadgeUnlocked,
   };
 }

@@ -26,7 +26,7 @@ interface PlantSuggestion {
 export default function AddPlantManually() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { addNotification } = useNotifications();
+  const { notifyPlantAdded } = useNotifications();
   const { updatePlantCollectionBadges } = useBadges();
   
   // État pour suivre l'étape du processus hiérarchique
@@ -329,11 +329,7 @@ export default function AddPlantManually() {
       updatePlantCollectionBadges.mutateAsync();
       
       // Ajouter une notification pour informer l'utilisateur
-      addNotification({
-        title: "Nouvelle plante ajoutée",
-        message: `Vous avez ajouté ${name} à votre collection`,
-        type: "success"
-      });
+      notifyPlantAdded(name);
       
       toast({
         title: "Plante ajoutée",

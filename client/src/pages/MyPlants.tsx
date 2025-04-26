@@ -10,10 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useNotifications from "@/hooks/useNotifications";
 
 export default function MyPlants() {
   const { data: plants, isLoading } = usePlants();
   const deletePlantMutation = usePlantDelete();
+  const { notifyPlantRemoved } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -146,7 +148,16 @@ export default function MyPlants() {
   // Fonction pour confirmer la suppression
   const confirmDelete = () => {
     if (plantToDelete) {
-      deletePlantMutation.mutate(plantToDelete);
+      // Récupérer le nom de la plante avant suppression
+      const plantName = plants?.find(p => p.id === plantToDelete)?.name || 'Plante';
+      
+      deletePlantMutation.mutate(plantToDelete, {
+        onSuccess: () => {
+          // Notification de suppression de plante
+          notifyPlantRemoved(plantName);
+        }
+      });
+      
       setConfirmDialogOpen(false);
       setPlantToDelete(null);
     }
