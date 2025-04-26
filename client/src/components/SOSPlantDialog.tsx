@@ -112,11 +112,16 @@ export default function SOSPlantDialog({
       
       const response = await apiRequest("POST", `/api/plants/${plant.id}/sos-diagnostic`, payload);
 
+      console.log("Réponse statut:", response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log("Erreur détaillée:", errorText);
         throw new Error("Une erreur est survenue lors de l'envoi du diagnostic");
       }
 
       const result = await response.json();
+      console.log("Résultat du diagnostic:", result);
       
       // Afficher le résultat du diagnostic
       setDiagnosis(result.diagnosis);

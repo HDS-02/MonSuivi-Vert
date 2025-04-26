@@ -931,6 +931,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour le diagnostic SOS d'une plante
+  app.post("/api/plants/:id/sos-diagnostic", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier que la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Valider les données du formulaire avec Zod
+      const diagnosticInputSchema = z.object({
+        plantId: z.number(),
+        plantName: z.string(),
+        plantSpecies: z.string().optional(),
+        lastWatering: z.string(),
+        environment: z.object({
+          directSunlight: z.boolean(),
+          brightIndirect: z.boolean(),
+          lowLight: z.boolean()
+        }),
+        temperature: z.string(),
+        symptoms: z.object({
+          yellowLeaves: z.boolean(),
+          brownSpots: z.boolean(),
+          droppingLeaves: z.boolean(),
+          dryLeaves: z.boolean(),
+          moldOrFungus: z.boolean(),
+          insects: z.boolean(),
+          slowGrowth: z.boolean(),
+          rootIssues: z.boolean()
+        }),
+        additionalNotes: z.string().optional()
+      });
+      
+      // Valider les données
+      const input = diagnosticInputSchema.parse(req.body);
+      
+      // Générer le diagnostic
+      const diagnostic = plantDiagnosticService.generateDiagnosis(input);
+      
+      // Mettre à jour les badges liés aux diagnostics SOS
+      const userId = req.user?.id;
+      if (userId) {
+        // Incrémenter le compteur de diagnostics pour ce badge
+        const userBadges = badgeService.getBadgesByUserId(userId);
+        const sosDiagnosticBadge = userBadges.find(b => b.id === "sos-diagnostic-1" || b.id === "sos-diagnostic-5");
+        
+        if (sosDiagnosticBadge) {
+          const progress = (sosDiagnosticBadge.progress || 0) + 1;
+          const unlockedBadges = badgeService.checkSOSDiagnosticBadges(userId, progress);
+          
+          if (unlockedBadges.length > 0) {
+            console.log("Badges débloqués:", unlockedBadges);
+          }
+        }
+      }
+      
+      res.json(diagnostic);
+    } catch (error: any) {
+      console.error("Erreur lors du diagnostic SOS:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Données invalides pour le diagnostic", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ message: error.message || "Erreur serveur" });
+    }
+  });
+
   // BADGES ROUTES
   // Route pour récupérer tous les badges d'un utilisateur
   app.get("/api/badges", isAuthenticated, async (req: Request, res: Response) => {

@@ -89,7 +89,11 @@ export default function PlantDetail() {
       notifyTask(`${taskType} de ${plant?.name || 'la plante'} effectué`);
       
       // Mettre à jour les badges de tâches complétées
-      badgesHook.updateTaskCompletionBadges.mutateAsync();
+      try {
+        badgesHook.updateTaskCompletionBadges.mutate();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour des badges:", error);
+      }
       
       toast({
         title: "Tâche terminée",
