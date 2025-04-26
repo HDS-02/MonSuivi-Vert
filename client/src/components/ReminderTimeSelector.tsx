@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import useNotifications from "@/hooks/useNotifications";
 import { Plant } from "@shared/schema";
 
 interface ReminderTimeSelectorProps {
@@ -14,6 +15,7 @@ interface ReminderTimeSelectorProps {
 
 export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProps) {
   const { toast } = useToast();
+  const { notifyTask } = useNotifications();
   const queryClient = useQueryClient();
   const [reminderTime, setReminderTime] = useState(plant.reminderTime || "08:00");
   const [isEditing, setIsEditing] = useState(false);
@@ -41,6 +43,29 @@ export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProp
       toast({
         title: "Heure de rappel mise à jour",
         description: `Les rappels pour ${plant.name} seront envoyés à ${reminderTime}`,
+      });
+      
+      // Envoyer une notification à l'utilisateur pour l'informer du changement de l'heure de rappel
+      notifyTask(`Heure de rappel pour ${plant.name} définie à ${reminderTime}`);
+      
+      // Envoyer un email de test pour confirmer les rappels d'arrosage
+      fetch('/api/plants/send-watering-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          plantId: plant.id,
+          reminderTime: reminderTime
+        })
+      }).then(response => {
+        if (response.ok) {
+          toast({
+            title: "Email de test envoyé",
+            description: "Un email de confirmation a été envoyé à votre adresse",
+            duration: 5000
+          });
+        }
+      }).catch(error => {
+        console.error("Erreur lors de l'envoi de l'email de test:", error);
       });
       
       // Si la plante a l'arrosage automatique activé, afficher un message supplémentaire
