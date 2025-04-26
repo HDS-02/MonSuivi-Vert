@@ -65,7 +65,7 @@ export default function PlantDetail() {
   });
   
   // Hook pour les badges et notifications
-  const { updateTaskCompletionBadges } = useBadges();
+  const badgesHook = useBadges();
   const { notifyTask } = useNotifications();
   
   // Mutation pour marquer une tâche comme terminée
@@ -89,7 +89,7 @@ export default function PlantDetail() {
       notifyTask(`${taskType} de ${plant?.name || 'la plante'} effectué`);
       
       // Mettre à jour les badges de tâches complétées
-      updateTaskCompletionBadges.mutateAsync();
+      badgesHook.updateTaskCompletionBadges.mutateAsync();
       
       toast({
         title: "Tâche terminée",
@@ -303,6 +303,13 @@ export default function PlantDetail() {
                   }).then(() => {
                     // Mettre à jour les données et l'interface
                     queryClient.invalidateQueries({ queryKey: [`/api/plants/${plant.id}`] });
+                    
+                    // Ajouter une notification d'arrosage avec le hook useNotifications
+                    if (!plant.autoWatering) {
+                      notifyTask(`Arrosage automatique activé pour ${plant.name}`);
+                    } else {
+                      notifyTask(`Arrosage automatique désactivé pour ${plant.name}`);
+                    }
                     
                     // Notification visuelle dans l'interface
                     toast({

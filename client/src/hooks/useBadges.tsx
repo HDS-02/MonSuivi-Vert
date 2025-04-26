@@ -21,7 +21,7 @@ export default function useBadges() {
   const { notifyBadgeUnlocked } = useNotifications();
   
   // Récupérer tous les badges
-  const { data: badges, isLoading } = useQuery<Badge[]>({
+  const { data: badges = [], isLoading: isBadgesLoading, error: badgesError = null, isError: isBadgesError } = useQuery<Badge[]>({
     queryKey: ["/api/badges"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/badges");
@@ -113,11 +113,25 @@ export default function useBadges() {
     }
   });
 
+  // Obtenir les badges en progression
+  const getInProgressBadges = () => {
+    return badges.filter(badge => badge.progress > 0 && !badge.unlocked);
+  };
+
+  // Obtenir les badges débloqués
+  const getUnlockedBadges = () => {
+    return badges.filter(badge => badge.unlocked);
+  };
+
   return {
     badges,
-    isLoading,
+    isBadgesLoading,
+    isBadgesError,
+    badgesError,
     updatePlantCollectionBadges,
     updateTaskCompletionBadges,
-    updateLoginStreakBadge
+    updateLoginStreakBadge,
+    getUnlockedBadges,
+    getInProgressBadges
   };
 }
