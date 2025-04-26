@@ -228,11 +228,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Partial validation of the request body
       const validatedData = insertPlantSchema.partial().parse(req.body);
       
-      // Si on met à jour l'heure de rappel et qu'aucune valeur pour autoWatering n'est explicitement fournie,
-      // on préserve l'état d'arrosage automatique existant
-      if ('reminderTime' in validatedData && !('autoWatering' in validatedData)) {
-        console.log(`Mise à jour de l'heure de rappel sans modification de l'arrosage automatique. Préservation de l'état: ${existingPlant.autoWatering}`);
-        validatedData.autoWatering = existingPlant.autoWatering;
+      // Ne modifions pas l'état d'arrosage automatique si pas explicitement demandé
+      // Cette modification pourrait interférer avec l'API dédiée à la bascule d'arrosage
+      // Nous autorisons uniquement la modification explicite (quand la clé autoWatering est fournie)
+      if (!('autoWatering' in validatedData)) {
+        console.log(`Mise à jour sans modification explicite de l'arrosage automatique. Préservation de l'état: ${existingPlant.autoWatering}`);
+        // On ne modifie pas validatedData.autoWatering pour laisser le comportement par défaut s'appliquer
       }
       
       // Vérifier si l'état d'arrosage automatique change
@@ -569,9 +570,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const oldReminderTime = plant.reminderTime || "08:00";
       
       // Mettre à jour l'heure de rappel en conservant l'état d'arrosage automatique
+      // Vérifier si une valeur d'arrosage automatique a été fournie explicitement
+      const autoWatering = req.body.autoWatering !== undefined ? req.body.autoWatering : plant.autoWatering;
+      
+      console.log(`Mise à jour de la plante ${plantId}: reminderTime=${reminderTime}, autoWatering=${autoWatering} (valeur précédente: ${plant.autoWatering})`);
+      
       const updatedPlant = await storage.updatePlant(plantId, { 
         reminderTime,
-        autoWatering: plant.autoWatering // Conserver l'état d'arrosage automatique
+        autoWatering // Utiliser la valeur fournie ou conserver l'état existant
       });
       
       if (!updatedPlant) {

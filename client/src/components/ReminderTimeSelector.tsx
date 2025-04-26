@@ -21,13 +21,15 @@ export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProp
   // Mutation pour mettre à jour l'heure de rappel de la plante
   const updateReminderTimeMutation = useMutation({
     mutationFn: async (newTime: string) => {
+      console.log("État actuel d'arrosage automatique avant mise à jour:", plant.autoWatering);
+      
       const response = await apiRequest("PATCH", `/api/plants/${plant.id}/reminder-time`, {
         reminderTime: newTime,
-        // On ne fait pas de mise à jour de l'état d'arrosage automatique ici
-        // Cela est géré par la route d'API qui préserve l'état existant
+        autoWatering: plant.autoWatering // Forcer explicitement le même état d'arrosage automatique
       });
       
       const data = await response.json();
+      console.log("Réponse de l'API après mise à jour:", data);
       return data;
     },
     onSuccess: (data) => {
