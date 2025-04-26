@@ -18,9 +18,14 @@ export default function Badges() {
   useEffect(() => {
     if (user) {
       // Mettre à jour les badges en fonction de la collection de plantes
-      updatePlantCollectionBadges.mutate();
+      updatePlantCollectionBadges.mutateAsync().catch(err => {
+        console.error("Erreur lors de la mise à jour des badges de collection:", err);
+      });
+      
       // Mettre à jour les badges en fonction des tâches complétées
-      updateTaskBadges.mutate();
+      updateTaskBadges.mutateAsync().catch(err => {
+        console.error("Erreur lors de la mise à jour des badges de tâches:", err);
+      });
     }
   }, [user]);
 
