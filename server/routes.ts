@@ -87,6 +87,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PLANTS ROUTES
+  // Route pour récupérer les catégories de plantes
+  app.get("/api/plant-categories", async (_req: Request, res: Response) => {
+    try {
+      // Importer les catégories depuis le module de base de données
+      const { plantCategories } = await import('./plantDatabase');
+      console.log("Envoi des catégories de plantes:", plantCategories.length);
+      res.json(plantCategories);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des catégories de plantes:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/plants", async (_req: Request, res: Response) => {
     try {
       const plants = await storage.getPlants();
