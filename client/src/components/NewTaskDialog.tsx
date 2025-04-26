@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plant, InsertTask } from "@shared/schema";
+import useNotifications from "@/hooks/useNotifications";
 
 import {
   Dialog,
@@ -71,6 +72,7 @@ export default function NewTaskDialog({
   selectedPlantId,
 }: NewTaskDialogProps) {
   const { toast } = useToast();
+  const { notifyWatering, notifyTask } = useNotifications();
   const [plants, setPlants] = useState<Plant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -164,6 +166,23 @@ export default function NewTaskDialog({
 
       // Rafraîchir les données de tâches dans le cache
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      
+      // Trouver le nom de la plante pour les notifications
+      const selectedPlant = plants.find(p => p.id === data.plantId);
+      const plantName = selectedPlant?.name || 'votre plante';
+      
+      // Déclencher les notifications appropriées selon le type de tâche
+      if (data.type === "water") {
+        notifyWatering(plantName);
+      } else {
+        // Obtenir le libellé du type de tâche pour la notification
+        const taskTypeLabel = 
+          data.type === "fertilize" ? "Fertilisation" :
+          data.type === "repot" ? "Rempotage" :
+          data.type === "light" ? "Exposition" : "Entretien";
+        
+        notifyTask(`${taskTypeLabel} programmé pour ${plantName}`);
+      }
       
       // Si l'option d'arrosage automatique est activée, mettre à jour la propriété autoWatering de la plante
       if (data.type === "water" && data.scheduleFuture) {
