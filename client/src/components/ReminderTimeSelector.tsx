@@ -38,6 +38,9 @@ export default function ReminderTimeSelector({ plant }: ReminderTimeSelectorProp
       });
       
       setIsEditing(false);
+      
+      // Si l'arrosage automatique n'était pas activé, on ne touche pas à cette option
+      // Ce n'est pas le but de ce composant
     },
     onError: (error: Error) => {
       toast({

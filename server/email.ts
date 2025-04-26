@@ -518,6 +518,8 @@ export async function sendScheduledWateringNotification(email: string, plant: Pl
     `;
   }).join('');
   
+  const reminderTime = plant.reminderTime || "08:00";
+  
   const content = `
     <p>Bonjour,</p>
     <p>Nous avons programmé les prochains arrosages pour votre plante :</p>
@@ -541,6 +543,8 @@ export async function sendScheduledWateringNotification(email: string, plant: Pl
     
     <div style="margin: 20px 0; padding: 15px; background-color: #e8f5e9; border-radius: 8px;">
       <p style="margin: 0;"><strong>Conseil :</strong> Cette plante nécessite un arrosage tous les ${plant.wateringFrequency} jours. Les tâches ont été automatiquement ajoutées à votre calendrier.</p>
+      <p style="margin: 10px 0 0;"><strong>Heure des rappels :</strong> Vous recevrez des rappels à <span style="font-weight: bold; color: #1976D2;">${reminderTime}</span> les jours d'arrosage prévus.</p>
+      <p style="margin: 5px 0 0; font-size: 13px; color: #666;">Vous pouvez modifier l'heure des rappels dans les détails de votre plante.</p>
     </div>
     
     <div style="text-align: center; margin: 25px 0;">
@@ -584,6 +588,9 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
   const actionIcon = isEnabled ? "✅" : "❌";
   const waterEmoji = "💧";
   
+  // Récupérer l'heure de rappel configurée
+  const reminderTime = plant.reminderTime || "08:00";
+
   // Calcul des prochaines dates d'arrosage si activé
   let wateringDatesHtml = '';
   if (isEnabled && plant.wateringFrequency) {
@@ -604,9 +611,15 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
         <ul style="margin: 10px 0 0; padding-left: 20px;">
           ${dates.map(date => `<li style="margin-bottom: 8px; color: #333;">${waterEmoji} ${date}</li>`).join('')}
         </ul>
-        <p style="margin: 15px 0 0; font-size: 13px; color: #666; font-style: italic;">
-          Des rappels vous seront envoyés le jour prévu pour chaque arrosage.
-        </p>
+        <div style="margin-top: 15px; padding: 8px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+          <p style="margin: 0; font-size: 14px; color: #1976D2;">
+            <strong>🕒 Heure des rappels :</strong> ${reminderTime}
+          </p>
+          <p style="margin: 5px 0 0; font-size: 12px; color: #666;">
+            Vous recevrez des notifications à cette heure les jours d'arrosage prévus.
+            <br>Vous pouvez modifier cette heure dans les détails de votre plante.
+          </p>
+        </div>
       </div>
     `;
   }

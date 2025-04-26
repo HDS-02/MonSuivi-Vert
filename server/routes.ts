@@ -558,6 +558,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Format d'heure invalide. Utilisez HH:MM" });
       }
       
+      const oldReminderTime = plant.reminderTime || "08:00";
+      
       // Mettre à jour l'heure de rappel
       const updatedPlant = await storage.updatePlant(plantId, { 
         reminderTime 
@@ -568,6 +570,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`Heure de rappel mise à jour pour la plante ${plantId} (${plant.name}): ${reminderTime}`);
+      
+      // Envoyer un email de notification si l'utilisateur est authentifié et a configuré son email
+      if (req.isAuthenticated() && req.user?.email) {
+        try {
+          // Créer un modèle d'email personnalisé pour la notification de changement d'heure
+          const emailContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
+              <h2 style="color: #2e7d32; text-align: center;">🕒 Heure de rappel modifiée</h2>
+              <p>Bonjour,</p>
+              <p>L'heure de rappel d'arrosage pour votre plante <strong>${plant.name}</strong> a été modifiée.</p>
+              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                <p style="margin: 5px 0;"><strong>Ancienne heure :</strong> ${oldReminderTime}</p>
+                <p style="margin: 5px 0;"><strong>Nouvelle heure :</strong> ${reminderTime}</p>
+              </div>
+              <p>Vous recevrez désormais les rappels d'arrosage à ${reminderTime} si cette plante a l'arrosage automatique activé.</p>
+              <p style="font-style: italic; color: #757575; margin-top: 20px; font-size: 0.9em;">Cet email est envoyé automatiquement par Mon Suivi Vert.</p>
+            </div>
+          `;
+          
+          const emailOptions = {
+            to: req.user.email,
+            subject: `Modification de l'heure de rappel pour ${plant.name}`,
+            html: emailContent
+          };
+          
+          const { sendEmail } = await import('./email');
+          sendEmail(emailOptions)
+            .then(success => {
+              if (success) {
+                console.log(`Email de notification de changement d'heure de rappel envoyé avec succès à ${req.user?.email}`);
+              }
+            })
+            .catch(emailError => {
+              console.error(`Erreur lors de l'envoi de l'email de notification de changement d'heure de rappel:`, emailError);
+            });
+        } catch (emailError) {
+          // Ne pas bloquer la mise à jour si l'envoi d'email échoue
+          console.error('Erreur lors de l\'envoi de l\'email de notification de changement d\'heure de rappel:', emailError);
+        }
+      }
       
       res.json({ 
         message: "Heure de rappel mise à jour avec succès",
