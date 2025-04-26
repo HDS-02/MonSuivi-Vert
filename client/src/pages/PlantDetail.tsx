@@ -264,17 +264,35 @@ export default function PlantDetail() {
               {/* Options d'arrosage automatique */}
               <button 
                 onClick={() => {
+                  // Valider si la plante a une fréquence d'arrosage définie
+                  if (!plant.autoWatering && (!plant.wateringFrequency || plant.wateringFrequency <= 0)) {
+                    toast({
+                      title: "Impossible d'activer l'arrosage automatique",
+                      description: "Veuillez d'abord définir une fréquence d'arrosage pour cette plante",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
                   // Basculer l'état d'arrosage automatique
                   updatePlantMutation.mutate({
                     id: plant.id,
                     updates: { autoWatering: !plant.autoWatering }
                   }, {
                     onSuccess: () => {
+                      // Notification visuelle dans l'interface
                       toast({
                         title: plant.autoWatering ? "Arrosage automatique désactivé" : "Arrosage automatique activé",
                         description: plant.autoWatering 
                           ? "Les tâches d'arrosage ne seront plus créées automatiquement" 
                           : "Les tâches d'arrosage seront créées automatiquement"
+                      });
+                      
+                      // Notification par email - appel API spécifique pour cela
+                      apiRequest('POST', `/api/plants/${plant.id}/toggle-auto-watering`, {
+                        enabled: !plant.autoWatering
+                      }).catch(error => {
+                        console.error("Erreur lors de l'envoi de la notification par email:", error);
                       });
                     }
                   });

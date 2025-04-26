@@ -107,6 +107,31 @@ export default function Home() {
     }
   }
 
+  // Filtrer les tâches uniquement pour aujourd'hui
+  const getTodayTasks = () => {
+    if (!tasks) return [];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return tasks.filter(t => {
+      // Vérifier si la tâche n'est pas complétée
+      if (t.completed) return false;
+      
+      // Convertir la date de la tâche
+      const taskDate = new Date(t.dueDate || new Date());
+      taskDate.setHours(0, 0, 0, 0);
+      
+      // Vérifier si la date est aujourd'hui
+      return taskDate >= today && taskDate < tomorrow;
+    });
+  };
+  
+  const todayTasks = !tasksLoading ? getTodayTasks() : [];
+  
   return (
     <div>
       {/* WELCOME SECTION */}
@@ -124,8 +149,8 @@ export default function Home() {
               <span className="font-semibold text-white">
                 {!plantsLoading ? plants?.length || 0 : "..."} plantes
               </span>
-              {!tasksLoading && tasks && tasks.filter(t => !t.completed).length > 0 && (
-                <>. <span className="font-semibold text-white">{tasks.filter(t => !t.completed).length}</span> tâche{tasks.filter(t => !t.completed).length > 1 ? 's' : ''} à accomplir aujourd'hui</>
+              {!tasksLoading && todayTasks.length > 0 && (
+                <>. <span className="font-semibold text-white">{todayTasks.length}</span> tâche{todayTasks.length > 1 ? 's' : ''} à accomplir aujourd'hui</>
               )}.
             </p>
           </div>
@@ -204,35 +229,33 @@ export default function Home() {
               </div>
               <p className="mt-2 text-gray-400">Chargement des tâches...</p>
             </div>
-          ) : tasks && tasks.filter(t => !t.completed).length > 0 ? (
+          ) : todayTasks.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {tasks
-                .filter((task: Task) => !task.completed)
-                .map((task: Task) => (
-                  <div key={task.id} className="p-4 flex items-center hover:bg-gray-50/50 transition-colors">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${
-                      task.type === 'water' ? 'from-blue-500/80 to-blue-400/80' :
-                      task.type === 'light' ? 'from-amber-500/80 to-amber-400/80' :
-                      task.type === 'fertilize' ? 'from-green-500/80 to-green-400/80' :
-                      task.type === 'repot' ? 'from-amber-700/80 to-amber-600/80' :
-                      'from-gray-500/80 to-gray-400/80'
-                    } rounded-full flex items-center justify-center mr-4 shadow-sm text-white`}>
-                      {getTaskIcon(task.type)}
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="font-medium">{task.description}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(task.dueDate || Date.now()).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                    <button 
-                      className="ml-2 p-2 rounded-full hover:bg-white/80 active:bg-white/90 transition-all"
-                      onClick={() => completeTask(task.id)}
-                    >
-                      <span className="material-icons text-gray-400 hover:text-green-500 transition-colors">check_circle_outline</span>
-                    </button>
+              {todayTasks.map((task: Task) => (
+                <div key={task.id} className="p-4 flex items-center hover:bg-gray-50/50 transition-colors">
+                  <div className={`w-12 h-12 bg-gradient-to-br ${
+                    task.type === 'water' ? 'from-blue-500/80 to-blue-400/80' :
+                    task.type === 'light' ? 'from-amber-500/80 to-amber-400/80' :
+                    task.type === 'fertilize' ? 'from-green-500/80 to-green-400/80' :
+                    task.type === 'repot' ? 'from-amber-700/80 to-amber-600/80' :
+                    'from-gray-500/80 to-gray-400/80'
+                  } rounded-full flex items-center justify-center mr-4 shadow-sm text-white`}>
+                    {getTaskIcon(task.type)}
                   </div>
-                ))}
+                  <div className="flex-grow">
+                    <h3 className="font-medium">{task.description}</h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(task.dueDate || Date.now()).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <button 
+                    className="ml-2 p-2 rounded-full hover:bg-white/80 active:bg-white/90 transition-all"
+                    onClick={() => completeTask(task.id)}
+                  >
+                    <span className="material-icons text-gray-400 hover:text-green-500 transition-colors">check_circle_outline</span>
+                  </button>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="p-8 text-center bg-gradient-to-br from-gray-50/50 to-white/80">
