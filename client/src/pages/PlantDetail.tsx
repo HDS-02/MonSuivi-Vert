@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import NewTaskDialog from "@/components/NewTaskDialog";
 import useBadges from "@/hooks/useBadges";
+import useNotifications from "@/hooks/useNotifications";
 import PlantingCalendar from "@/components/PlantingCalendar";
 import ReminderTimeSelector from "@/components/ReminderTimeSelector";
 
@@ -63,8 +64,9 @@ export default function PlantDetail() {
     }
   });
   
-  // Hook pour les badges
-  const { updateTaskBadges } = useBadges();
+  // Hook pour les badges et notifications
+  const { updateTaskCompletionBadges } = useBadges();
+  const { notifyTask } = useNotifications();
   
   // Mutation pour marquer une tâche comme terminée
   const completeTaskMutation = useMutation({
@@ -72,12 +74,22 @@ export default function PlantDetail() {
       const response = await apiRequest("PATCH", `/api/tasks/${taskId}/complete`);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/plants/${id}/tasks`] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       
+      // Rechercher la tâche dans la liste actuelle pour le nom de la plante
+      const completedTask = tasks?.find(t => t.id === data.id);
+      const taskType = completedTask?.type === "water" ? "Arrosage" : 
+                      completedTask?.type === "fertilize" ? "Fertilisation" : 
+                      completedTask?.type === "repot" ? "Rempotage" : 
+                      completedTask?.type === "light" ? "Exposition" : "Entretien";
+      
+      // Notifier que la tâche est terminée
+      notifyTask(`${taskType} de ${plant?.name || 'la plante'} effectué`);
+      
       // Mettre à jour les badges de tâches complétées
-      updateTaskBadges.mutateAsync();
+      updateTaskCompletionBadges.mutateAsync();
       
       toast({
         title: "Tâche terminée",
