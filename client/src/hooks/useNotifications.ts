@@ -51,24 +51,27 @@ export default function useNotifications() {
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   const [exampleNotificationsAdded, setExampleNotificationsAdded] = useState(false);
   
-  // Ajouter des notifications d'exemple
+  // Charger les notifications depuis le localStorage
   useEffect(() => {
     if (!exampleNotificationsAdded) {
-      // Ajouter des notifications d'exemple avec délai pour simulation
-      setTimeout(() => {
-        const now = new Date();
+      try {
+        // Charger les notifications sauvegardées
+        const savedNotifications = localStorage.getItem('msv_notifications');
+        if (savedNotifications) {
+          const parsedNotifications = JSON.parse(savedNotifications);
+          // Convertir les dates (qui sont stockées en string) en objets Date
+          const notificationsWithDates = parsedNotifications.map((notif: any) => ({
+            ...notif,
+            date: new Date(notif.date)
+          }));
+          setNotifications(notificationsWithDates);
+        }
         
-        // Ajouter les notifications avec des dates différentes
-        const exampleWithDates = EXAMPLE_NOTIFICATIONS.map((notif, index) => ({
-          ...notif,
-          id: Math.random().toString(36).substring(2),
-          date: new Date(now.getTime() - index * 1000 * 60 * 60 * (index + 1)), // Espacer les dates
-          read: index > 1 // Les 2 premières ne sont pas lues
-        }));
-        
-        setNotifications(exampleWithDates);
         setExampleNotificationsAdded(true);
-      }, 500);
+      } catch (error) {
+        console.error("Erreur lors du chargement des notifications:", error);
+        setExampleNotificationsAdded(true);
+      }
     }
   }, [exampleNotificationsAdded]);
 
@@ -127,7 +130,19 @@ export default function useNotifications() {
       read: false,
     };
 
-    setNotifications(prev => [newNotification, ...prev]);
+    // Mettre à jour l'état
+    setNotifications(prev => {
+      const updatedNotifications = [newNotification, ...prev];
+      
+      // Sauvegarder dans localStorage
+      try {
+        localStorage.setItem('msv_notifications', JSON.stringify(updatedNotifications));
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des notifications:", error);
+      }
+      
+      return updatedNotifications;
+    });
 
     // Afficher un toast
     toast({

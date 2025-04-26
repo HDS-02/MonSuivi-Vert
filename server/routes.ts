@@ -842,6 +842,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // Route pour générer un QR code SVG pour une plante
+  app.get("/api/plants/:id/qrcode/svg", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier que la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Générer le QR code SVG
+      const svgContent = await qrCodeService.generatePlantQRCodeSVG(plantId);
+      
+      // Renvoyer le SVG
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.send(svgContent);
+    } catch (error: any) {
+      console.error("Erreur lors de la génération du QR code SVG:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Route pour mettre à jour l'heure de rappel globale d'un utilisateur
   app.patch("/api/users/:id/reminder-time", isAuthenticated, async (req: Request, res: Response) => {

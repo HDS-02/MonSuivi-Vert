@@ -36,7 +36,7 @@ export function PlantQRCode({ plantId, plantName }: PlantQRCodeProps) {
           return response.json();
         })
         .then(data => {
-          setQrCodeData(data.qrCodeDataUrl);
+          setQrCodeData(data.qrcode);
           setIsLoading(false);
         })
         .catch(err => {
