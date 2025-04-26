@@ -797,6 +797,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UTIL ROUTES
 
   // Autres routes EMAIL, QR Code, PDF, etc.
+  
+  // Route pour générer un QR code pour une plante
+  app.get("/api/plants/:id/qrcode", async (req: Request, res: Response) => {
+    try {
+      const plantId = parseInt(req.params.id);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "ID de plante invalide" });
+      }
+      
+      // Vérifier que la plante existe
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plante non trouvée" });
+      }
+      
+      // Taille du QR code (optionnel)
+      const size = req.query.size ? parseInt(req.query.size as string) : 300;
+      
+      // Générer le QR code
+      const qrCodeData = await qrCodeService.generatePlantQRCode(plantId, size);
+      
+      // Vérifier le format demandé (image ou JSON)
+      const format = req.query.format || 'json';
+      
+      if (format === 'image') {
+        // Renvoyer l'image directement
+        const base64Data = qrCodeData.replace(/^data:image\/png;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
+      } else {
+        // Renvoyer les données en JSON
+        res.json({ 
+          qrcode: qrCodeData,
+          plantId,
+          plantName: plant.name
+        });
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la génération du QR code:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // Route pour mettre à jour l'heure de rappel globale d'un utilisateur
   app.patch("/api/users/:id/reminder-time", isAuthenticated, async (req: Request, res: Response) => {
