@@ -130,22 +130,22 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             <span className="material-icons text-primary text-lg">palette</span>
             <h3 className="text-base font-medium text-gray-700">Apparence</h3>
           </div>
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-100 shadow-sm">
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-md">
             <div className="flex items-center justify-between">
-              <Label htmlFor="dark-mode" className="flex items-center gap-2 cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="material-icons text-gray-600">dark_mode</span>
+              <Label htmlFor="dark-mode" className="flex items-center gap-3 cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shadow-sm">
+                  <span className="material-icons text-gray-700">dark_mode</span>
                 </div>
                 <div>
-                  <span className="block text-sm font-medium">Mode sombre</span>
-                  <span className="block text-xs text-gray-500">Réduire la luminosité de l'écran</span>
+                  <span className="block text-sm font-medium text-gray-900">Mode sombre</span>
+                  <span className="block text-xs text-gray-600">Réduire la luminosité de l'écran</span>
                 </div>
               </Label>
               <Switch
                 id="dark-mode"
                 checked={darkMode}
                 onCheckedChange={setDarkMode}
-                className="data-[state=checked]:bg-primary"
+                className="data-[state=checked]:bg-primary h-6 w-11"
               />
             </div>
           </div>
@@ -164,48 +164,48 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             <h3 className="text-base font-medium text-gray-700">Notifications</h3>
           </div>
           <div className="space-y-3">
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-md">
               <div className="flex items-center justify-between">
-                <Label htmlFor="app-notif" className="flex items-center gap-2 cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span className="material-icons text-gray-600">notifications_active</span>
+                <Label htmlFor="app-notif" className="flex items-center gap-3 cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shadow-sm">
+                    <span className="material-icons text-gray-700">notifications_active</span>
                   </div>
                   <div>
-                    <span className="block text-sm font-medium">Notifications de l'application</span>
-                    <span className="block text-xs text-gray-500">Rappels d'entretien dans l'application</span>
+                    <span className="block text-sm font-medium text-gray-900">Notifications de l'application</span>
+                    <span className="block text-xs text-gray-600">Rappels d'entretien dans l'application</span>
                   </div>
                 </Label>
                 <Switch
                   id="app-notif"
                   checked={notifications}
                   onCheckedChange={setNotifications}
-                  className="data-[state=checked]:bg-primary"
+                  className="data-[state=checked]:bg-primary h-6 w-11"
                 />
               </div>
             </div>
             
-            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-md">
               <div className="flex items-center justify-between">
-                <Label htmlFor="email-notif" className="flex items-center gap-2 cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span className="material-icons text-gray-600">email</span>
+                <Label htmlFor="email-notif" className="flex items-center gap-3 cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shadow-sm">
+                    <span className="material-icons text-gray-700">email</span>
                   </div>
                   <div>
-                    <span className="block text-sm font-medium">Notifications par email</span>
-                    <span className="block text-xs text-gray-500">Recevez les rappels par email</span>
+                    <span className="block text-sm font-medium text-gray-900">Notifications par email</span>
+                    <span className="block text-xs text-gray-600">Recevez les rappels par email</span>
                   </div>
                 </Label>
                 <Switch
                   id="email-notif"
                   checked={emailNotifications}
                   onCheckedChange={setEmailNotifications}
-                  className="data-[state=checked]:bg-primary"
+                  className="data-[state=checked]:bg-primary h-6 w-11"
                 />
               </div>
               
               {emailNotifications && (
-                <div className="mt-3 pl-10">
-                  <Label htmlFor="email-address" className="text-xs text-gray-600 mb-1 block">
+                <div className="mt-4 pt-3 pb-2 px-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <Label htmlFor="email-address" className="text-sm text-gray-800 font-medium mb-2 block">
                     Votre adresse email pour les rappels
                   </Label>
                   <Input
@@ -214,18 +214,18 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                     placeholder="votre@email.com"
                     value={emailAddress}
                     onChange={(e) => setEmailAddress(e.target.value)}
-                    className="text-sm h-9"
+                    className="text-sm h-10 bg-white border-gray-300 shadow-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-600 mt-2">
                     Les rappels d'entretien seront envoyés à cette adresse
                   </p>
                   
-                  <div className="grid grid-cols-1 gap-2 mt-3">
+                  <div className="grid grid-cols-1 gap-3 mt-4">
                     <Button
                       variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs"
+                      className="text-xs bg-white border-gray-300 hover:bg-gray-50 text-gray-800 h-9 font-medium"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -273,7 +273,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                       variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs"
+                      className="text-xs bg-white border-gray-300 hover:bg-gray-50 text-gray-800 h-9 font-medium"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -321,7 +321,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                       variant="outline"
                       size="sm"
                       type="button"
-                      className="text-xs text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"
+                      className="text-xs text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 h-9 font-medium shadow-sm"
                       onClick={async () => {
                         try {
                           if (!emailAddress) {
@@ -387,17 +387,17 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             <span className="material-icons text-primary text-lg">info</span>
             <h3 className="text-base font-medium text-gray-700">À propos</h3>
           </div>
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-gray-100 shadow-sm">
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-md">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium">Mon Suivi Vert</h4>
-              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+              <h4 className="font-medium text-gray-900 text-base">Mon Suivi Vert</h4>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 shadow-sm font-medium">
                 v1.0.0
               </Badge>
             </div>
-            <p className="text-sm text-gray-500 mb-2">
+            <p className="text-sm text-gray-700 mb-3">
               Une application d'analyse et de suivi de santé des plantes.
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               © 2025 Mon Suivi Vert. Tous droits réservés.
             </p>
           </div>
