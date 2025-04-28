@@ -1,0 +1,41 @@
+# Configuration de l'application pour Bolt.DIY
+[app]
+name = "mon-suivi-vert"
+version = "1.0.0"
+description = "Une application de suivi de plantes avec fonctionnalités communautaires"
+
+[build]
+command = "npm run build"
+output_dir = "dist"
+
+[deploy]
+runtime = "nodejs"
+version = "20"
+start_command = "node dist/index.js"
+port = 5000
+health_check_path = "/api/health"
+
+[env]
+# Variables d'environnement requises
+required = [
+  "DATABASE_URL",
+  "OPENAI_API_KEY",
+  "EMAIL_USER",
+  "EMAIL_PASSWORD"
+]
+
+[resources]
+memory = "512Mi"
+cpu = "0.5"
+
+[features]
+# Fonctionnalités supportées par l'application
+auth = true
+database = true
+plant_tracking = true
+community = true
+weather_integration = true
+
+[database]
+type = "postgresql"
+migrations = "drizzle-kit push"

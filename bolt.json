@@ -1,0 +1,49 @@
+{
+  "name": "mon-suivi-vert",
+  "version": "1.0.0",
+  "description": "Une application de suivi de plantes avec fonctionnalités communautaires",
+  "main": "server/index.ts",
+  "type": "module",
+  "bolt": {
+    "entrypoint": "server/index.ts",
+    "environment": "node",
+    "nodeVersion": "20.x",
+    "dependencies": {
+      "system": [
+        "nodejs-20"
+      ],
+      "packages": [
+        "express",
+        "react",
+        "drizzle-orm"
+      ]
+    },
+    "port": 5000,
+    "resources": {
+      "memory": "512Mi",
+      "cpu": "0.5"
+    },
+    "envVars": [
+      "DATABASE_URL",
+      "OPENAI_API_KEY",
+      "EMAIL_USER",
+      "EMAIL_PASSWORD"
+    ],
+    "features": [
+      "auth",
+      "database",
+      "plant-tracking",
+      "community",
+      "weather-integration"
+    ],
+    "autoStart": true
+  },
+  "scripts": {
+    "start": "NODE_ENV=production node dist/index.js",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "db:push": "drizzle-kit push"
+  },
+  "author": "Bolt.DIY",
+  "license": "MIT"
+}

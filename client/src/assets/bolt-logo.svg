@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="640" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="640" height="200" fill="#FFFFFF" rx="12" ry="12"/>
+  
+  <!-- Bolt Icon -->
+  <path d="M110 40 L80 100 L130 110 L90 170 L140 110 L90 90 Z" fill="#FF5722" stroke="#333333" stroke-width="4"/>
+  
+  <!-- DIY Tools -->
+  <circle cx="170" cy="90" r="15" fill="#2196F3" stroke="#333333" stroke-width="2"/>
+  <rect x="190" y="75" width="30" height="30" fill="#4CAF50" stroke="#333333" stroke-width="2"/>
+  <path d="M240 75 L260 105 L220 105 Z" fill="#FFC107" stroke="#333333" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="300" y="110" font-family="Arial, sans-serif" font-size="70" font-weight="bold" fill="#333333">BOLT.DIY</text>
+  <text x="310" y="140" font-family="Arial, sans-serif" font-size="20" fill="#666666">Plant Tracker</text>
+</svg>
