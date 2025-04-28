@@ -3,7 +3,9 @@ import {
   tasks, Task, InsertTask,
   plantAnalyses, PlantAnalysis, InsertPlantAnalysis,
   users, User, InsertUser,
-  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry
+  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry,
+  communityTips, CommunityTip, InsertCommunityTip,
+  communityComments, CommunityComment, InsertCommunityComment
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -49,6 +51,22 @@ export interface IStorage {
   updateGrowthJournalEntry(id: number, updates: Partial<GrowthJournalEntry>): Promise<GrowthJournalEntry | undefined>;
   deleteGrowthJournalEntry(id: number): Promise<boolean>;
   
+  // Community features methods
+  getCommunityTips(): Promise<CommunityTip[]>;
+  getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]>;
+  getCommunityTipById(id: number): Promise<CommunityTip | undefined>;
+  createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip>;
+  updateCommunityTip(id: number, updates: Partial<CommunityTip>): Promise<CommunityTip | undefined>;
+  deleteCommunityTip(id: number): Promise<boolean>;
+  voteCommunityTip(id: number, value: 1 | -1): Promise<CommunityTip | undefined>;
+  getCommunityCommentsByTipId(tipId: number): Promise<CommunityComment[]>;
+  createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment>;
+  deleteCommunityComment(id: number): Promise<boolean>;
+  likeCommunityComment(id: number): Promise<CommunityComment | undefined>;
+  getPopularCommunityTips(limit?: number): Promise<CommunityTip[]>;
+  getCommunityTipsByCategory(category: string): Promise<CommunityTip[]>;
+  searchCommunityTips(query: string): Promise<CommunityTip[]>;
+  
   // Session store
   sessionStore: session.Store;
 }
@@ -58,10 +76,18 @@ export class MemStorage implements IStorage {
   private plants: Map<number, Plant>;
   private tasks: Map<number, Task>;
   private plantAnalyses: Map<number, PlantAnalysis>;
+  private growthJournal: Map<number, GrowthJournalEntry>;
+  private communityTips: Map<number, CommunityTip>;
+  private communityComments: Map<number, CommunityComment>;
+  
   private userIdCounter: number;
   private plantIdCounter: number;
   private taskIdCounter: number;
   private analysisIdCounter: number;
+  private journalIdCounter: number;
+  private tipIdCounter: number;
+  private commentIdCounter: number;
+  
   public sessionStore: session.Store;
 
   constructor() {
@@ -69,11 +95,17 @@ export class MemStorage implements IStorage {
     this.plants = new Map();
     this.tasks = new Map();
     this.plantAnalyses = new Map();
+    this.growthJournal = new Map();
+    this.communityTips = new Map();
+    this.communityComments = new Map();
     
     this.userIdCounter = 1;
     this.plantIdCounter = 1;
     this.taskIdCounter = 1;
     this.analysisIdCounter = 1;
+    this.journalIdCounter = 1;
+    this.tipIdCounter = 1;
+    this.commentIdCounter = 1;
     
     // Create session store
     const MemoryStore = createMemoryStore(session);
@@ -279,13 +311,188 @@ export class MemStorage implements IStorage {
     this.plantAnalyses.set(id, newAnalysis);
     return newAnalysis;
   }
+  
+  // Journal de croissance methods
+  async getGrowthJournalEntries(plantId: number): Promise<GrowthJournalEntry[]> {
+    return Array.from(this.growthJournal.values())
+      .filter(entry => entry.plantId === plantId)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+  }
+  
+  async getGrowthJournalEntriesByUserId(userId: number): Promise<GrowthJournalEntry[]> {
+    return Array.from(this.growthJournal.values())
+      .filter(entry => entry.userId === userId)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+  }
+  
+  async getGrowthJournalEntry(id: number): Promise<GrowthJournalEntry | undefined> {
+    return this.growthJournal.get(id);
+  }
+  
+  async createGrowthJournalEntry(entry: InsertGrowthJournalEntry): Promise<GrowthJournalEntry> {
+    const id = this.journalIdCounter++;
+    const date = new Date();
+    const newEntry: GrowthJournalEntry = { ...entry, id, date };
+    this.growthJournal.set(id, newEntry);
+    return newEntry;
+  }
+  
+  async updateGrowthJournalEntry(id: number, updates: Partial<GrowthJournalEntry>): Promise<GrowthJournalEntry | undefined> {
+    const entry = this.growthJournal.get(id);
+    if (!entry) return undefined;
+    
+    const updatedEntry = { ...entry, ...updates };
+    this.growthJournal.set(id, updatedEntry);
+    return updatedEntry;
+  }
+  
+  async deleteGrowthJournalEntry(id: number): Promise<boolean> {
+    return this.growthJournal.delete(id);
+  }
+  
+  // Community features methods
+  async getCommunityTips(): Promise<CommunityTip[]> {
+    return Array.from(this.communityTips.values())
+      .filter(tip => tip.approved)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]> {
+    return Array.from(this.communityTips.values())
+      .filter(tip => tip.userId === userId)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getCommunityTipById(id: number): Promise<CommunityTip | undefined> {
+    return this.communityTips.get(id);
+  }
+  
+  async createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip> {
+    const id = this.tipIdCounter++;
+    const createdAt = new Date();
+    const votes = 0;
+    const rating = 0;
+    const approved = false; // Les conseils doivent être approuvés avant d'être publics
+    const newTip: CommunityTip = { ...tip, id, createdAt, votes, rating, approved };
+    this.communityTips.set(id, newTip);
+    return newTip;
+  }
+  
+  async updateCommunityTip(id: number, updates: Partial<CommunityTip>): Promise<CommunityTip | undefined> {
+    const tip = this.communityTips.get(id);
+    if (!tip) return undefined;
+    
+    const updatedTip = { ...tip, ...updates };
+    this.communityTips.set(id, updatedTip);
+    return updatedTip;
+  }
+  
+  async deleteCommunityTip(id: number): Promise<boolean> {
+    return this.communityTips.delete(id);
+  }
+  
+  async voteCommunityTip(id: number, value: 1 | -1): Promise<CommunityTip | undefined> {
+    const tip = this.communityTips.get(id);
+    if (!tip) return undefined;
+    
+    // Valeurs par défaut si null
+    const currentVotes = tip.votes ?? 0;
+    const currentRating = tip.rating ?? 0;
+    
+    const updatedTip: CommunityTip = {
+      ...tip,
+      votes: currentVotes + value,
+      rating: currentVotes > 0 ? 
+        Math.max(0, Math.min(5, Math.round((currentRating * currentVotes + (value > 0 ? 5 : 1)) / (currentVotes + 1)))) 
+        : (value > 0 ? 5 : 1)
+    };
+    
+    this.communityTips.set(id, updatedTip);
+    return updatedTip;
+  }
+  
+  async getCommunityCommentsByTipId(tipId: number): Promise<CommunityComment[]> {
+    return Array.from(this.communityComments.values())
+      .filter(comment => comment.tipId === tipId)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment> {
+    const id = this.commentIdCounter++;
+    const createdAt = new Date();
+    const likes = 0;
+    const newComment: CommunityComment = { ...comment, id, createdAt, likes };
+    this.communityComments.set(id, newComment);
+    return newComment;
+  }
+  
+  async deleteCommunityComment(id: number): Promise<boolean> {
+    return this.communityComments.delete(id);
+  }
+  
+  async likeCommunityComment(id: number): Promise<CommunityComment | undefined> {
+    const comment = this.communityComments.get(id);
+    if (!comment) return undefined;
+    
+    const updatedComment: CommunityComment = {
+      ...comment,
+      likes: (comment.likes ?? 0) + 1
+    };
+    
+    this.communityComments.set(id, updatedComment);
+    return updatedComment;
+  }
+  
+  async getPopularCommunityTips(limit: number = 5): Promise<CommunityTip[]> {
+    return Array.from(this.communityTips.values())
+      .filter(tip => tip.approved)
+      .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0))
+      .slice(0, limit);
+  }
+  
+  async getCommunityTipsByCategory(category: string): Promise<CommunityTip[]> {
+    return Array.from(this.communityTips.values())
+      .filter(tip => tip.approved && tip.category === category)
+      .sort((a, b) => {
+        // Sort by date descending (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async searchCommunityTips(query: string): Promise<CommunityTip[]> {
+    const lowerQuery = query.toLowerCase();
+    
+    return Array.from(this.communityTips.values())
+      .filter(tip => 
+        tip.approved && (
+          tip.title.toLowerCase().includes(lowerQuery) || 
+          tip.content.toLowerCase().includes(lowerQuery) ||
+          (Array.isArray(tip.tags) && tip.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
+        )
+      );
+  }
 }
 
 // Import la version persistante de notre storage avec base de données
 import { DatabaseStorage } from "./DatabaseStorage";
 
-// Commentez cette ligne pour utiliser le stockage en mémoire
-// export const storage = new MemStorage();
+// Utilisons le stockage en mémoire pour le développement
+export const storage = new MemStorage();
 
-// Utilisez cette ligne pour le stockage en base de données
-export const storage = new DatabaseStorage();
+// Utilisez cette ligne pour le stockage en base de données quand elle sera disponible
+// export const storage = new DatabaseStorage();
