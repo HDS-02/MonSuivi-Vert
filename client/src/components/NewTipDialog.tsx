@@ -44,7 +44,7 @@ const formSchema = z.object({
   category: z.string().optional(),
   plantSpecies: z.string().optional().nullable(),
   imageUrl: z.string().url({ message: "L'URL de l'image n'est pas valide" }).optional().nullable(),
-  tags: z.string().optional().transform(val => val ? val.split(",").map(tag => tag.trim()) : []),
+  tags: z.string().optional().transform(val => val ? val.split(",").map(tag => tag.trim()) : null),
 });
 
 // Type pour les valeurs du formulaire

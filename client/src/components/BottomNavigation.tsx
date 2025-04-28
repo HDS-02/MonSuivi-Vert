@@ -33,16 +33,16 @@ export default function BottomNavigation() {
             </button>
           </div>
 
+          <Link href="/communaute">
+            <div className={`py-3 px-3 flex flex-col items-center ${location === "/communaute" || location.startsWith("/communaute/") ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
+              <span className="material-icons text-current">forum</span>
+              <span className="text-xs mt-1">Communauté</span>
+            </div>
+          </Link>
           <Link href="/badges">
             <div className={`py-3 px-3 flex flex-col items-center ${location === "/badges" ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
               <span className="material-icons text-current">emoji_events</span>
               <span className="text-xs mt-1">Badges</span>
-            </div>
-          </Link>
-          <Link href="/calendar">
-            <div className={`py-3 px-3 flex flex-col items-center ${location === "/calendar" ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
-              <span className="material-icons text-current">calendar_today</span>
-              <span className="text-xs mt-1">Calendrier</span>
             </div>
           </Link>
         </div>
