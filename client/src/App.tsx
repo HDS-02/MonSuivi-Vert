@@ -16,6 +16,8 @@ import Tips from "@/pages/Tips";
 import Badges from "@/pages/Badges";
 import AuthPage from "@/pages/auth-page";
 import AddPlantManually from "@/pages/AddPlantManually";
+import Communaute from "@/pages/Communaute";
+import ConseilDetail from "@/pages/ConseilDetail";
 
 function AppRoutes() {
   return (
@@ -28,6 +30,8 @@ function AppRoutes() {
         <ProtectedRoute path="/calendar" component={Calendar} />
         <ProtectedRoute path="/tips" component={Tips} />
         <ProtectedRoute path="/badges" component={Badges} />
+        <ProtectedRoute path="/communaute" component={Communaute} />
+        <ProtectedRoute path="/communaute/:id" component={ConseilDetail} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

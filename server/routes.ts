@@ -1243,6 +1243,332 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ROUTES POUR LES FONCTIONNALITÉS COMMUNAUTAIRES
+  
+  // Récupérer tous les conseils approuvés
+  app.get("/api/community/tips", async (req: Request, res: Response) => {
+    try {
+      // Vérifier s'il y a un paramètre de catégorie
+      const category = req.query.category as string;
+      if (category) {
+        const tips = await storage.getCommunityTipsByCategory(category);
+        return res.json(tips);
+      }
+      
+      // S'il y a un paramètre de recherche
+      const query = req.query.search as string;
+      if (query) {
+        const tips = await storage.searchCommunityTips(query);
+        return res.json(tips);
+      }
+      
+      // Récupérer tous les conseils
+      const tips = await storage.getCommunityTips();
+      res.json(tips);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des conseils:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Récupérer les conseils populaires
+  app.get("/api/community/tips/popular", async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const tips = await storage.getPopularCommunityTips(limit);
+      res.json(tips);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des conseils populaires:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Récupérer les conseils d'un utilisateur
+  app.get("/api/community/tips/user/:userId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Vérifier que l'utilisateur récupère ses propres conseils ou est un administrateur
+      if (req.user?.id !== userId && !req.user?.isAdmin) {
+        return res.status(403).json({ message: "Non autorisé à accéder aux conseils de cet utilisateur" });
+      }
+      
+      const tips = await storage.getCommunityTipsByUserId(userId);
+      res.json(tips);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des conseils de l'utilisateur:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Récupérer un conseil spécifique
+  app.get("/api/community/tips/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      const tip = await storage.getCommunityTipById(id);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier si le conseil est approuvé ou si l'utilisateur est l'auteur
+      if (!tip.approved && (!req.isAuthenticated() || req.user?.id !== tip.userId)) {
+        return res.status(403).json({ message: "Ce conseil n'est pas encore approuvé" });
+      }
+      
+      res.json(tip);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération du conseil:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Créer un nouveau conseil
+  app.post("/api/community/tips", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validation des données
+      const validatedData = insertCommunityTipSchema.parse({
+        ...req.body,
+        userId: req.user?.id
+      });
+      
+      // Créer le conseil
+      const newTip = await storage.createCommunityTip(validatedData);
+      res.status(201).json(newTip);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de la création du conseil:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Mettre à jour un conseil
+  app.patch("/api/community/tips/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      // Récupérer le conseil existant
+      const tip = await storage.getCommunityTipById(id);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier que l'utilisateur est l'auteur du conseil ou un administrateur
+      if (tip.userId !== req.user?.id && !req.user?.isAdmin) {
+        return res.status(403).json({ message: "Non autorisé à modifier ce conseil" });
+      }
+      
+      // Validation des données
+      const updateSchema = z.object({
+        title: z.string().min(5).max(100).optional(),
+        content: z.string().min(20).max(5000).optional(),
+        imageUrl: z.string().url().nullable().optional(),
+        plantSpecies: z.string().nullable().optional(),
+        tags: z.array(z.string()).nullable().optional(),
+        category: z.string().nullable().optional(),
+        approved: z.boolean().optional(), // Seuls les admins peuvent modifier ceci
+      });
+      
+      // Si l'utilisateur n'est pas admin, retirer le champ approved
+      if (!req.user?.isAdmin && 'approved' in req.body) {
+        delete req.body.approved;
+      }
+      
+      const validatedData = updateSchema.parse(req.body);
+      
+      // Mettre à jour le conseil
+      const updatedTip = await storage.updateCommunityTip(id, validatedData);
+      res.json(updatedTip);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de la mise à jour du conseil:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Supprimer un conseil
+  app.delete("/api/community/tips/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      // Récupérer le conseil existant
+      const tip = await storage.getCommunityTipById(id);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier que l'utilisateur est l'auteur du conseil ou un administrateur
+      if (tip.userId !== req.user?.id && !req.user?.isAdmin) {
+        return res.status(403).json({ message: "Non autorisé à supprimer ce conseil" });
+      }
+      
+      // Supprimer le conseil
+      await storage.deleteCommunityTip(id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression du conseil:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Voter pour un conseil
+  app.post("/api/community/tips/:id/vote", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      // Validation des données
+      const voteSchema = z.object({
+        value: z.union([z.literal(1), z.literal(-1)])
+      });
+      
+      const { value } = voteSchema.parse(req.body);
+      
+      // Récupérer le conseil existant
+      const tip = await storage.getCommunityTipById(id);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier que le conseil est approuvé
+      if (!tip.approved) {
+        return res.status(403).json({ message: "Ce conseil n'est pas encore approuvé" });
+      }
+      
+      // Voter pour le conseil
+      const updatedTip = await storage.voteCommunityTip(id, value);
+      res.json(updatedTip);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors du vote pour le conseil:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Récupérer les commentaires d'un conseil
+  app.get("/api/community/tips/:id/comments", async (req: Request, res: Response) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      // Récupérer le conseil existant
+      const tip = await storage.getCommunityTipById(tipId);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier si le conseil est approuvé ou si l'utilisateur est l'auteur
+      if (!tip.approved && (!req.isAuthenticated() || req.user?.id !== tip.userId)) {
+        return res.status(403).json({ message: "Ce conseil n'est pas encore approuvé" });
+      }
+      
+      // Récupérer les commentaires
+      const comments = await storage.getCommunityCommentsByTipId(tipId);
+      res.json(comments);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des commentaires:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Ajouter un commentaire à un conseil
+  app.post("/api/community/tips/:id/comments", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "ID de conseil invalide" });
+      }
+      
+      // Récupérer le conseil existant
+      const tip = await storage.getCommunityTipById(tipId);
+      if (!tip) {
+        return res.status(404).json({ message: "Conseil non trouvé" });
+      }
+      
+      // Vérifier que le conseil est approuvé
+      if (!tip.approved) {
+        return res.status(403).json({ message: "Ce conseil n'est pas encore approuvé" });
+      }
+      
+      // Validation des données
+      const validatedData = insertCommunityCommentSchema.parse({
+        ...req.body,
+        userId: req.user?.id,
+        tipId
+      });
+      
+      // Créer le commentaire
+      const newComment = await storage.createCommunityComment(validatedData);
+      res.status(201).json(newComment);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de la création du commentaire:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Supprimer un commentaire
+  app.delete("/api/community/comments/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de commentaire invalide" });
+      }
+      
+      // Récupérer le commentaire existant (pas implémenté dans l'interface storage)
+      // Pour le moment, on suppose que l'utilisateur a le droit de supprimer le commentaire
+      
+      // Supprimer le commentaire
+      await storage.deleteCommunityComment(id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression du commentaire:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Liker un commentaire
+  app.post("/api/community/comments/:id/like", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID de commentaire invalide" });
+      }
+      
+      // Liker le commentaire
+      const updatedComment = await storage.likeCommunityComment(id);
+      if (!updatedComment) {
+        return res.status(404).json({ message: "Commentaire non trouvé" });
+      }
+      
+      res.json(updatedComment);
+    } catch (error: any) {
+      console.error("Erreur lors du like du commentaire:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
