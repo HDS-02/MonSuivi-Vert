@@ -1,45 +1,40 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-
-// Type pour les catégories
-type Category = {
-  id: string;
-  name: string;
-  description: string;
-};
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 // Props du composant
 interface NewTipDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  categories: Category[];
+  categories: {
+    id: string;
+    name: string;
+    description: string;
+  }[];
 }
 
-// Schéma de validation pour le formulaire
+// Schéma de validation du formulaire
 const formSchema = z.object({
-  title: z.string().min(5, {
-    message: "Le titre doit contenir au moins 5 caractères",
+  title: z.string().min(3, {
+    message: "Le titre doit contenir au moins 3 caractères",
   }).max(100, {
-    message: "Le titre ne peut pas dépasser 100 caractères",
+    message: "Le titre ne doit pas dépasser 100 caractères",
   }),
-  content: z.string().min(20, {
-    message: "Le contenu doit contenir au moins 20 caractères",
-  }).max(5000, {
-    message: "Le contenu ne peut pas dépasser 5000 caractères",
+  content: z.string().min(10, {
+    message: "Le contenu doit contenir au moins 10 caractères",
   }),
   category: z.string().optional(),
   plantSpecies: z.string().optional().nullable(),
@@ -54,7 +49,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Initialisation du formulaire
+  // Initialisation du formulaire avec le type explicite
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -89,7 +84,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
     },
   });
   
-  // Soumission du formulaire
+  // Soumission du formulaire typée explicitement
   const onSubmit = (data: FormValues) => {
     if (!user) {
       toast({
@@ -107,23 +102,23 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Partager un conseil</DialogTitle>
+          <DialogTitle>Créer une nouvelle discussion</DialogTitle>
           <DialogDescription>
             Partagez votre expérience et vos connaissances avec la communauté.
-            Votre conseil sera examiné avant d'être publié.
+            Votre discussion sera publiée immédiatement.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="title"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Titre</FormLabel>
                   <FormControl>
-                    <Input placeholder="Un titre concis et descriptif" {...field} />
+                    <Input placeholder="Un titre concis et descriptif pour votre discussion" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -131,14 +126,14 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
             />
             
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contenu</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Décrivez votre conseil en détail..." 
+                      placeholder="Décrivez en détail votre sujet, votre question ou votre conseil..." 
                       className="min-h-[150px]"
                       {...field} 
                     />
@@ -150,7 +145,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
@@ -178,7 +173,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
               />
               
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="plantSpecies"
                 render={({ field }) => (
                   <FormItem>
@@ -193,7 +188,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
             </div>
             
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
@@ -207,7 +202,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
             />
             
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="tags"
               render={({ field }) => (
                 <FormItem>
@@ -215,6 +210,9 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
                   <FormControl>
                     <Input placeholder="arrosage, lumière, engrais" {...field} />
                   </FormControl>
+                  <FormDescription className="text-xs">
+                    Ajoutez des mots-clés pour aider les utilisateurs à trouver votre discussion.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -224,14 +222,14 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
               <Button 
                 type="submit" 
                 disabled={createTipMutation.isPending}
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700"
               >
                 {createTipMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Envoi en cours...
                   </>
-                ) : "Partager mon conseil"}
+                ) : "Publier cette discussion"}
               </Button>
             </DialogFooter>
           </form>

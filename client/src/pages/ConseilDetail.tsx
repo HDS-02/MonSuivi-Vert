@@ -231,200 +231,237 @@ export default function ConseilDetail() {
   }
   
   return (
-    <div className="container py-8">
-      <div className="mb-6">
+    <div className="container py-6 max-w-5xl">
+      {/* Navigation */}
+      <div className="mb-6 flex items-center text-sm text-muted-foreground">
         <Link href="/communaute">
-          <Button variant="outline" className="flex items-center gap-2">
-            <ChevronLeft className="h-4 w-4" />
-            Retour à la communauté
-          </Button>
+          <span className="hover:text-primary hover:underline flex items-center">
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Retour au forum
+          </span>
         </Link>
+        <span className="mx-2">/</span>
+        <span className="text-primary font-medium">Discussion</span>
       </div>
       
-      <Card>
-        <CardHeader>
+      {/* Thread Container */}
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden mb-8">
+        {/* Thread Header */}
+        <div className="p-4 bg-green-50 border-b">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">{tip.title}</CardTitle>
-              <CardDescription className="flex items-center gap-2 mt-2">
+              <h1 className="text-xl font-bold text-green-800">{tip.title}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>{formatDate(tip.createdAt)}</span>
-                <span className="mx-1">•</span>
+                <span>•</span>
                 <User className="h-4 w-4" />
                 <span>Utilisateur #{tip.userId}</span>
                 {tip.category && (
                   <>
-                    <span className="mx-1">•</span>
-                    <Badge variant="secondary">{tip.category}</Badge>
+                    <span>•</span>
+                    <Badge variant="outline" className="bg-white">{tip.category}</Badge>
                   </>
                 )}
-              </CardDescription>
+                
+                {tip.plantSpecies && (
+                  <>
+                    <span>•</span>
+                    <Badge variant="outline" className="bg-white">Espèce: {tip.plantSpecies}</Badge>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Award className="h-4 w-4" />
-                <span>{tip.rating.toFixed(1)}</span>
-              </Badge>
-              <Badge variant="outline" className="flex items-center gap-1">
-                <ThumbsUp className="h-4 w-4" />
-                <span>{tip.votes}</span>
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="prose max-w-none">
-            {tip.imageUrl && (
-              <img 
-                src={tip.imageUrl} 
-                alt={tip.title} 
-                className="w-full max-h-96 object-cover rounded-md mb-4"
+            
+            <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-md border">
+              <ThumbsUp
+                className={`h-4 w-4 cursor-pointer ${tip.votes > 0 ? 'text-green-600' : ''}`}
+                onClick={() => handleVote(1)}
               />
-            )}
-            <p className="whitespace-pre-line">{tip.content}</p>
-          </div>
-          
-          {tip.plantSpecies && (
-            <div className="mt-4">
-              <Badge variant="outline">Espèce: {tip.plantSpecies}</Badge>
+              <span className="mx-1 font-medium">{tip.votes}</span>
+              <ThumbsDown
+                className="h-4 w-4 cursor-pointer text-red-600 hover:text-red-700"
+                onClick={() => handleVote(-1)}
+              />
             </div>
-          )}
-          
-          {tip.tags && tip.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-4">
-              {tip.tags.map((tag, index) => (
-                <Badge key={index} variant="outline">{tag}</Badge>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              className="flex items-center gap-1"
-              onClick={() => handleVote(1)}
-            >
-              <ThumbsUp className="h-4 w-4" />
-              <span>Utile</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => handleVote(-1)}
-            >
-              <ThumbsDown className="h-4 w-4" />
-              <span>Non utile</span>
-            </Button>
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+        
+        {/* Original Post Content */}
+        <div className="p-6 border-b">
+          <div className="flex gap-4">
+            <div className="flex-shrink-0">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-green-100 text-green-700">
+                  U{tip.userId}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            
+            <div className="flex-grow">
+              <div className="prose max-w-none">
+                {tip.imageUrl && (
+                  <img 
+                    src={tip.imageUrl} 
+                    alt={tip.title} 
+                    className="w-full max-h-96 object-cover rounded-md mb-4"
+                  />
+                )}
+                <p className="whitespace-pre-line text-gray-700">{tip.content}</p>
+              </div>
+              
+              {tip.tags && tip.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-4">
+                  {tip.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline" className="bg-gray-50">#{tag}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
       
-      <Separator className="my-8" />
-      
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Commentaires ({comments?.length || 0})</h2>
+      {/* Replies Section */}
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden mb-8">
+        <div className="px-4 py-3 bg-muted/30 flex justify-between items-center border-b">
+          <h2 className="font-medium">Réponses ({comments?.length || 0})</h2>
+          
           {!isReplyFormVisible && (
-            <Button onClick={() => setIsReplyFormVisible(true)}>
-              Ajouter un commentaire
+            <Button 
+              onClick={() => setIsReplyFormVisible(true)}
+              className="bg-green-600 hover:bg-green-700"
+              size="sm"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Répondre
             </Button>
           )}
         </div>
         
-        {isReplyFormVisible && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Ajouter un commentaire</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Partagez votre avis ou posez une question..." 
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setIsReplyFormVisible(false)}
-                    >
-                      Annuler
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={addCommentMutation.isPending}
-                    >
-                      {addCommentMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Envoi...
-                        </>
-                      ) : "Publier"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        )}
-        
         {isLoadingComments ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
           </div>
         ) : comments && comments.length > 0 ? (
-          <div className="space-y-4">
+          <div className="divide-y">
             {comments.map((comment) => (
-              <Card key={comment.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-2 items-center">
-                      <Avatar>
-                        <AvatarFallback>{comment.userId.toString().substring(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">Utilisateur #{comment.userId}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</p>
-                      </div>
-                    </div>
+              <div key={comment.id} className="p-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gray-100">
+                        U{comment.userId}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-line">{comment.content}</p>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="flex items-center gap-1"
-                    onClick={() => handleLikeComment(comment.id)}
-                  >
-                    <Heart className="h-4 w-4" />
-                    <span>{comment.likes > 0 ? comment.likes : ""}</span>
-                  </Button>
-                </CardFooter>
-              </Card>
+                  
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Utilisateur #{comment.userId}</span>
+                        <span className="text-xs text-muted-foreground">• {formatDate(comment.createdAt)}</span>
+                      </div>
+                      
+                      <button 
+                        className="flex items-center gap-1 text-primary hover:text-primary-dark"
+                        onClick={() => handleLikeComment(comment.id)}
+                      >
+                        <Heart className={`h-4 w-4 ${comment.likes > 0 ? 'fill-primary' : ''}`} />
+                        <span className="text-xs">{comment.likes > 0 ? comment.likes : ""}</span>
+                      </button>
+                    </div>
+                    
+                    <p className="whitespace-pre-line text-gray-700">{comment.content}</p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-center p-4 text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
-            <p>Aucun commentaire pour l'instant. Soyez le premier à commenter !</p>
+          <div className="text-center py-10 text-muted-foreground">
+            <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-20" />
+            <p>Aucune réponse pour le moment</p>
+            <p className="text-sm">Soyez le premier à répondre à cette discussion</p>
           </div>
         )}
+        
+        {/* Reply Form */}
+        {isReplyFormVisible && (
+          <div className="p-6 bg-gray-50 border-t">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>
+                    {user ? user.username.substring(0, 2).toUpperCase() : "?"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              
+              <div className="flex-grow">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Répondez à cette discussion..." 
+                              className="min-h-[120px] bg-white"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsReplyFormVisible(false)}
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={addCommentMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {addCommentMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Envoi...
+                          </>
+                        ) : "Publier la réponse"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Related or Popular Discussions */}
+      <div className="bg-white rounded-lg shadow-sm border p-4">
+        <h3 className="font-medium mb-4">À explorer aussi</h3>
+        <div className="grid grid-cols-1 gap-4">
+          <Link href="/communaute">
+            <div className="p-3 rounded-md border hover:bg-muted/20 cursor-pointer">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium text-green-700">Toutes les discussions</h4>
+                <ChevronLeft className="h-4 w-4 transform rotate-180" />
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Explorez toutes les discussions de la communauté
+              </p>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
