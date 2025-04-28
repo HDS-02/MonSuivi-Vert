@@ -75,6 +75,8 @@ export const growthJournal = pgTable("growth_journal", {
 export const usersRelations = relations(users, ({ many }) => ({
   plants: many(plants),
   growthEntries: many(growthJournal),
+  tips: many(communityTips),
+  comments: many(communityComments),
 }));
 
 export const plantsRelations = relations(plants, ({ one, many }) => ({
@@ -169,6 +171,74 @@ export interface Badge {
   progress?: number;
   maxProgress?: number;
 }
+
+// Tables pour les fonctionnalités communautaires
+export const communityTips = pgTable("community_tips", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  plantSpecies: text("plant_species"),
+  rating: integer("rating").default(0),
+  votes: integer("votes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  tags: json("tags").$type<string[]>().default([]),
+  imageUrl: text("image_url"),
+  category: text("category"), // Entretien, Maladies, Arrosage, etc.
+  approved: boolean("approved").default(false),
+});
+
+export const communityComments = pgTable("community_comments", {
+  id: serial("id").primaryKey(),
+  tipId: integer("tip_id").notNull(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  likes: integer("likes").default(0),
+});
+
+// Relations pour les tables communautaires
+export const communityTipsRelations = relations(communityTips, ({ one, many }) => ({
+  author: one(users, {
+    fields: [communityTips.userId],
+    references: [users.id],
+  }),
+  comments: many(communityComments),
+}));
+
+export const communityCommentsRelations = relations(communityComments, ({ one }) => ({
+  tip: one(communityTips, {
+    fields: [communityComments.tipId],
+    references: [communityTips.id],
+  }),
+  author: one(users, {
+    fields: [communityComments.userId],
+    references: [users.id],
+  }),
+}));
+
+// Les relations des utilisateurs sont déjà définies plus haut
+
+// Schemas pour l'insertion de données
+export const insertCommunityTipSchema = createInsertSchema(communityTips).omit({
+  id: true,
+  createdAt: true,
+  votes: true,
+  rating: true,
+});
+
+export const insertCommunityCommentSchema = createInsertSchema(communityComments).omit({
+  id: true,
+  createdAt: true,
+  likes: true,
+});
+
+// Types
+export type CommunityTip = typeof communityTips.$inferSelect;
+export type InsertCommunityTip = z.infer<typeof insertCommunityTipSchema>;
+
+export type CommunityComment = typeof communityComments.$inferSelect;
+export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
 
 // API response types for AI analysis
 export interface PlantAnalysisResponse {

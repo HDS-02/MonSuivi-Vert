@@ -3,7 +3,9 @@ import {
   tasks, Task, InsertTask,
   plantAnalyses, PlantAnalysis, InsertPlantAnalysis,
   users, User, InsertUser,
-  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry
+  growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry,
+  communityTips, CommunityTip, InsertCommunityTip,
+  communityComments, CommunityComment, InsertCommunityComment
 } from "@shared/schema";
 import { db } from "./db";
 import { pool } from "./db";
@@ -234,5 +236,160 @@ export class DatabaseStorage implements IStorage {
   async deleteGrowthJournalEntry(id: number): Promise<boolean> {
     const result = await db.delete(growthJournal).where(eq(growthJournal.id, id));
     return true; // Supposons que la suppression a réussi
+  }
+
+  // Community CRUD methods
+  async getCommunityTips(): Promise<CommunityTip[]> {
+    return await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.approved, true))
+      .orderBy(desc(communityTips.createdAt));
+  }
+
+  async getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]> {
+    return await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.userId, userId))
+      .orderBy(desc(communityTips.createdAt));
+  }
+
+  async getCommunityTipById(id: number): Promise<CommunityTip | undefined> {
+    const [tip] = await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.id, id));
+    return tip;
+  }
+
+  async createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip> {
+    const [newTip] = await db
+      .insert(communityTips)
+      .values(tip)
+      .returning();
+    return newTip;
+  }
+
+  async updateCommunityTip(id: number, updates: Partial<CommunityTip>): Promise<CommunityTip | undefined> {
+    const [updatedTip] = await db
+      .update(communityTips)
+      .set(updates)
+      .where(eq(communityTips.id, id))
+      .returning();
+    return updatedTip;
+  }
+
+  async deleteCommunityTip(id: number): Promise<boolean> {
+    const result = await db.delete(communityTips).where(eq(communityTips.id, id));
+    return true;
+  }
+
+  async voteCommunityTip(id: number, value: 1 | -1): Promise<CommunityTip | undefined> {
+    // Récupérer d'abord la pointe actuelle
+    const [tip] = await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.id, id));
+    
+    if (!tip) return undefined;
+    
+    // Valeurs par défaut si null
+    const currentVotes = tip.votes ?? 0;
+    const currentRating = tip.rating ?? 0;
+    
+    // Mettre à jour le nombre de votes
+    const [updatedTip] = await db
+      .update(communityTips)
+      .set({ 
+        votes: currentVotes + value,
+        // Mettre à jour la note en fonction des votes (simple moyenne)
+        rating: currentVotes > 0 ? 
+          Math.max(0, Math.min(5, Math.round((currentRating * currentVotes + (value > 0 ? 5 : 1)) / (currentVotes + 1)))) 
+          : (value > 0 ? 5 : 1)
+      })
+      .where(eq(communityTips.id, id))
+      .returning();
+    
+    return updatedTip;
+  }
+
+  async getCommunityCommentsByTipId(tipId: number): Promise<CommunityComment[]> {
+    return await db
+      .select()
+      .from(communityComments)
+      .where(eq(communityComments.tipId, tipId))
+      .orderBy(desc(communityComments.createdAt));
+  }
+
+  async createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment> {
+    const [newComment] = await db
+      .insert(communityComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+
+  async deleteCommunityComment(id: number): Promise<boolean> {
+    const result = await db.delete(communityComments).where(eq(communityComments.id, id));
+    return true;
+  }
+
+  async likeCommunityComment(id: number): Promise<CommunityComment | undefined> {
+    const [comment] = await db
+      .select()
+      .from(communityComments)
+      .where(eq(communityComments.id, id));
+    
+    if (!comment) return undefined;
+    
+    const [updatedComment] = await db
+      .update(communityComments)
+      .set({ likes: comment.likes + 1 })
+      .where(eq(communityComments.id, id))
+      .returning();
+    
+    return updatedComment;
+  }
+
+  async getPopularCommunityTips(limit: number = 5): Promise<CommunityTip[]> {
+    // Récupérer les conseils les plus populaires (avec le plus de votes)
+    const allTips = await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.approved, true));
+    
+    return allTips
+      .sort((a, b) => b.votes - a.votes)
+      .slice(0, limit);
+  }
+
+  async getCommunityTipsByCategory(category: string): Promise<CommunityTip[]> {
+    return await db
+      .select()
+      .from(communityTips)
+      .where(
+        and(
+          eq(communityTips.approved, true),
+          eq(communityTips.category, category)
+        )
+      )
+      .orderBy(desc(communityTips.createdAt));
+  }
+
+  async searchCommunityTips(query: string): Promise<CommunityTip[]> {
+    // Recherche simple par titre et contenu
+    const allTips = await db
+      .select()
+      .from(communityTips)
+      .where(eq(communityTips.approved, true));
+    
+    const lowerQuery = query.toLowerCase();
+    
+    return allTips.filter(tip => 
+      tip.title.toLowerCase().includes(lowerQuery) || 
+      tip.content.toLowerCase().includes(lowerQuery) ||
+      (tip.tags as string[]).some(tag => tag.toLowerCase().includes(lowerQuery))
+    );
   }
 }
