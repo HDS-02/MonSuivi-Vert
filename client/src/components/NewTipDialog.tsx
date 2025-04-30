@@ -38,7 +38,7 @@ const formSchema = z.object({
   }),
   category: z.string().optional(),
   plantSpecies: z.string().optional().nullable(),
-  imageUrl: z.string().url({ message: "L'URL de l'image n'est pas valide" }).optional().nullable(),
+  imageUrl: z.string().url({ message: "L'URL de l'image n'est pas valide" }).optional().nullable().or(z.literal("")),
   tags: z.string().optional().transform(val => val ? val.split(",").map(tag => tag.trim()) : null),
 });
 
@@ -70,7 +70,7 @@ export default function NewTipDialog({ open, onOpenChange, onSuccess, categories
     onSuccess: () => {
       toast({
         title: "Conseil partagé avec succès",
-        description: "Votre conseil a été soumis et sera publié après validation",
+        description: "Votre conseil a été soumis et sera publiée après validation",
       });
       form.reset();
       onSuccess();

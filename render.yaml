@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: monsuivi-vert
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: CRON_SECRET
+        sync: false 

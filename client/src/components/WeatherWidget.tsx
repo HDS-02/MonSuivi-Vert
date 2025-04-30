@@ -18,6 +18,74 @@ interface WeatherData {
   };
 }
 
+// Traduction des codes météo en icônes Material Icons
+function getWeatherIconFromCode(code: number): string {
+  console.log('Code météo reçu:', code);
+  
+  // Codes de WeatherAPI.com
+  switch (code) {
+    // Ensoleillé
+    case 1000: return 'wb_sunny';
+    
+    // Partiellement nuageux
+    case 1003: return 'partly_cloudy_day';
+    case 1006: return 'cloud';
+    case 1009: return 'cloud';
+    
+    // Nuageux
+    case 1030: return 'cloud';
+    case 1135: return 'cloud';
+    case 1147: return 'cloud';
+    
+    // Pluie
+    case 1063: return 'water_drop';
+    case 1069: return 'water_drop';
+    case 1072: return 'water_drop';
+    case 1087: return 'thunderstorm';
+    case 1150: return 'water_drop';
+    case 1153: return 'water_drop';
+    case 1168: return 'water_drop';
+    case 1171: return 'water_drop';
+    case 1180: return 'water_drop';
+    case 1183: return 'water_drop';
+    case 1186: return 'water_drop';
+    case 1189: return 'water_drop';
+    case 1192: return 'water_drop';
+    case 1195: return 'water_drop';
+    case 1198: return 'water_drop';
+    case 1201: return 'water_drop';
+    case 1204: return 'water_drop';
+    case 1207: return 'water_drop';
+    
+    // Neige
+    case 1066: return 'ac_unit';
+    case 1114: return 'ac_unit';
+    case 1117: return 'ac_unit';
+    case 1210: return 'ac_unit';
+    case 1213: return 'ac_unit';
+    case 1216: return 'ac_unit';
+    case 1219: return 'ac_unit';
+    case 1222: return 'ac_unit';
+    case 1225: return 'ac_unit';
+    
+    // Orage
+    case 1237: return 'thunderstorm';
+    case 1240: return 'thunderstorm';
+    case 1243: return 'thunderstorm';
+    case 1246: return 'thunderstorm';
+    case 1249: return 'thunderstorm';
+    case 1252: return 'thunderstorm';
+    case 1255: return 'thunderstorm';
+    case 1258: return 'thunderstorm';
+    case 1261: return 'thunderstorm';
+    case 1264: return 'thunderstorm';
+    
+    default:
+      console.log('Code non reconnu:', code);
+      return 'wb_cloudy';
+  }
+}
+
 // Conseils d'entretien basés sur les conditions météorologiques
 function generateRecommendations(temperature: number, humidity: number): string[] {
   const recommendations: string[] = [];
@@ -66,12 +134,6 @@ export default function WeatherWidget() {
 
   // État pour la géolocalisation
   useEffect(() => {
-    // Forcer l'utilisation de la géolocalisation à chaque chargement
-    localStorage.removeItem('userLocation');
-    
-    // Définir la durée de cache à 1 jour
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000; // Un jour en millisecondes
-    
     const fetchWeatherData = async () => {
       try {
         setLoading(true);
@@ -86,201 +148,68 @@ export default function WeatherWidget() {
             }
             
             navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: false, // Précision standard pour économiser la batterie
-              timeout: 10000, // 10 secondes de timeout
-              maximumAge: ONE_DAY_MS // Utiliser les données pendant une journée
+              enableHighAccuracy: false,
+              timeout: 10000,
+              maximumAge: 0
             });
           });
         };
         
-        // Localisation par défaut
-        let location = "Paris, France";
-        
-        console.log("Demande d'accès à la géolocalisation...");
-        
-        // Fonction pour déterminer la ville approximative basée sur les coordonnées
-        const getNearestCity = (lat: number, lon: number): string => {
-          // Coordonnées approximatives de nombreuses villes françaises pour plus de précision
-          const cities = [
-            { name: "Paris", lat: 48.86, lon: 2.35 },
-            { name: "Lyon", lat: 45.75, lon: 4.85 },
-            { name: "Marseille", lat: 43.30, lon: 5.37 },
-            { name: "Lille", lat: 50.63, lon: 3.07 },
-            { name: "Bordeaux", lat: 44.84, lon: -0.58 },
-            { name: "Toulouse", lat: 43.60, lon: 1.44 },
-            { name: "Strasbourg", lat: 48.58, lon: 7.75 },
-            { name: "Nice", lat: 43.70, lon: 7.27 },
-            { name: "Nantes", lat: 47.22, lon: -1.55 },
-            { name: "Rennes", lat: 48.11, lon: -1.68 },
-            { name: "Montpellier", lat: 43.61, lon: 3.87 },
-            { name: "Grenoble", lat: 45.19, lon: 5.72 },
-            { name: "Dijon", lat: 47.32, lon: 5.04 },
-            { name: "Angers", lat: 47.47, lon: -0.55 },
-            { name: "Reims", lat: 49.26, lon: 4.03 },
-            { name: "Le Havre", lat: 49.49, lon: 0.11 },
-            { name: "Saint-Étienne", lat: 45.44, lon: 4.39 },
-            { name: "Toulon", lat: 43.12, lon: 5.93 },
-            { name: "Annecy", lat: 45.90, lon: 6.12 },
-            { name: "Brest", lat: 48.39, lon: -4.49 },
-            { name: "Le Mans", lat: 48.00, lon: 0.20 },
-            { name: "Amiens", lat: 49.89, lon: 2.30 },
-            { name: "Tours", lat: 47.39, lon: 0.69 },
-            { name: "Limoges", lat: 45.83, lon: 1.26 },
-            { name: "Clermont-Ferrand", lat: 45.78, lon: 3.08 },
-            { name: "Besançon", lat: 47.24, lon: 6.02 },
-          ];
-          
-          // Calculer la distance par rapport à chaque ville
-          const cityWithDistance = cities.map(city => {
-            const latDiff = city.lat - lat;
-            const lonDiff = city.lon - lon;
-            const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
-            return { ...city, distance };
-          });
-          
-          // Trouver la ville la plus proche
-          const nearestCity = cityWithDistance.reduce((prev, curr) => 
-            prev.distance < curr.distance ? prev : curr
-          );
-          
-          return `${nearestCity.name}, France`;
-        };
-        
         try {
-          // Essayer d'obtenir la position actuelle
           const position = await getLocation();
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          };
+          const { latitude, longitude } = position.coords;
           
-          // Utiliser l'API de géocodage inverse pour obtenir le nom exact de la ville
-          const lat = coords.latitude;
-          const lon = coords.longitude;
+          const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d5be8837b69d404486321729253004&q=${latitude},${longitude}&days=2&lang=fr`);
           
-          // Fonction pour obtenir le nom de la ville à partir des coordonnées
-          const getExactCity = async (lat: number, lon: number): Promise<string> => {
-            try {
-              // Utiliser l'API OpenStreetMap Nominatim pour le géocodage inversé
-              const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
-              const data = await response.json();
-              
-              // Extraire le nom de la ville ou du village
-              const city = data.address.city || data.address.town || data.address.village || data.address.hamlet || "Localité inconnue";
-              return city + ", France";
-            } catch (error) {
-              console.error("Erreur lors de la récupération du nom de la ville:", error);
-              return "Localisation inconnue";
-            }
-          };
-          
-          // Obtenir le nom exact de la ville
-          const exactCity = await getExactCity(lat, lon);
-          location = exactCity;
-          console.log("Localisation mise à jour:", location);
-        } catch (locError) {
-          console.log("Impossible d'obtenir la position, utilisation de Paris par défaut");
-          // On continue avec la localisation par défaut de Paris
-          location = "Paris, France"; // Localisation par défaut
-        }
-        
-        // Simulation de données météo pour une expérience utilisateur fiable
-        // Dans une version de production, une API météo serait utilisée
-        
-        // Date actuelle
-        const now = new Date();
-        const month = now.getMonth(); // 0-11
-        
-        // Températures ajustées selon la saison
-        let baseTemp;
-        let tempVariation;
-        
-        // Estimation saisonnière
-        if (month >= 11 || month <= 1) {         // Hiver (Dec-Fév)
-          baseTemp = 5;
-          tempVariation = 7;
-        } else if (month >= 2 && month <= 4) {   // Printemps (Mar-Mai)
-          baseTemp = 15;
-          tempVariation = 8;
-        } else if (month >= 5 && month <= 8) {   // Été (Juin-Sep)
-          baseTemp = 23;
-          tempVariation = 7;
-        } else {                                 // Automne (Oct-Nov)
-          baseTemp = 12;
-          tempVariation = 6;
-        }
-        
-        // Calcul température et humidité pour aujourd'hui
-        const temperature = Math.floor(baseTemp + (Math.random() * tempVariation));
-        const humidity = Math.floor(Math.random() * 30) + 50;    // 50-80%
-        
-        // Détermination de l'icône et la description pour aujourd'hui
-        let icon = "partly_cloudy";
-        let description = "Partiellement nuageux";
-        
-        if (temperature > 25) {
-          icon = "clear_day";
-          description = "Ensoleillé";
-        } else if (temperature < 10) {
-          if (Math.random() > 0.5) {
-            icon = "cloudy";
-            description = "Nuageux";
-          } else {
-            icon = "rainy";
-            description = "Pluvieux";
+          if (!response.ok) {
+            throw new Error('Erreur lors de la récupération des données météo');
           }
-        }
-        
-        // Calcul des prévisions pour demain (légèrement différent d'aujourd'hui)
-        // Variation de température de +/- 3 degrés par rapport à aujourd'hui
-        const temperatureVariation = Math.floor(Math.random() * 7) - 3; // -3 à +3 degrés
-        const forecastTemperature = temperature + temperatureVariation;
-        
-        // Variation d'humidité de +/- 10%
-        const humidityVariation = Math.floor(Math.random() * 21) - 10; // -10% à +10%
-        const forecastHumidity = Math.max(40, Math.min(90, humidity + humidityVariation));
-        
-        // Description et icône pour demain
-        let forecastIcon = icon;
-        let forecastDescription = description;
-        
-        // 30% de chances que le temps change
-        if (Math.random() < 0.3) {
-          // Changement de temps
-          const weatherTypes = [
-            { icon: "clear_day", description: "Ensoleillé" },
-            { icon: "partly_cloudy", description: "Partiellement nuageux" },
-            { icon: "cloudy", description: "Nuageux" },
-            { icon: "rainy", description: "Pluvieux" }
-          ];
           
-          // Choisir un nouveau type de temps différent de l'actuel
-          const availableTypes = weatherTypes.filter(type => type.icon !== icon);
-          const newWeather = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          const data = await response.json();
+          console.log('Données météo reçues:', data.current.condition);
           
-          forecastIcon = newWeather.icon;
-          forecastDescription = newWeather.description;
-        }
-        
-        // Court délai pour simuler une requête API et améliorer l'expérience utilisateur
-        setTimeout(() => {
-          setWeatherData({
-            temperature,
-            humidity,
-            icon,
-            description,
-            location,
-            recommendations: generateRecommendations(temperature, humidity),
+          // Formatage des données pour notre interface
+          const weatherData: WeatherData = {
+            temperature: Math.round(data.current.temp_c),
+            humidity: data.current.humidity,
+            description: data.current.condition.text,
+            icon: getWeatherIconFromCode(data.current.condition.code),
+            location: data.location.name + ', ' + data.location.country,
+            recommendations: generateRecommendations(data.current.temp_c, data.current.humidity),
             forecast: {
-              temperature: forecastTemperature,
-              humidity: forecastHumidity,
-              icon: forecastIcon,
-              description: forecastDescription
+              temperature: Math.round(data.forecast.forecastday[1].day.avgtemp_c),
+              humidity: data.forecast.forecastday[1].day.avghumidity,
+              description: data.forecast.forecastday[1].day.condition.text,
+              icon: getWeatherIconFromCode(data.forecast.forecastday[1].day.condition.code)
             }
-          });
-          setLoading(false);
-        }, 1000);
+          };
+          
+          setWeatherData(weatherData);
+        } catch (locError) {
+          console.error("Erreur de géolocalisation:", locError);
+          const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d5be8837b69d404486321729253004&q=Paris&days=2&lang=fr`);
+          const data = await response.json();
+          console.log('Données météo Paris:', data.current.condition);
+          
+          const weatherData: WeatherData = {
+            temperature: Math.round(data.current.temp_c),
+            humidity: data.current.humidity,
+            description: data.current.condition.text,
+            icon: getWeatherIconFromCode(data.current.condition.code),
+            location: "Paris, France",
+            recommendations: generateRecommendations(data.current.temp_c, data.current.humidity),
+            forecast: {
+              temperature: Math.round(data.forecast.forecastday[1].day.avgtemp_c),
+              humidity: data.forecast.forecastday[1].day.avghumidity,
+              description: data.forecast.forecastday[1].day.condition.text,
+              icon: getWeatherIconFromCode(data.forecast.forecastday[1].day.condition.code)
+            }
+          };
+          
+          setWeatherData(weatherData);
+        }
         
+        setLoading(false);
       } catch (err) {
         console.error("Erreur lors de la récupération des données météo:", err);
         setError("Impossible de récupérer les données météo");
@@ -307,9 +236,10 @@ export default function WeatherWidget() {
   }
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-gray-100 rounded-xl shadow-md overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-500/90 to-blue-400/90 text-white p-4">
-        <h3 className="text-lg font-semibold flex items-center">
+    <Card className="bg-white/95 backdrop-blur-sm border-gray-100 rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+        <h3 className="text-lg font-semibold flex items-center relative">
           <span className="material-icons mr-2">wb_sunny</span>
           Météo et conseils d'entretien
         </h3>
@@ -318,7 +248,7 @@ export default function WeatherWidget() {
         {loading ? (
           <div className="space-y-4 py-4">
             <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 rounded-full bg-blue-100 animate-pulse flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 animate-pulse flex items-center justify-center">
                 <span className="material-icons text-blue-300 text-2xl">wb_cloudy</span>
               </div>
             </div>
@@ -339,8 +269,8 @@ export default function WeatherWidget() {
         ) : weatherData ? (
           <div>
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-400/10 p-4 rounded-full shadow-inner">
-                <span className="material-icons text-5xl text-blue-500">
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-400/20 p-4 rounded-full shadow-inner hover:shadow-lg transition-all duration-300">
+                <span className="material-icons text-5xl text-blue-600">
                   {getWeatherIcon(weatherData.icon)}
                 </span>
               </div>
@@ -349,20 +279,20 @@ export default function WeatherWidget() {
             <div className="flex justify-between mb-4">
               <div className="text-center">
                 <div className="text-gray-500 text-sm mb-1">Température</div>
-                <div className="text-2xl font-medium">{weatherData.temperature}°C</div>
+                <div className="text-2xl font-medium text-blue-600">{weatherData.temperature}°C</div>
               </div>
               <div className="text-center">
                 <div className="text-gray-500 text-sm mb-1">Humidité</div>
-                <div className="text-2xl font-medium">{weatherData.humidity}%</div>
+                <div className="text-2xl font-medium text-blue-600">{weatherData.humidity}%</div>
               </div>
             </div>
             
-            <div className="text-center text-gray-600 mb-1 font-medium">{weatherData.description}</div>
+            <div className="text-center text-gray-700 mb-1 font-medium">{weatherData.description}</div>
             
             <div className="flex items-center justify-center mb-4">
-              <div className="bg-blue-50 px-3 py-1 rounded-full flex items-center">
-                <span className="material-icons text-blue-500 text-sm mr-1">location_on</span>
-                <span className="text-sm text-blue-600 font-medium">{weatherData.location}</span>
+              <div className="bg-blue-50 px-3 py-1 rounded-full flex items-center hover:bg-blue-100 transition-colors duration-200">
+                <span className="material-icons text-blue-600 text-sm mr-1">location_on</span>
+                <span className="text-sm text-blue-700 font-medium">{weatherData.location}</span>
               </div>
             </div>
             
@@ -375,20 +305,20 @@ export default function WeatherWidget() {
                 </h4>
                 <div className="flex items-center justify-center gap-6">
                   <div className="text-center">
-                    <div className="bg-blue-50 rounded-full p-2 mb-1 inline-block">
-                      <span className="material-icons text-blue-500">
+                    <div className="bg-blue-50 rounded-full p-2 mb-1 inline-block hover:bg-blue-100 transition-colors duration-200">
+                      <span className="material-icons text-blue-600">
                         {getWeatherIcon(weatherData.forecast.icon)}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-500">{weatherData.forecast.description}</div>
+                    <div className="text-sm text-gray-600">{weatherData.forecast.description}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-sm text-gray-500 mb-1">Température</div>
-                    <div className="text-lg font-medium">{weatherData.forecast.temperature}°C</div>
+                    <div className="text-lg font-medium text-blue-600">{weatherData.forecast.temperature}°C</div>
                   </div>
                   <div className="text-center">
                     <div className="text-sm text-gray-500 mb-1">Humidité</div>
-                    <div className="text-lg font-medium">{weatherData.forecast.humidity}%</div>
+                    <div className="text-lg font-medium text-blue-600">{weatherData.forecast.humidity}%</div>
                   </div>
                 </div>
               </div>
@@ -403,8 +333,8 @@ export default function WeatherWidget() {
                 </h4>
                 <ul className="space-y-2">
                   {weatherData.recommendations.map((recommendation, index) => (
-                    <li key={index} className="text-sm text-gray-600 flex items-start">
-                      <span className="material-icons text-green-500 text-sm mr-2 mt-0.5">eco</span>
+                    <li key={index} className="text-sm text-gray-600 flex items-start hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200">
+                      <span className="material-icons text-green-600 text-sm mr-2 mt-0.5">eco</span>
                       {recommendation}
                     </li>
                   ))}
