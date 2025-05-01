@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+
+interface ForumPost {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
 
 /**
  * Panneau d'administration pour les opérations de maintenance
@@ -12,6 +21,63 @@ export function AdminPanel() {
   const { toast } = useToast();
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
   const [lastGeneration, setLastGeneration] = useState<Date | null>(null);
+  const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchForumPosts();
+  }, []);
+
+  const fetchForumPosts = async () => {
+    try {
+      const response = await fetch("/api/forum/posts/admin", {
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des posts");
+      }
+      
+      const data = await response.json();
+      setForumPosts(data);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les posts du forum",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePostAction = async (postId: number, action: 'approve' | 'reject' | 'delete') => {
+    try {
+      const response = await fetch(`/api/forum/posts/${postId}/${action}`, {
+        method: "POST",
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur lors de l'action ${action}`);
+      }
+      
+      toast({
+        title: "Succès",
+        description: `Post ${action === 'approve' ? 'approuvé' : action === 'reject' ? 'rejeté' : 'supprimé'} avec succès`,
+      });
+      
+      fetchForumPosts();
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast({
+        title: "Erreur",
+        description: `Impossible d'effectuer l'action ${action}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   /**
    * Demande au serveur de générer les tâches d'arrosage automatiques 
@@ -57,12 +123,73 @@ export function AdminPanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestion des Posts du Forum</CardTitle>
+          <CardDescription>
+            Approuvez, rejetez ou supprimez les posts du forum
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {forumPosts.map((post) => (
+                <div key={post.id} className="border rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{post.title}</h3>
+                      <p className="text-sm text-gray-500">Par {post.author}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePostAction(post.id, 'approve')}
+                        disabled={post.status === 'approved'}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Approuver
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePostAction(post.id, 'reject')}
+                        disabled={post.status === 'rejected'}
+                      >
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Rejeter
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handlePostAction(post.id, 'delete')}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm">{post.content}</p>
+                  <p className="text-xs text-gray-500">
+                    Créé le {new Date(post.createdAt).toLocaleString('fr-FR')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="border-dashed border-yellow-500/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-yellow-700 flex items-center gap-2">
             <span className="material-icons text-yellow-600">admin_panel_settings</span>
-            <span>Administration</span>
+            <span>Maintenance</span>
           </CardTitle>
           <CardDescription>
             Outils de maintenance réservés aux administrateurs
