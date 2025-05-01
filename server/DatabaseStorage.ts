@@ -16,7 +16,7 @@ import {
   forumVotesRelations
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { IStorage } from "./storage";
@@ -47,9 +47,68 @@ const dbWithRelations = drizzle(pool, {
   }
 });
 
+interface ForumPostRow {
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  approved: boolean;
+  rejected: boolean;
+  rejection_reason: string | null;
+  author_id: number;
+  author_username: string;
+  votes: Array<{
+    id: number;
+    post_id: number;
+    user_id: number;
+    vote: 'like' | 'dislike';
+  }>;
+  comments: Array<{
+    id: number;
+    post_id: number;
+    user_id: number;
+    content: string;
+    created_at: Date;
+  }>;
+}
+
+interface ForumPostResult {
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  approved: boolean;
+  rejected: boolean;
+  rejection_reason: string | null;
+  author_id: number;
+  author_username: string;
+}
+
+interface ForumVoteResult {
+  post_id: number;
+  user_id: number;
+  vote: 'like' | 'dislike';
+}
+
+interface ForumCommentResult {
+  id: number;
+  post_id: number;
+  user_id: number;
+  content: string;
+  created_at: Date;
+  author_id: number;
+  author_username: string;
+}
+
 export class DatabaseStorage implements IStorage {
   public sessionStore: session.Store;
-  private db: typeof dbWithRelations;
+  private db: typeof db;
 
   constructor() {
     const PostgresSessionStore = connectPg(session);
@@ -65,7 +124,7 @@ export class DatabaseStorage implements IStorage {
       ttl: 30 * 24 * 60 * 60, // 30 jours en secondes
       pruneSessionInterval: 60 * 60 // Vérifier toutes les heures
     });
-    this.db = dbWithRelations;
+    this.db = db;
   }
 
   // User CRUD methods
@@ -423,38 +482,170 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getForumPosts(): Promise<ForumPost[]> {
-    const posts = await this.db.query.forumPosts.findMany({
-      with: {
-        author: true,
-        votes: true,
-        comments: {
-          with: {
-            author: true
-          }
+    const posts = await this.db
+      .select({
+        id: forumPosts.id,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        category: forumPosts.category,
+        userId: forumPosts.userId,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        approved: forumPosts.approved,
+        rejected: forumPosts.rejected,
+        rejectionReason: forumPosts.rejectionReason,
+        author: {
+          id: users.id,
+          username: users.username
         }
-      },
-      orderBy: (posts, { desc }) => [desc(posts.createdAt)]
-    });
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.userId, users.id))
+      .orderBy(desc(forumPosts.createdAt));
 
-    return posts.map(post => ({
-      id: post.id,
-      title: post.title,
-      content: post.content,
+    const postIds = posts.map(p => p.id);
+    
+    const [votes, comments] = await Promise.all([
+      this.db
+        .select({
+          postId: forumVotes.postId,
+          userId: forumVotes.userId,
+          vote: forumVotes.vote
+        })
+        .from(forumVotes)
+        .where(sql`${forumVotes.postId} = ANY(${postIds})`),
+      
+      this.db
+        .select({
+          id: forumComments.id,
+          postId: forumComments.postId,
+          userId: forumComments.userId,
+          content: forumComments.content,
+          createdAt: forumComments.createdAt,
+          author: {
+            id: users.id,
+            username: users.username
+          }
+        })
+        .from(forumComments)
+        .leftJoin(users, eq(forumComments.userId, users.id))
+        .where(sql`${forumComments.postId} = ANY(${postIds})`)
+    ]);
+
+    const votesByPostId = votes.reduce((acc, vote) => {
+      if (!acc[vote.postId]) {
+        acc[vote.postId] = [];
+      }
+      acc[vote.postId].push(vote);
+      return acc;
+    }, {} as Record<number, typeof votes>);
+
+    const commentsByPostId = comments.reduce((acc, comment) => {
+      if (!acc[comment.postId]) {
+        acc[comment.postId] = [];
+      }
+      acc[comment.postId].push(comment);
+      return acc;
+    }, {} as Record<number, typeof comments>);
+
+    return posts.map(post => {
+      const postVotes = votesByPostId[post.id] || [];
+      const postComments = commentsByPostId[post.id] || [];
+
+      return {
+        ...post,
+        category: post.category as ForumCategory,
+        likes: postVotes.filter(v => v.vote === 'like').length,
+        dislikes: postVotes.filter(v => v.vote === 'dislike').length,
+        userVotes: Object.fromEntries(
+          postVotes.map(v => [v.userId, v.vote as 'like' | 'dislike'])
+        ),
+        comments: postComments.map(comment => ({
+          id: comment.id,
+          content: comment.content,
+          userId: comment.userId,
+          postId: comment.postId,
+          createdAt: comment.createdAt,
+          updatedAt: comment.createdAt,
+          author: {
+            id: comment.author?.id || 0,
+            username: comment.author?.username || '',
+            avatar: undefined
+          }
+        })),
+        author: {
+          id: post.author?.id || 0,
+          username: post.author?.username || '',
+          avatar: undefined
+        }
+      };
+    });
+  }
+
+  async getForumPost(postId: number): Promise<ForumPost> {
+    const [post] = await this.db
+      .select({
+        id: forumPosts.id,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        category: forumPosts.category,
+        userId: forumPosts.userId,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        approved: forumPosts.approved,
+        rejected: forumPosts.rejected,
+        rejectionReason: forumPosts.rejectionReason,
+        author: {
+          id: users.id,
+          username: users.username
+        }
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.userId, users.id))
+      .where(eq(forumPosts.id, postId));
+
+    if (!post) {
+      throw new Error("Post non trouvé");
+    }
+
+    const [votes, comments] = await Promise.all([
+      this.db
+        .select({
+          userId: forumVotes.userId,
+          vote: forumVotes.vote
+        })
+        .from(forumVotes)
+        .where(eq(forumVotes.postId, postId)),
+      
+      this.db
+        .select({
+          id: forumComments.id,
+          userId: forumComments.userId,
+          content: forumComments.content,
+          createdAt: forumComments.createdAt,
+          author: {
+            id: users.id,
+            username: users.username
+          }
+        })
+        .from(forumComments)
+        .leftJoin(users, eq(forumComments.userId, users.id))
+        .where(eq(forumComments.postId, postId))
+    ]);
+
+    return {
+      ...post,
       category: post.category as ForumCategory,
-      userId: post.userId,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      approved: post.approved,
-      rejected: post.rejected,
-      rejectionReason: post.rejectionReason || undefined,
-      likes: post.votes?.length || 0,
-      dislikes: 0,
-      userVotes: {},
-      comments: post.comments?.map(comment => ({
+      likes: votes.filter(v => v.vote === 'like').length,
+      dislikes: votes.filter(v => v.vote === 'dislike').length,
+      userVotes: Object.fromEntries(
+        votes.map(v => [v.userId, v.vote as 'like' | 'dislike'])
+      ),
+      comments: comments.map(comment => ({
         id: comment.id,
         content: comment.content,
         userId: comment.userId,
-        postId: comment.postId,
+        postId: postId,
         createdAt: comment.createdAt,
         updatedAt: comment.createdAt,
         author: {
@@ -462,26 +653,29 @@ export class DatabaseStorage implements IStorage {
           username: comment.author.username,
           avatar: undefined
         }
-      })) || [],
+      })),
       author: {
         id: post.author.id,
         username: post.author.username,
         avatar: undefined
       }
-    }));
+    };
   }
 
   async createForumPost(data: CreateForumPost): Promise<ForumPost> {
-    const post = await this.db.insert(forumPosts).values({
-      title: data.title,
-      content: data.content,
-      category: data.category,
-      userId: data.userId,
-      approved: false,
-      rejected: false
-    }).returning();
+    const [post] = await this.db
+      .insert(forumPosts)
+      .values({
+        title: data.title,
+        content: data.content,
+        category: data.category,
+        userId: data.userId,
+        approved: false,
+        rejected: false
+      })
+      .returning();
 
-    return this.getForumPost(post[0].id);
+    return this.getForumPost(post.id);
   }
 
   async voteForumPost(postId: number, userId: number, vote: "like" | "dislike"): Promise<ForumPost> {
@@ -536,61 +730,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(forumPosts.id, postId));
 
     return this.getForumPost(postId);
-  }
-
-  async getForumPost(postId: number): Promise<ForumPost> {
-    const post = await this.db.query.forumPosts.findFirst({
-      where: eq(forumPosts.id, postId),
-      with: {
-        author: true,
-        votes: true,
-        comments: {
-          with: {
-            author: true
-          }
-        }
-      }
-    });
-
-    if (!post) {
-      throw new Error("Post non trouvé");
-    }
-
-    return {
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      category: post.category as ForumCategory,
-      userId: post.userId,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      approved: post.approved,
-      rejected: post.rejected,
-      rejectionReason: post.rejectionReason || undefined,
-      likes: post.votes.filter(v => v.vote === 'like').length,
-      dislikes: post.votes.filter(v => v.vote === 'dislike').length,
-      userVotes: Object.fromEntries(
-        post.votes.map(v => [Number(v.userId), v.vote as 'like' | 'dislike'])
-      ) as Record<number, 'like' | 'dislike'>,
-      comments: post.comments.map(comment => ({
-        id: comment.id,
-        content: comment.content,
-        userId: comment.userId,
-        postId: comment.postId,
-        createdAt: comment.createdAt,
-        updatedAt: comment.createdAt,
-        author: {
-          id: comment.author.id,
-          username: comment.author.username,
-          avatar: undefined
-        }
-      })),
-      author: {
-        id: post.author.id,
-        username: post.author.username,
-        avatar: undefined
-      }
-    };
   }
 
   async getPendingTips(): Promise<CommunityTip[]> {
