@@ -482,100 +482,104 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getForumPosts(): Promise<ForumPost[]> {
-    const posts = await this.db
-      .select({
-        id: forumPosts.id,
-        title: forumPosts.title,
-        content: forumPosts.content,
-        category: forumPosts.category,
-        userId: forumPosts.userId,
-        createdAt: forumPosts.createdAt,
-        updatedAt: forumPosts.updatedAt,
-        approved: forumPosts.approved,
-        rejected: forumPosts.rejected,
-        rejectionReason: forumPosts.rejectionReason,
-        author: {
-          id: users.id,
-          username: users.username
-        }
-      })
-      .from(forumPosts)
-      .leftJoin(users, eq(forumPosts.userId, users.id))
-      .orderBy(desc(forumPosts.createdAt));
+    // Récupérer tous les posts avec leurs auteurs
+    const posts = await this.db.execute(sql`
+      SELECT 
+        fp.id,
+        fp.title,
+        fp.content,
+        fp.category,
+        fp.user_id,
+        fp.created_at,
+        fp.updated_at,
+        fp.approved,
+        fp.rejected,
+        fp.rejection_reason,
+        u.id as author_id,
+        u.username as author_username
+      FROM forum_posts fp
+      LEFT JOIN users u ON fp.user_id = u.id
+      ORDER BY fp.created_at DESC
+    `);
 
-    const postIds = posts.map(p => p.id);
-    
-    const [votes, comments] = await Promise.all([
-      this.db
-        .select({
-          postId: forumVotes.postId,
-          userId: forumVotes.userId,
-          vote: forumVotes.vote
-        })
-        .from(forumVotes)
-        .where(sql`${forumVotes.postId} = ANY(${postIds})`),
-      
-      this.db
-        .select({
-          id: forumComments.id,
-          postId: forumComments.postId,
-          userId: forumComments.userId,
-          content: forumComments.content,
-          createdAt: forumComments.createdAt,
-          author: {
-            id: users.id,
-            username: users.username
-          }
-        })
-        .from(forumComments)
-        .leftJoin(users, eq(forumComments.userId, users.id))
-        .where(sql`${forumComments.postId} = ANY(${postIds})`)
-    ]);
+    // Récupérer tous les votes
+    const votes = await this.db.execute(sql`
+      SELECT 
+        post_id,
+        user_id,
+        vote
+      FROM forum_votes
+    `);
 
-    const votesByPostId = votes.reduce((acc, vote) => {
-      if (!acc[vote.postId]) {
-        acc[vote.postId] = [];
+    // Récupérer tous les commentaires avec leurs auteurs
+    const comments = await this.db.execute(sql`
+      SELECT 
+        fc.id,
+        fc.post_id,
+        fc.user_id,
+        fc.content,
+        fc.created_at,
+        u.id as author_id,
+        u.username as author_username
+      FROM forum_comments fc
+      LEFT JOIN users u ON fc.user_id = u.id
+    `);
+
+    // Organiser les votes par post
+    const votesByPostId = votes.rows.reduce((acc, vote) => {
+      if (!acc[vote.post_id]) {
+        acc[vote.post_id] = [];
       }
-      acc[vote.postId].push(vote);
+      acc[vote.post_id].push(vote);
       return acc;
-    }, {} as Record<number, typeof votes>);
+    }, {} as Record<number, typeof votes.rows>);
 
-    const commentsByPostId = comments.reduce((acc, comment) => {
-      if (!acc[comment.postId]) {
-        acc[comment.postId] = [];
+    // Organiser les commentaires par post
+    const commentsByPostId = comments.rows.reduce((acc, comment) => {
+      if (!acc[comment.post_id]) {
+        acc[comment.post_id] = [];
       }
-      acc[comment.postId].push(comment);
+      acc[comment.post_id].push(comment);
       return acc;
-    }, {} as Record<number, typeof comments>);
+    }, {} as Record<number, typeof comments.rows>);
 
-    return posts.map(post => {
+    // Construire les posts avec leurs votes et commentaires
+    return posts.rows.map(post => {
       const postVotes = votesByPostId[post.id] || [];
       const postComments = commentsByPostId[post.id] || [];
 
       return {
-        ...post,
+        id: post.id,
+        title: post.title,
+        content: post.content,
         category: post.category as ForumCategory,
-        likes: postVotes.filter(v => v.vote === 'like').length,
-        dislikes: postVotes.filter(v => v.vote === 'dislike').length,
+        userId: post.user_id,
+        createdAt: post.created_at,
+        updatedAt: post.updated_at,
+        approved: post.approved,
+        rejected: post.rejected,
+        rejectionReason: post.rejection_reason || undefined,
+        likes: postVotes.filter((v: any) => v.vote === 'like').length,
+        dislikes: postVotes.filter((v: any) => v.vote === 'dislike').length,
         userVotes: Object.fromEntries(
-          postVotes.map(v => [v.userId, v.vote as 'like' | 'dislike'])
+          postVotes.map((v: any) => [v.user_id, v.vote])
         ),
-        comments: postComments.map(comment => ({
+        comments: postComments.map((comment: any) => ({
           id: comment.id,
           content: comment.content,
-          userId: comment.userId,
-          postId: comment.postId,
-          createdAt: comment.createdAt,
-          updatedAt: comment.createdAt,
+          userId: comment.user_id,
+          postId: comment.post_id,
+          createdAt: comment.created_at,
+          updatedAt: comment.created_at,
           author: {
-            id: comment.author?.id || 0,
-            username: comment.author?.username || '',
+            id: comment.author_id,
+            username: comment.author_username,
             avatar: undefined
           }
         })),
         author: {
-          id: post.author?.id || 0,
-          username: post.author?.username || '',
+          id: post.author_id,
+          username: post.author_username,
           avatar: undefined
         }
       };
@@ -583,151 +587,136 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getForumPost(postId: number): Promise<ForumPost> {
-    const [post] = await this.db
-      .select({
-        id: forumPosts.id,
-        title: forumPosts.title,
-        content: forumPosts.content,
-        category: forumPosts.category,
-        userId: forumPosts.userId,
-        createdAt: forumPosts.createdAt,
-        updatedAt: forumPosts.updatedAt,
-        approved: forumPosts.approved,
-        rejected: forumPosts.rejected,
-        rejectionReason: forumPosts.rejectionReason,
-        author: {
-          id: users.id,
-          username: users.username
-        }
-      })
-      .from(forumPosts)
-      .leftJoin(users, eq(forumPosts.userId, users.id))
-      .where(eq(forumPosts.id, postId));
+    // Récupérer le post avec son auteur
+    const [post] = await this.db.execute(sql`
+      SELECT 
+        fp.id,
+        fp.title,
+        fp.content,
+        fp.category,
+        fp.user_id,
+        fp.created_at,
+        fp.updated_at,
+        fp.approved,
+        fp.rejected,
+        fp.rejection_reason,
+        u.id as author_id,
+        u.username as author_username
+      FROM forum_posts fp
+      LEFT JOIN users u ON fp.user_id = u.id
+      WHERE fp.id = ${postId}
+    `);
 
     if (!post) {
       throw new Error("Post non trouvé");
     }
 
-    const [votes, comments] = await Promise.all([
-      this.db
-        .select({
-          userId: forumVotes.userId,
-          vote: forumVotes.vote
-        })
-        .from(forumVotes)
-        .where(eq(forumVotes.postId, postId)),
-      
-      this.db
-        .select({
-          id: forumComments.id,
-          userId: forumComments.userId,
-          content: forumComments.content,
-          createdAt: forumComments.createdAt,
-          author: {
-            id: users.id,
-            username: users.username
-          }
-        })
-        .from(forumComments)
-        .leftJoin(users, eq(forumComments.userId, users.id))
-        .where(eq(forumComments.postId, postId))
-    ]);
+    // Récupérer les votes du post
+    const votes = await this.db.execute(sql`
+      SELECT 
+        user_id,
+        vote
+      FROM forum_votes
+      WHERE post_id = ${postId}
+    `);
+
+    // Récupérer les commentaires du post avec leurs auteurs
+    const comments = await this.db.execute(sql`
+      SELECT 
+        fc.id,
+        fc.user_id,
+        fc.content,
+        fc.created_at,
+        u.id as author_id,
+        u.username as author_username
+      FROM forum_comments fc
+      LEFT JOIN users u ON fc.user_id = u.id
+      WHERE fc.post_id = ${postId}
+    `);
 
     return {
-      ...post,
+      id: post.id,
+      title: post.title,
+      content: post.content,
       category: post.category as ForumCategory,
-      likes: votes.filter(v => v.vote === 'like').length,
-      dislikes: votes.filter(v => v.vote === 'dislike').length,
+      userId: post.user_id,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      approved: post.approved,
+      rejected: post.rejected,
+      rejectionReason: post.rejection_reason || undefined,
+      likes: votes.rows.filter((v: any) => v.vote === 'like').length,
+      dislikes: votes.rows.filter((v: any) => v.vote === 'dislike').length,
       userVotes: Object.fromEntries(
-        votes.map(v => [v.userId, v.vote as 'like' | 'dislike'])
+        votes.rows.map((v: any) => [v.user_id, v.vote])
       ),
-      comments: comments.map(comment => ({
+      comments: comments.rows.map((comment: any) => ({
         id: comment.id,
         content: comment.content,
-        userId: comment.userId,
+        userId: comment.user_id,
         postId: postId,
-        createdAt: comment.createdAt,
-        updatedAt: comment.createdAt,
+        createdAt: comment.created_at,
+        updatedAt: comment.created_at,
         author: {
-          id: comment.author.id,
-          username: comment.author.username,
+          id: comment.author_id,
+          username: comment.author_username,
           avatar: undefined
         }
       })),
       author: {
-        id: post.author.id,
-        username: post.author.username,
+        id: post.author_id,
+        username: post.author_username,
         avatar: undefined
       }
     };
   }
 
   async createForumPost(data: CreateForumPost): Promise<ForumPost> {
-    const [post] = await this.db
-      .insert(forumPosts)
-      .values({
-        title: data.title,
-        content: data.content,
-        category: data.category,
-        userId: data.userId,
-        approved: false,
-        rejected: false
-      })
-      .returning();
+    const [post] = await this.db.execute(sql`
+      INSERT INTO forum_posts (title, content, category, user_id, approved, rejected)
+      VALUES (${data.title}, ${data.content}, ${data.category}, ${data.userId}, false, false)
+      RETURNING id
+    `);
 
     return this.getForumPost(post.id);
   }
 
   async voteForumPost(postId: number, userId: number, vote: "like" | "dislike"): Promise<ForumPost> {
-    await this.db
-      .insert(forumVotes)
-      .values({
-        postId,
-        userId,
-        vote
-      })
-      .onConflictDoUpdate({
-        target: [forumVotes.postId, forumVotes.userId],
-        set: { vote }
-      });
+    await this.db.execute(sql`
+      INSERT INTO forum_votes (post_id, user_id, vote)
+      VALUES (${postId}, ${userId}, ${vote})
+      ON CONFLICT (post_id, user_id) DO UPDATE
+      SET vote = ${vote}
+    `);
 
     return this.getForumPost(postId);
   }
 
   async createForumComment(data: CreateForumComment): Promise<ForumPost> {
-    await this.db
-      .insert(forumComments)
-      .values({
-        postId: data.postId,
-        userId: data.userId,
-        content: data.content
-      });
+    await this.db.execute(sql`
+      INSERT INTO forum_comments (post_id, user_id, content)
+      VALUES (${data.postId}, ${data.userId}, ${data.content})
+    `);
 
     return this.getForumPost(data.postId);
   }
 
   async approveForumPost(postId: number): Promise<ForumPost> {
-    await this.db
-      .update(forumPosts)
-      .set({
-        approved: true,
-        rejected: false,
-        rejectionReason: null
-      })
-      .where(eq(forumPosts.id, postId));
+    await this.db.execute(sql`
+      UPDATE forum_posts
+      SET approved = true, rejected = false, rejection_reason = NULL
+      WHERE id = ${postId}
+    `);
 
     return this.getForumPost(postId);
   }
 
   async rejectForumPost(postId: number, reason: string): Promise<ForumPost> {
-    await this.db
-      .update(forumPosts)
-      .set({
-        approved: false,
-        rejected: true,
-        rejectionReason: reason
-      })
-      .where(eq(forumPosts.id, postId));
+    await this.db.execute(sql`
+      UPDATE forum_posts
+      SET approved = false, rejected = true, rejection_reason = ${reason}
+      WHERE id = ${postId}
+    `);
 
     return this.getForumPost(postId);
   }
