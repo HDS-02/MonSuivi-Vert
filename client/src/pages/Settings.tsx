@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@shared/schema';
-import AdminPanel from '../components/AdminPanel';
+import { AdminPanel } from '../components/AdminPanel';
 
 export default function Settings() {
   const [user, setUser] = useState<User | null>(null);
