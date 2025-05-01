@@ -66,6 +66,8 @@ export interface IStorage {
   getPopularCommunityTips(limit?: number): Promise<CommunityTip[]>;
   getCommunityTipsByCategory(category: string): Promise<CommunityTip[]>;
   searchCommunityTips(query: string): Promise<CommunityTip[]>;
+  getPendingTips(): Promise<CommunityTip[]>;
+  validateTip(id: number): Promise<CommunityTip | undefined>;
   
   // Session store
   sessionStore: session.Store;
@@ -485,6 +487,20 @@ export class MemStorage implements IStorage {
           (Array.isArray(tip.tags) && tip.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
         )
       );
+  }
+
+  async getPendingTips(): Promise<CommunityTip[]> {
+    return Array.from(this.communityTips.values())
+      .filter(tip => !tip.validated);
+  }
+
+  async validateTip(id: number): Promise<CommunityTip | undefined> {
+    const tip = this.communityTips.get(id);
+    if (!tip) return undefined;
+    
+    const updatedTip = { ...tip, validated: true };
+    this.communityTips.set(id, updatedTip);
+    return updatedTip;
   }
 }
 

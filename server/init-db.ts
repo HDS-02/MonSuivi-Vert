@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { users, plants, tasks, plantAnalyses, growthJournal, communityTips, communityComments } from "@shared/schema";
 
-async function initDatabase() {
+export async function initDatabase() {
   try {
     // Créer les tables
     await db.execute(`
@@ -31,7 +31,8 @@ async function initDatabase() {
         common_diseases JSONB DEFAULT '[]',
         auto_watering BOOLEAN DEFAULT false,
         reminder_time TEXT DEFAULT '08:00',
-        user_id INTEGER NOT NULL DEFAULT 1
+        user_id INTEGER NOT NULL DEFAULT 1,
+        validated BOOLEAN DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS tasks (
@@ -99,4 +100,4 @@ async function initDatabase() {
   }
 }
 
-initDatabase(); 
+// Ne plus appeler initDatabase() ici 

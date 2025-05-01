@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import fetch from "node-fetch";
+import { initDatabase } from "./init-db";
 
 /**
  * Configure un vérificateur périodique pour les rappels d'arrosage
@@ -116,6 +117,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialiser la base de données
+  await initDatabase();
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -1682,6 +1682,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour récupérer les posts en attente de validation
+  app.get("/api/community/tips/pending", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const pendingTips = await storage.getPendingTips();
+      res.json(pendingTips);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Route pour valider un post
+  app.post("/api/community/tips/:id/validate", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      await storage.validateTip(tipId);
+      res.json({ message: "Post validé avec succès" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
