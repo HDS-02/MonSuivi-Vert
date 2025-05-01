@@ -9,78 +9,86 @@ async function initDatabase() {
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        firstName TEXT,
-        email TEXT UNIQUE,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        reminderTime TEXT,
-        resetToken TEXT,
-        resetTokenExpiry TIMESTAMP
+        first_name TEXT,
+        email TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        reminder_time TEXT DEFAULT '08:00'
       );
 
       CREATE TABLE IF NOT EXISTS plants (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         species TEXT,
-        description TEXT,
-        imageUrl TEXT,
+        status TEXT NOT NULL DEFAULT 'healthy',
         image TEXT,
-        userId INTEGER REFERENCES users(id),
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        gallery JSONB DEFAULT '[]',
         date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        lastWatered TIMESTAMP,
-        nextWatering TIMESTAMP,
         watering_frequency INTEGER,
-        sunlight TEXT,
+        light TEXT,
         temperature TEXT,
-        humidity TEXT,
-        soilType TEXT,
-        fertilizer TEXT,
-        notes TEXT,
-        status TEXT DEFAULT 'active',
-        gallery JSONB DEFAULT '[]'::jsonb
+        care_notes TEXT,
+        pot_size TEXT,
+        common_diseases JSONB DEFAULT '[]',
+        auto_watering BOOLEAN DEFAULT false,
+        reminder_time TEXT DEFAULT '08:00',
+        user_id INTEGER NOT NULL DEFAULT 1
       );
 
       CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
-        plantId INTEGER REFERENCES plants(id),
+        plant_id INTEGER REFERENCES plants(id),
         type TEXT NOT NULL,
-        dueDate TIMESTAMP NOT NULL,
+        description TEXT NOT NULL,
+        due_date TIMESTAMP,
         completed BOOLEAN DEFAULT FALSE,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        date_completed TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS plant_analyses (
         id SERIAL PRIMARY KEY,
-        plantId INTEGER REFERENCES plants(id),
-        analysis TEXT NOT NULL,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        plant_id INTEGER NOT NULL,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status TEXT NOT NULL,
+        image TEXT,
+        ai_analysis JSONB,
+        health_issues TEXT,
+        recommendations TEXT
       );
 
       CREATE TABLE IF NOT EXISTS growth_journal (
         id SERIAL PRIMARY KEY,
-        plantId INTEGER REFERENCES plants(id),
-        userId INTEGER REFERENCES users(id),
-        entry TEXT NOT NULL,
-        imageUrl TEXT,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        plant_id INTEGER NOT NULL,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        title TEXT NOT NULL,
+        notes TEXT,
+        image_url TEXT,
+        height INTEGER,
+        leaves INTEGER,
+        health_rating INTEGER,
+        user_id INTEGER NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS community_tips (
         id SERIAL PRIMARY KEY,
-        userId INTEGER REFERENCES users(id),
+        user_id INTEGER NOT NULL,
         title TEXT NOT NULL,
         content TEXT NOT NULL,
-        category TEXT NOT NULL,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        votes INTEGER DEFAULT 0
+        plant_species TEXT,
+        rating INTEGER DEFAULT 0,
+        votes INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        tags JSONB DEFAULT '[]',
+        image_url TEXT,
+        category TEXT,
+        approved BOOLEAN DEFAULT FALSE
       );
 
       CREATE TABLE IF NOT EXISTS community_comments (
         id SERIAL PRIMARY KEY,
-        tipId INTEGER REFERENCES community_tips(id),
-        userId INTEGER REFERENCES users(id),
+        tip_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
         content TEXT NOT NULL,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         likes INTEGER DEFAULT 0
       );
     `);
