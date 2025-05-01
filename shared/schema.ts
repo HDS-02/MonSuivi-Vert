@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, pgEnum, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -257,16 +257,11 @@ export interface PlantAnalysisResponse {
   };
 }
 
-export const forumCategories = [
-  'conseils',
-  'questions',
-  'partage',
-  'identification',
-  'maladies',
-  'autres'
-] as const;
-
+// Types pour le forum
+export const forumCategories = ['conseils', 'questions', 'partage', 'identification', 'maladies', 'autres'] as const;
 export type ForumCategory = typeof forumCategories[number];
+
+export const forumCategoryEnum = pgEnum('forum_category', ['GENERAL', 'HELP', 'TIPS', 'DISCUSSION']);
 
 export interface ForumPost {
   id: number;
@@ -281,7 +276,7 @@ export interface ForumPost {
   rejectionReason?: string;
   likes: number;
   dislikes: number;
-  userVote?: 'like' | 'dislike';
+  userVotes: Record<number, 'like' | 'dislike'>;
   comments: ForumComment[];
   author: {
     id: number;
@@ -304,6 +299,19 @@ export interface ForumComment {
   };
 }
 
+export interface CreateForumPost {
+  title: string;
+  content: string;
+  category: ForumCategory;
+  userId: number;
+}
+
+export interface CreateForumComment {
+  content: string;
+  userId: number;
+  postId: number;
+}
+
 export const createForumPostSchema = z.object({
   title: z.string().min(5).max(100),
   content: z.string().min(20).max(5000),
@@ -322,3 +330,67 @@ export const voteForumPostSchema = z.object({
 export const rejectForumPostSchema = z.object({
   reason: z.string().min(10).max(500),
 });
+
+export const forumPosts = pgTable("forum_posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  approved: boolean("approved").default(false).notNull(),
+  rejected: boolean("rejected").default(false).notNull(),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const forumVotes = pgTable("forum_votes", {
+  postId: integer("post_id").notNull().references(() => forumPosts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  vote: varchar("vote", { length: 10 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    pk: primaryKey(table.postId, table.userId)
+  };
+});
+
+export const forumComments = pgTable("forum_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => forumPosts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Relations
+export const forumPostsRelations = relations(forumPosts, ({ many, one }) => ({
+  votes: many(forumVotes),
+  comments: many(forumComments),
+  author: one(users, {
+    fields: [forumPosts.userId],
+    references: [users.id]
+  })
+}));
+
+export const forumCommentsRelations = relations(forumComments, ({ one }) => ({
+  post: one(forumPosts, {
+    fields: [forumComments.postId],
+    references: [forumPosts.id]
+  }),
+  author: one(users, {
+    fields: [forumComments.userId],
+    references: [users.id]
+  })
+}));
+
+export const forumVotesRelations = relations(forumVotes, ({ one }) => ({
+  post: one(forumPosts, {
+    fields: [forumVotes.postId],
+    references: [forumPosts.id]
+  }),
+  user: one(users, {
+    fields: [forumVotes.userId],
+    references: [users.id]
+  })
+}));

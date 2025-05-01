@@ -5,16 +5,51 @@ import {
   users, User, InsertUser,
   growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry,
   communityTips, CommunityTip, InsertCommunityTip,
-  communityComments, CommunityComment, InsertCommunityComment
+  communityComments, CommunityComment, InsertCommunityComment,
+  forumPosts, forumVotes, forumComments,
+  ForumPost, ForumCategory, ForumComment,
+  createForumPostSchema, createForumCommentSchema,
+  type CreateForumPost,
+  type CreateForumComment,
+  forumPostsRelations,
+  forumCommentsRelations,
+  forumVotesRelations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { IStorage } from "./storage";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+
+// Configuration de la connexion PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Configuration des relations pour Drizzle
+const dbWithRelations = drizzle(pool, {
+  schema: {
+    forumPosts,
+    forumComments,
+    forumVotes,
+    users,
+    communityTips,
+    relations: {
+      forumPosts: forumPostsRelations,
+      forumComments: forumCommentsRelations,
+      forumVotes: forumVotesRelations
+    }
+  }
+});
 
 export class DatabaseStorage implements IStorage {
   public sessionStore: session.Store;
+  private db: typeof dbWithRelations;
 
   constructor() {
     const PostgresSessionStore = connectPg(session);
@@ -30,6 +65,7 @@ export class DatabaseStorage implements IStorage {
       ttl: 30 * 24 * 60 * 60, // 30 jours en secondes
       pruneSessionInterval: 60 * 60 // Vérifier toutes les heures
     });
+    this.db = dbWithRelations;
   }
 
   // User CRUD methods
@@ -239,13 +275,11 @@ export class DatabaseStorage implements IStorage {
 
   // Community CRUD methods
   async getCommunityTips(options?: { approved?: boolean }): Promise<CommunityTip[]> {
-    let query = db.select().from(communityTips);
-    
-    if (options?.approved !== undefined) {
-      query = query.where(eq(communityTips.approved, options.approved));
-    }
-    
-    return await query.orderBy(desc(communityTips.createdAt));
+    const tips = await this.db.query.communityTips.findMany({
+      where: options?.approved !== undefined ? eq(communityTips.approved, options.approved) : undefined,
+      orderBy: desc(communityTips.createdAt)
+    });
+    return tips;
   }
 
   async getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]> {
@@ -389,197 +423,189 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getForumPosts(): Promise<ForumPost[]> {
-    const result = await this.db.query(
-      `SELECT 
-        p.*,
-        u.username as author_username,
-        u.avatar_url as author_avatar,
-        COALESCE(v.likes, 0) as likes,
-        COALESCE(v.dislikes, 0) as dislikes,
-        COALESCE(c.comment_count, 0) as comment_count
-      FROM forum_posts p
-      LEFT JOIN users u ON p.user_id = u.id
-      LEFT JOIN (
-        SELECT 
-          post_id,
-          SUM(CASE WHEN vote = 'like' THEN 1 ELSE 0 END) as likes,
-          SUM(CASE WHEN vote = 'dislike' THEN 1 ELSE 0 END) as dislikes
-        FROM forum_votes
-        GROUP BY post_id
-      ) v ON p.id = v.post_id
-      LEFT JOIN (
-        SELECT post_id, COUNT(*) as comment_count
-        FROM forum_comments
-        GROUP BY post_id
-      ) c ON p.id = c.post_id
-      ORDER BY p.created_at DESC`
-    );
-
-    return result.rows.map(row => ({
-      id: row.id,
-      title: row.title,
-      content: row.content,
-      category: row.category,
-      userId: row.user_id,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      approved: row.approved,
-      rejected: row.rejected,
-      rejectionReason: row.rejection_reason,
-      likes: row.likes,
-      dislikes: row.dislikes,
-      userVotes: {},
-      comments: [],
-      author: {
-        username: row.author_username,
-        avatarUrl: row.author_avatar,
+    const posts = await this.db.query.forumPosts.findMany({
+      with: {
+        author: true,
+        votes: true,
+        comments: {
+          with: {
+            author: true
+          }
+        }
       },
+      orderBy: (posts, { desc }) => [desc(posts.createdAt)]
+    });
+
+    return posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      category: post.category as ForumCategory,
+      userId: post.userId,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      approved: post.approved,
+      rejected: post.rejected,
+      rejectionReason: post.rejectionReason || undefined,
+      likes: post.votes?.length || 0,
+      dislikes: 0,
+      userVotes: {},
+      comments: post.comments?.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        userId: comment.userId,
+        postId: comment.postId,
+        createdAt: comment.createdAt,
+        updatedAt: comment.createdAt,
+        author: {
+          id: comment.author.id,
+          username: comment.author.username,
+          avatar: undefined
+        }
+      })) || [],
+      author: {
+        id: post.author.id,
+        username: post.author.username,
+        avatar: undefined
+      }
     }));
   }
 
   async createForumPost(data: CreateForumPost): Promise<ForumPost> {
-    const result = await this.db.query(
-      `INSERT INTO forum_posts (title, content, category, user_id, approved)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [data.title, data.content, data.category, data.userId, false]
-    );
+    const post = await this.db.insert(forumPosts).values({
+      title: data.title,
+      content: data.content,
+      category: data.category,
+      userId: data.userId,
+      approved: false,
+      rejected: false
+    }).returning();
 
-    const post = result.rows[0];
-    const author = await this.getUser(data.userId);
-
-    return {
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      category: post.category,
-      userId: post.user_id,
-      createdAt: post.created_at,
-      updatedAt: post.updated_at,
-      approved: post.approved,
-      rejected: post.rejected,
-      rejectionReason: post.rejection_reason,
-      likes: 0,
-      dislikes: 0,
-      userVotes: {},
-      comments: [],
-      author: {
-        username: author?.username || "",
-        avatarUrl: author?.avatarUrl || "",
-      },
-    };
+    return this.getForumPost(post[0].id);
   }
 
   async voteForumPost(postId: number, userId: number, vote: "like" | "dislike"): Promise<ForumPost> {
-    await this.db.query(
-      `INSERT INTO forum_votes (post_id, user_id, vote)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (post_id, user_id) DO UPDATE SET vote = $3`,
-      [postId, userId, vote]
-    );
+    await this.db
+      .insert(forumVotes)
+      .values({
+        postId,
+        userId,
+        vote
+      })
+      .onConflictDoUpdate({
+        target: [forumVotes.postId, forumVotes.userId],
+        set: { vote }
+      });
 
     return this.getForumPost(postId);
   }
 
   async createForumComment(data: CreateForumComment): Promise<ForumPost> {
-    await this.db.query(
-      `INSERT INTO forum_comments (post_id, user_id, content)
-       VALUES ($1, $2, $3)`,
-      [data.postId, data.userId, data.content]
-    );
+    await this.db
+      .insert(forumComments)
+      .values({
+        postId: data.postId,
+        userId: data.userId,
+        content: data.content
+      });
 
     return this.getForumPost(data.postId);
   }
 
   async approveForumPost(postId: number): Promise<ForumPost> {
-    await this.db.query(
-      `UPDATE forum_posts
-       SET approved = true, rejected = false, rejection_reason = NULL
-       WHERE id = $1`,
-      [postId]
-    );
+    await this.db
+      .update(forumPosts)
+      .set({
+        approved: true,
+        rejected: false,
+        rejectionReason: null
+      })
+      .where(eq(forumPosts.id, postId));
 
     return this.getForumPost(postId);
   }
 
   async rejectForumPost(postId: number, reason: string): Promise<ForumPost> {
-    await this.db.query(
-      `UPDATE forum_posts
-       SET approved = false, rejected = true, rejection_reason = $2
-       WHERE id = $1`,
-      [postId, reason]
-    );
+    await this.db
+      .update(forumPosts)
+      .set({
+        approved: false,
+        rejected: true,
+        rejectionReason: reason
+      })
+      .where(eq(forumPosts.id, postId));
 
     return this.getForumPost(postId);
   }
 
   async getForumPost(postId: number): Promise<ForumPost> {
-    const result = await this.db.query(
-      `SELECT 
-        p.*,
-        u.username as author_username,
-        u.avatar_url as author_avatar,
-        COALESCE(v.likes, 0) as likes,
-        COALESCE(v.dislikes, 0) as dislikes,
-        COALESCE(c.comment_count, 0) as comment_count,
-        json_agg(
-          json_build_object(
-            'id', fc.id,
-            'content', fc.content,
-            'userId', fc.user_id,
-            'createdAt', fc.created_at,
-            'author', json_build_object(
-              'username', cu.username,
-              'avatarUrl', cu.avatar_url
-            )
-          )
-        ) as comments
-      FROM forum_posts p
-      LEFT JOIN users u ON p.user_id = u.id
-      LEFT JOIN (
-        SELECT 
-          post_id,
-          SUM(CASE WHEN vote = 'like' THEN 1 ELSE 0 END) as likes,
-          SUM(CASE WHEN vote = 'dislike' THEN 1 ELSE 0 END) as dislikes
-        FROM forum_votes
-        GROUP BY post_id
-      ) v ON p.id = v.post_id
-      LEFT JOIN (
-        SELECT post_id, COUNT(*) as comment_count
-        FROM forum_comments
-        GROUP BY post_id
-      ) c ON p.id = c.post_id
-      LEFT JOIN forum_comments fc ON p.id = fc.post_id
-      LEFT JOIN users cu ON fc.user_id = cu.id
-      WHERE p.id = $1
-      GROUP BY p.id, u.username, u.avatar_url, v.likes, v.dislikes, c.comment_count`,
-      [postId]
-    );
+    const post = await this.db.query.forumPosts.findFirst({
+      where: eq(forumPosts.id, postId),
+      with: {
+        author: true,
+        votes: true,
+        comments: {
+          with: {
+            author: true
+          }
+        }
+      }
+    });
 
-    if (result.rows.length === 0) {
+    if (!post) {
       throw new Error("Post non trouvé");
     }
 
-    const row = result.rows[0];
     return {
-      id: row.id,
-      title: row.title,
-      content: row.content,
-      category: row.category,
-      userId: row.user_id,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      approved: row.approved,
-      rejected: row.rejected,
-      rejectionReason: row.rejection_reason,
-      likes: row.likes,
-      dislikes: row.dislikes,
-      userVotes: {},
-      comments: row.comments || [],
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      category: post.category as ForumCategory,
+      userId: post.userId,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      approved: post.approved,
+      rejected: post.rejected,
+      rejectionReason: post.rejectionReason || undefined,
+      likes: post.votes.filter(v => v.vote === 'like').length,
+      dislikes: post.votes.filter(v => v.vote === 'dislike').length,
+      userVotes: Object.fromEntries(
+        post.votes.map(v => [Number(v.userId), v.vote as 'like' | 'dislike'])
+      ) as Record<number, 'like' | 'dislike'>,
+      comments: post.comments.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        userId: comment.userId,
+        postId: comment.postId,
+        createdAt: comment.createdAt,
+        updatedAt: comment.createdAt,
+        author: {
+          id: comment.author.id,
+          username: comment.author.username,
+          avatar: undefined
+        }
+      })),
       author: {
-        username: row.author_username,
-        avatarUrl: row.author_avatar,
-      },
+        id: post.author.id,
+        username: post.author.username,
+        avatar: undefined
+      }
     };
+  }
+
+  async getPendingTips(): Promise<CommunityTip[]> {
+    const tips = await this.db.query.communityTips.findMany({
+      where: eq(communityTips.approved, false)
+    });
+    return tips;
+  }
+
+  async validateTip(id: number): Promise<CommunityTip | undefined> {
+    const [validatedTip] = await this.db
+      .update(communityTips)
+      .set({ approved: true })
+      .where(eq(communityTips.id, id))
+      .returning();
+    return validatedTip;
   }
 }
