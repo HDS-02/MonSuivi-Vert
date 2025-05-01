@@ -76,8 +76,9 @@ export const growthJournal = pgTable("growth_journal", {
 export const usersRelations = relations(users, ({ many }) => ({
   plants: many(plants),
   growthEntries: many(growthJournal),
-  tips: many(communityTips),
-  comments: many(communityComments),
+  posts: many(communityPosts),
+  postComments: many(communityPostComments),
+  postVotes: many(communityPostVotes)
 }));
 
 export const plantsRelations = relations(plants, ({ one, many }) => ({
@@ -140,7 +141,12 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
 });
 
 // Types 
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & {
+  role: 'user' | 'admin' | 'moderator';
+  status: 'active' | 'banned';
+  lastLogin: string;
+  avatar?: string;
+};
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Plant = typeof plants.$inferSelect;
@@ -173,179 +179,25 @@ export interface Badge {
   maxProgress?: number;
 }
 
-// Tables pour les fonctionnalités communautaires
-export const communityTips = pgTable("community_tips", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  plantSpecies: text("plant_species"),
-  rating: integer("rating").default(0),
-  votes: integer("votes").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  tags: json("tags").$type<string[]>().default([]),
-  imageUrl: text("image_url"),
-  category: text("category"), // Entretien, Maladies, Arrosage, etc.
-  approved: boolean("approved").default(false),
-  validated: boolean("validated").default(false),
-});
+// Types pour l'espace communautaire
+export const communityCategories = ['conseils', 'experiences', 'questions', 'astuces'] as const;
+export type CommunityCategory = typeof communityCategories[number];
 
-export const communityComments = pgTable("community_comments", {
-  id: serial("id").primaryKey(),
-  tipId: integer("tip_id").notNull(),
-  userId: integer("user_id").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  likes: integer("likes").default(0),
-});
-
-// Relations pour les tables communautaires
-export const communityTipsRelations = relations(communityTips, ({ one, many }) => ({
-  author: one(users, {
-    fields: [communityTips.userId],
-    references: [users.id],
-  }),
-  comments: many(communityComments),
-}));
-
-export const communityCommentsRelations = relations(communityComments, ({ one }) => ({
-  tip: one(communityTips, {
-    fields: [communityComments.tipId],
-    references: [communityTips.id],
-  }),
-  author: one(users, {
-    fields: [communityComments.userId],
-    references: [users.id],
-  }),
-}));
-
-// Les relations des utilisateurs sont déjà définies plus haut
-
-// Schemas pour l'insertion de données
-export const insertCommunityTipSchema = createInsertSchema(communityTips).omit({
-  id: true,
-  createdAt: true,
-  votes: true,
-  rating: true,
-});
-
-export const insertCommunityCommentSchema = createInsertSchema(communityComments).omit({
-  id: true,
-  createdAt: true,
-  likes: true,
-});
-
-// Types
-export type CommunityTip = typeof communityTips.$inferSelect;
-export type InsertCommunityTip = z.infer<typeof insertCommunityTipSchema>;
-
-export type CommunityComment = typeof communityComments.$inferSelect;
-export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
-
-// API response types for AI analysis
-export interface PlantAnalysisResponse {
-  plantName?: string;
-  species?: string;
-  status: "healthy" | "warning" | "danger";
-  healthIssues?: string[];
-  recommendations: string[];
-  careInstructions: {
-    watering?: string;
-    light?: string;
-    temperature?: string;
-    additional?: string[];
-  };
-}
-
-// Types pour le forum
-export const forumCategories = ['conseils', 'questions', 'partage', 'identification', 'maladies', 'autres'] as const;
-export type ForumCategory = typeof forumCategories[number];
-
-export const forumCategoryEnum = pgEnum('forum_category', ['GENERAL', 'HELP', 'TIPS', 'DISCUSSION']);
-
-export interface ForumPost {
-  id: number;
-  title: string;
-  content: string;
-  category: ForumCategory;
-  userId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  approved: boolean;
-  rejected: boolean;
-  rejectionReason?: string;
-  likes: number;
-  dislikes: number;
-  userVotes: Record<number, 'like' | 'dislike'>;
-  comments: ForumComment[];
-  author: {
-    id: number;
-    username: string;
-    avatar?: string;
-  };
-}
-
-export interface ForumComment {
-  id: number;
-  content: string;
-  userId: number;
-  postId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  author: {
-    id: number;
-    username: string;
-    avatar?: string;
-  };
-}
-
-export interface CreateForumPost {
-  title: string;
-  content: string;
-  category: ForumCategory;
-  userId: number;
-}
-
-export interface CreateForumComment {
-  content: string;
-  userId: number;
-  postId: number;
-}
-
-export const createForumPostSchema = z.object({
-  title: z.string().min(5).max(100),
-  content: z.string().min(20).max(5000),
-  category: z.enum(forumCategories),
-});
-
-export const createForumCommentSchema = z.object({
-  content: z.string().min(1).max(1000),
-  postId: z.number(),
-});
-
-export const voteForumPostSchema = z.object({
-  vote: z.enum(['like', 'dislike']),
-});
-
-export const rejectForumPostSchema = z.object({
-  reason: z.string().min(10).max(500),
-});
-
-export const forumPosts = pgTable("forum_posts", {
+export const communityPosts = pgTable("community_posts", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
   category: varchar("category", { length: 50 }).notNull(),
   userId: integer("user_id").notNull().references(() => users.id),
   approved: boolean("approved").default(false).notNull(),
-  rejected: boolean("rejected").default(false).notNull(),
-  rejectionReason: text("rejection_reason"),
+  status: varchar("status", { length: 20 }).default('active').notNull(),
+  reports: integer("reports").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
-export const forumVotes = pgTable("forum_votes", {
-  postId: integer("post_id").notNull().references(() => forumPosts.id),
+export const communityPostVotes = pgTable("community_post_votes", {
+  postId: integer("post_id").notNull().references(() => communityPosts.id),
   userId: integer("user_id").notNull().references(() => users.id),
   vote: varchar("vote", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -355,42 +207,87 @@ export const forumVotes = pgTable("forum_votes", {
   };
 });
 
-export const forumComments = pgTable("forum_comments", {
+export const communityPostComments = pgTable("community_post_comments", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => forumPosts.id),
+  postId: integer("post_id").notNull().references(() => communityPosts.id),
   userId: integer("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
+  status: varchar("status", { length: 20 }).default('active').notNull(),
+  likes: integer("likes").default(0).notNull(),
+  dislikes: integer("dislikes").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
 // Relations
-export const forumPostsRelations = relations(forumPosts, ({ many, one }) => ({
-  votes: many(forumVotes),
-  comments: many(forumComments),
+export const communityPostsRelations = relations(communityPosts, ({ many, one }) => ({
+  votes: many(communityPostVotes),
+  comments: many(communityPostComments),
   author: one(users, {
-    fields: [forumPosts.userId],
+    fields: [communityPosts.userId],
     references: [users.id]
   })
 }));
 
-export const forumCommentsRelations = relations(forumComments, ({ one }) => ({
-  post: one(forumPosts, {
-    fields: [forumComments.postId],
-    references: [forumPosts.id]
+export const communityPostCommentsRelations = relations(communityPostComments, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostComments.postId],
+    references: [communityPosts.id]
   }),
   author: one(users, {
-    fields: [forumComments.userId],
+    fields: [communityPostComments.userId],
     references: [users.id]
   })
 }));
 
-export const forumVotesRelations = relations(forumVotes, ({ one }) => ({
-  post: one(forumPosts, {
-    fields: [forumVotes.postId],
-    references: [forumPosts.id]
+export const communityPostVotesRelations = relations(communityPostVotes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostVotes.postId],
+    references: [communityPosts.id]
   }),
   user: one(users, {
-    fields: [forumVotes.userId],
+    fields: [communityPostVotes.userId],
     references: [users.id]
   })
 }));
+
+// Types
+export type CommunityPost = typeof communityPosts.$inferSelect & {
+  author: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+  likes: number;
+  dislikes: number;
+  comments: CommunityPostComment[];
+};
+
+export type CommunityPostComment = typeof communityPostComments.$inferSelect & {
+  author: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+};
+
+// Schemas pour l'insertion de données
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  approved: true,
+  status: true,
+  reports: true,
+});
+
+export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  likes: true,
+  dislikes: true,
+});
+
+export const voteCommunityPostSchema = z.object({
+  vote: z.enum(['like', 'dislike']),
+});

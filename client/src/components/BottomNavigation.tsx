@@ -35,10 +35,10 @@ export default function BottomNavigation() {
             </button>
           </div>
 
-          <Link href="/forum">
-            <div className={`py-3 px-3 flex flex-col items-center ${location === "/forum" || location.startsWith("/forum/") ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
-              <span className="material-icons text-current">forum</span>
-              <span className="text-xs mt-1">Forum</span>
+          <Link href="/communaute">
+            <div className={`py-3 px-3 flex flex-col items-center ${location === "/communaute" || location.startsWith("/communaute/") ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
+              <span className="material-icons text-current">groups</span>
+              <span className="text-xs mt-1">Communauté</span>
             </div>
           </Link>
           {user?.isAdmin && (

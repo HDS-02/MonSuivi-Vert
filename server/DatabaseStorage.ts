@@ -22,6 +22,8 @@ import connectPg from "connect-pg-simple";
 import { IStorage } from "./storage";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { pgTable, serial, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 // Configuration de la connexion PostgreSQL
 const pool = new Pool({
@@ -45,6 +47,68 @@ const dbWithRelations = drizzle(pool, {
       forumVotes: forumVotesRelations
     }
   }
+});
+
+// Tables pour l'espace communautaire
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  likes: integer("likes").default(0),
+  dislikes: integer("dislikes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  approved: boolean("approved").default(false),
+  status: text("status").default("active"),
+  reports: integer("reports").default(0),
+});
+
+export const communityPostComments = pgTable("community_post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  likes: integer("likes").default(0),
+  dislikes: integer("dislikes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  status: text("status").default("active"),
+});
+
+// Relations pour l'espace communautaire
+export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [communityPosts.userId],
+    references: [users.id],
+  }),
+  comments: many(communityPostComments),
+}));
+
+export const communityPostCommentsRelations = relations(communityPostComments, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostComments.postId],
+    references: [communityPosts.id],
+  }),
+  author: one(users, {
+    fields: [communityPostComments.userId],
+    references: [users.id],
+  }),
+}));
+
+// Mise à jour de la table users
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  firstName: text("first_name"),
+  email: text("email"),
+  avatar: text("avatar"),
+  role: text("role").default("user"),
+  status: text("status").default("active"),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  reminderTime: text("reminder_time").default("08:00"),
+  isAdmin: boolean("is_admin").default(false),
 });
 
 interface ForumPostRow {
@@ -128,68 +192,129 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User CRUD methods
-  async getUsers(): Promise<User[]> {
-    return await db.select().from(users);
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    if (result.length === 0) return undefined;
+    const user = result[0];
+    return {
+      ...user,
+      role: user.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: user.avatar || undefined
+    };
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUsers(): Promise<User[]> {
+    const result = await this.db.select().from(users);
+    return result.map(user => ({
+      ...user,
+      role: user.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: user.avatar || undefined
+    }));
+  }
+
+  async getUserById(id: number): Promise<User | null> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    if (result.length === 0) return null;
+    const user = result[0];
+    return {
+      ...user,
+      role: user.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: user.avatar || undefined
+    };
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    const result = await this.db.select().from(users).where(eq(users.username, username));
+    if (result.length === 0) return undefined;
+    const user = result[0];
+    return {
+      ...user,
+      role: user.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: user.avatar || undefined
+    };
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    const [newUser] = await this.db.insert(users).values(user).returning();
+    return {
+      ...newUser,
+      role: newUser.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: newUser.avatar || undefined
+    };
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
+    const [updatedUser] = await this.db
       .update(users)
       .set(updates)
       .where(eq(users.id, id))
       .returning();
-    return updatedUser;
+    if (!updatedUser) return undefined;
+    return {
+      ...updatedUser,
+      role: updatedUser.isAdmin ? 'admin' : 'user',
+      status: 'active',
+      lastLogin: new Date().toISOString(),
+      avatar: updatedUser.avatar || undefined
+    };
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
+    const result = await this.db.delete(users).where(eq(users.id, id));
     return true;
+  }
+
+  async updateUserRole(id: number, role: 'user' | 'admin' | 'moderator'): Promise<void> {
+    await this.db.update(users)
+      .set({ isAdmin: role === 'admin' })
+      .where(eq(users.id, id));
+  }
+
+  async updateUserStatus(id: number, status: 'active' | 'banned'): Promise<void> {
+    await this.db.update(users)
+      .set({ status })
+      .where(eq(users.id, id));
   }
   
   // Plant CRUD methods
   async getPlants(): Promise<Plant[]> {
-    return await db.select().from(plants);
+    return await this.db.select().from(plants);
   }
 
   async getPlantsByUserId(userId: number): Promise<Plant[]> {
-    return await db.select().from(plants).where(eq(plants.userId, userId));
+    return await this.db.select().from(plants).where(eq(plants.userId, userId));
   }
   
   async getPlantsByIds(ids: number[]): Promise<Plant[]> {
     if (ids.length === 0) return [];
-    return await db.select().from(plants).where(
+    return await this.db.select().from(plants).where(
       // @ts-ignore
       plants.id.in(ids)
     );
   }
 
   async getPlant(id: number): Promise<Plant | undefined> {
-    const [plant] = await db.select().from(plants).where(eq(plants.id, id));
+    const [plant] = await this.db.select().from(plants).where(eq(plants.id, id));
     return plant;
   }
 
   async createPlant(plant: InsertPlant): Promise<Plant> {
-    const [newPlant] = await db.insert(plants).values(plant).returning();
+    const [newPlant] = await this.db.insert(plants).values(plant).returning();
     return newPlant;
   }
 
   async updatePlant(id: number, updates: Partial<Plant>): Promise<Plant | undefined> {
-    const [updatedPlant] = await db
+    const [updatedPlant] = await this.db
       .update(plants)
       .set(updates)
       .where(eq(plants.id, id))
@@ -198,21 +323,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePlant(id: number): Promise<boolean> {
-    const result = await db.delete(plants).where(eq(plants.id, id));
+    const result = await this.db.delete(plants).where(eq(plants.id, id));
     return true;
   }
   
   // Task CRUD methods
   async getTasks(): Promise<Task[]> {
-    return await db.select().from(tasks);
+    return await this.db.select().from(tasks);
   }
 
   async getTasksByPlantId(plantId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.plantId, plantId));
+    return await this.db.select().from(tasks).where(eq(tasks.plantId, plantId));
   }
   
   async getTasksByDateRange(startDate: Date, endDate: Date): Promise<Task[]> {
-    const allTasks = await db.select().from(tasks);
+    const allTasks = await this.db.select().from(tasks);
     return allTasks.filter(task => {
       if (!task.dueDate) return false;
       const taskDate = new Date(task.dueDate);
@@ -221,19 +346,19 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPendingTasks(): Promise<Task[]> {
-    return await db
+    return await this.db
       .select()
       .from(tasks)
       .where(eq(tasks.completed, false));
   }
 
   async createTask(task: InsertTask): Promise<Task> {
-    const [newTask] = await db.insert(tasks).values(task).returning();
+    const [newTask] = await this.db.insert(tasks).values(task).returning();
     return newTask;
   }
 
   async updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined> {
-    const [updatedTask] = await db
+    const [updatedTask] = await this.db
       .update(tasks)
       .set(updates)
       .where(eq(tasks.id, id))
@@ -242,7 +367,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async completeTask(id: number): Promise<Task | undefined> {
-    const [completedTask] = await db
+    const [completedTask] = await this.db
       .update(tasks)
       .set({ 
         completed: true, 
@@ -254,13 +379,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    const result = await db.delete(tasks).where(eq(tasks.id, id));
+    const result = await this.db.delete(tasks).where(eq(tasks.id, id));
     return true;
   }
   
   // Plant Analysis CRUD methods
   async getPlantAnalyses(plantId: number): Promise<PlantAnalysis[]> {
-    return await db
+    return await this.db
       .select()
       .from(plantAnalyses)
       .where(eq(plantAnalyses.plantId, plantId))
@@ -268,7 +393,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getLatestPlantAnalysis(plantId: number): Promise<PlantAnalysis | undefined> {
-    const [analysis] = await db
+    const [analysis] = await this.db
       .select()
       .from(plantAnalyses)
       .where(eq(plantAnalyses.plantId, plantId))
@@ -278,7 +403,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPlantAnalysis(analysis: InsertPlantAnalysis): Promise<PlantAnalysis> {
-    const [newAnalysis] = await db
+    const [newAnalysis] = await this.db
       .insert(plantAnalyses)
       .values({ ...analysis, date: new Date() })
       .returning();
@@ -287,7 +412,7 @@ export class DatabaseStorage implements IStorage {
   
   // Journal de croissance CRUD methods
   async getGrowthJournalEntries(plantId: number): Promise<GrowthJournalEntry[]> {
-    return await db
+    return await this.db
       .select()
       .from(growthJournal)
       .where(eq(growthJournal.plantId, plantId))
@@ -295,7 +420,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getGrowthJournalEntriesByUserId(userId: number): Promise<GrowthJournalEntry[]> {
-    return await db
+    return await this.db
       .select()
       .from(growthJournal)
       .where(eq(growthJournal.userId, userId))
@@ -303,7 +428,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getGrowthJournalEntry(id: number): Promise<GrowthJournalEntry | undefined> {
-    const [entry] = await db
+    const [entry] = await this.db
       .select()
       .from(growthJournal)
       .where(eq(growthJournal.id, id));
@@ -311,7 +436,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createGrowthJournalEntry(entry: InsertGrowthJournalEntry): Promise<GrowthJournalEntry> {
-    const [newEntry] = await db
+    const [newEntry] = await this.db
       .insert(growthJournal)
       .values({ ...entry, date: new Date() })
       .returning();
@@ -319,7 +444,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateGrowthJournalEntry(id: number, updates: Partial<GrowthJournalEntry>): Promise<GrowthJournalEntry | undefined> {
-    const [updatedEntry] = await db
+    const [updatedEntry] = await this.db
       .update(growthJournal)
       .set(updates)
       .where(eq(growthJournal.id, id))
@@ -328,7 +453,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteGrowthJournalEntry(id: number): Promise<boolean> {
-    const result = await db.delete(growthJournal).where(eq(growthJournal.id, id));
+    const result = await this.db.delete(growthJournal).where(eq(growthJournal.id, id));
     return true;
   }
 
@@ -342,7 +467,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]> {
-    return await db
+    return await this.db
       .select()
       .from(communityTips)
       .where(eq(communityTips.userId, userId))
@@ -350,7 +475,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCommunityTipById(id: number): Promise<CommunityTip | undefined> {
-    const [tip] = await db
+    const [tip] = await this.db
       .select()
       .from(communityTips)
       .where(eq(communityTips.id, id));
@@ -358,7 +483,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip> {
-    const [newTip] = await db
+    const [newTip] = await this.db
       .insert(communityTips)
       .values(tip)
       .returning();
@@ -366,7 +491,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCommunityTip(id: number, updates: Partial<CommunityTip>): Promise<CommunityTip | undefined> {
-    const [updatedTip] = await db
+    const [updatedTip] = await this.db
       .update(communityTips)
       .set(updates)
       .where(eq(communityTips.id, id))
@@ -375,12 +500,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCommunityTip(id: number): Promise<boolean> {
-    const result = await db.delete(communityTips).where(eq(communityTips.id, id));
+    const result = await this.db.delete(communityTips).where(eq(communityTips.id, id));
     return true;
   }
 
   async voteCommunityTip(id: number, value: 1 | -1): Promise<CommunityTip | undefined> {
-    const [tip] = await db
+    const [tip] = await this.db
       .select()
       .from(communityTips)
       .where(eq(communityTips.id, id));
@@ -390,7 +515,7 @@ export class DatabaseStorage implements IStorage {
     const currentVotes = tip.votes ?? 0;
     const currentRating = tip.rating ?? 0;
     
-    const [updatedTip] = await db
+    const [updatedTip] = await this.db
       .update(communityTips)
       .set({ 
         votes: currentVotes + value,
@@ -405,7 +530,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCommunityCommentsByTipId(tipId: number): Promise<CommunityComment[]> {
-    return await db
+    return await this.db
       .select()
       .from(communityComments)
       .where(eq(communityComments.tipId, tipId))
@@ -413,7 +538,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment> {
-    const [newComment] = await db
+    const [newComment] = await this.db
       .insert(communityComments)
       .values(comment)
       .returning();
@@ -421,19 +546,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCommunityComment(id: number): Promise<boolean> {
-    const result = await db.delete(communityComments).where(eq(communityComments.id, id));
+    const result = await this.db.delete(communityComments).where(eq(communityComments.id, id));
     return true;
   }
 
   async likeCommunityComment(id: number): Promise<CommunityComment | undefined> {
-    const [comment] = await db
+    const [comment] = await this.db
       .select()
       .from(communityComments)
       .where(eq(communityComments.id, id));
     
     if (!comment) return undefined;
     
-    const [updatedComment] = await db
+    const [updatedComment] = await this.db
       .update(communityComments)
       .set({ likes: (comment.likes ?? 0) + 1 })
       .where(eq(communityComments.id, id))
@@ -443,7 +568,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPopularCommunityTips(limit: number = 5): Promise<CommunityTip[]> {
-    const allTips = await db
+    const allTips = await this.db
       .select()
       .from(communityTips)
       .where(eq(communityTips.approved, true));
@@ -454,7 +579,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCommunityTipsByCategory(category: string): Promise<CommunityTip[]> {
-    return await db
+    return await this.db
       .select()
       .from(communityTips)
       .where(
@@ -467,7 +592,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchCommunityTips(query: string): Promise<CommunityTip[]> {
-    const allTips = await db
+    const allTips = await this.db
       .select()
       .from(communityTips)
       .where(eq(communityTips.approved, true));
@@ -735,5 +860,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(communityTips.id, id))
       .returning();
     return validatedTip;
+  }
+
+  async getCommunityPosts(): Promise<CommunitySpacePost[]> {
+    const result = await this.db.select().from(communityPosts);
+    return result.map(post => ({
+      ...post,
+      author: {
+        id: post.userId,
+        username: '', // Nous devrons joindre avec la table users
+        avatar: undefined
+      },
+      comments: [], // Nous devrons joindre avec la table comments
+      status: post.status as 'active' | 'reported' | 'banned',
+      createdAt: post.createdAt.toISOString()
+    }));
+  }
+
+  async createCommunityPost(post: Omit<CommunitySpacePost, 'id' | 'createdAt' | 'author' | 'comments' | 'status'>): Promise<CommunitySpacePost> {
+    const result = await this.db.insert(communityPosts)
+      .values({
+        userId: post.author.id,
+        title: post.title,
+        content: post.content,
+        category: post.category,
+        likes: post.likes,
+        dislikes: post.dislikes,
+        approved: post.approved,
+        reports: post.reports
+      })
+      .returning();
+    
+    return {
+      ...result[0],
+      author: post.author,
+      comments: [],
+      status: 'active',
+      createdAt: new Date().toISOString()
+    };
   }
 }

@@ -21,6 +21,7 @@ import ResetPassword from "@/pages/reset-password";
 import ResetPasswordToken from "@/pages/reset-password/[token]";
 import Settings from "@/pages/Settings";
 import AdminPanel from "@/components/AdminPanel";
+import CommunitySpace from "@/components/CommunitySpace";
 
 function AppRoutes() {
   return (
@@ -36,6 +37,7 @@ function AppRoutes() {
         <ProtectedRoute path="/forum" component={Forum} />
         <ProtectedRoute path="/settings" component={Settings} />
         <ProtectedRoute path="/admin" component={AdminPanel} />
+        <ProtectedRoute path="/communaute" component={CommunitySpace} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/reset-password/:token" component={ResetPasswordToken} />
