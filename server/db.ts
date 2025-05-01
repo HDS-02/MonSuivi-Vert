@@ -4,7 +4,7 @@ import * as schema from '@shared/schema';
 
 // Configuration de la base de données
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: 'postgresql://postgres.rrvlihoixjwteiowfgdf:Tugny-02640@aws-0-eu-west-3.pooler.supabase.com:5432/postgres',
   ssl: false
 });
 
