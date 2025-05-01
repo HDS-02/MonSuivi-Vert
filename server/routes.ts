@@ -1773,64 +1773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID invalide" });
       }
 
-      // Récupérer le post avant la mise à jour
-      const tip = await storage.getCommunityTipById(tipId);
-      if (!tip) {
-        return res.status(404).json({ message: "Post non trouvé" });
-      }
-
-      // Récupérer l'utilisateur qui a créé le post
-      const author = await storage.getUser(tip.userId);
-      if (!author || !author.email) {
-        return res.status(404).json({ message: "Utilisateur non trouvé" });
-      }
-
-      // Mettre à jour le post
       const updatedTip = await storage.updateCommunityTip(tipId, { approved: false });
-
-      // Envoyer un email de notification
-      const emailContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="display: inline-block; background-color: #F44336; border-radius: 50%; width: 70px; height: 70px; line-height: 70px; text-align: center; margin-bottom: 10px;">
-              <span style="color: white; font-size: 36px;">⚠️</span>
-            </div>
-            <h2 style="color: #F44336; margin: 10px 0 0;">Post rejeté</h2>
-          </div>
-          
-          <p style="font-size: 16px; color: #333; line-height: 1.5;">Bonjour,</p>
-          <p style="font-size: 16px; color: #333; line-height: 1.5;">
-            Votre post intitulé <strong style="color: #F44336;">${tip.title}</strong> a été rejeté par un modérateur.
-          </p>
-          
-          <div style="background-color: #FFEBEE; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #F44336;">
-            <p style="margin: 0; font-size: 15px; color: #C62828;">
-              <strong>Raison du rejet :</strong> Le contenu ne respecte pas les règles du forum.
-            </p>
-          </div>
-          
-          <p style="font-size: 16px; color: #333; line-height: 1.5;">
-            Vous pouvez modifier votre post et le soumettre à nouveau pour approbation.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="https://monsuivivert.fr/forum" style="background-color: #F44336; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-              Accéder au forum
-            </a>
-          </div>
-          
-          <p style="font-style: italic; color: #757575; margin-top: 30px; font-size: 0.9em; text-align: center; border-top: 1px solid #e0e0e0; padding-top: 15px;">
-            Cet email est envoyé automatiquement par Mon Suivi Vert.
-          </p>
-        </div>
-      `;
-
-      await sendEmail({
-        to: author.email,
-        subject: `Votre post "${tip.title}" a été rejeté`,
-        html: emailContent
-      });
-
       res.json(updatedTip);
     } catch (error: any) {
       console.error("Erreur lors du rejet du post:", error);
