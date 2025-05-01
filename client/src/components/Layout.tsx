@@ -11,32 +11,16 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   
-  // Vérifier si on est sur la page d'authentification
-  const isAuthPage = location === "/auth";
-  
+  // Ne pas afficher le menu sur les pages d'authentification et de réinitialisation de mot de passe
+  const showNavigation = !['/auth', '/reset-password'].some(path => location.startsWith(path));
+
   return (
-    <div className="min-h-screen flex flex-col bg-neutral">
-      <Header />
-      
-      <main className={`flex-grow container mx-auto px-4 py-6 ${!isAuthPage ? "mb-16" : ""}`}>
+    <div className="min-h-screen bg-gray-50">
+      {showNavigation && <Header />}
+      <main className="container mx-auto px-4 py-6">
         {children}
       </main>
-      
-      {/* ADD PLANT FLOATING BUTTON - Masqué sur la page d'authentification */}
-      {!isAuthPage && (
-        <div className="fixed right-4 bottom-20 z-10">
-          <a 
-            href="/add-plant" 
-            className="w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white hover:bg-primary-dark transition-colors"
-          >
-            <span className="material-icons">add</span>
-          </a>
-        </div>
-      )}
-      
-      {/* Barre de navigation - Masquée sur la page d'authentification */}
-      {!isAuthPage && <BottomNavigation />}
-      
+      {showNavigation && <BottomNavigation />}
       <OnboardingTutorial />
     </div>
   );
