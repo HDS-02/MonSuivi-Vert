@@ -26,16 +26,18 @@ async function initDatabase() {
         image TEXT,
         userId INTEGER REFERENCES users(id),
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         lastWatered TIMESTAMP,
         nextWatering TIMESTAMP,
-        wateringFrequency INTEGER,
+        watering_frequency INTEGER,
         sunlight TEXT,
         temperature TEXT,
         humidity TEXT,
         soilType TEXT,
         fertilizer TEXT,
         notes TEXT,
-        status TEXT DEFAULT 'active'
+        status TEXT DEFAULT 'active',
+        gallery JSONB DEFAULT '[]'::jsonb
       );
 
       CREATE TABLE IF NOT EXISTS tasks (
