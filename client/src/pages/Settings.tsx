@@ -1,36 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { User } from '@shared/schema';
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { AdminPanel } from '../components/AdminPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function Settings() {
-  const [user, setUser] = useState<User | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [theme, setTheme] = useState('light');
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    notificationsEnabled: true,
+    emailNotifications: true,
+    theme: 'light'
+  });
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur:', error);
+  const handleSettingChange = async (key: string, value: any) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/user/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ [key]: value })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la sauvegarde des paramètres');
       }
-    };
 
-    fetchUser();
-  }, []);
+      setSettings(prev => ({ ...prev, [key]: value }));
+      toast({
+        title: "Paramètres mis à jour",
+        description: "Vos préférences ont été enregistrées avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder les paramètres",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Paramètres</h1>
+    <div className="container max-w-4xl mx-auto p-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-primary">Paramètres</h1>
+        {isSaving && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Sauvegarde en cours...
+          </div>
+        )}
+      </div>
       
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -41,49 +73,74 @@ export default function Settings() {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
-          <Card>
+          <Card className="bg-card">
             <CardHeader>
-              <CardTitle>Paramètres Généraux</CardTitle>
+              <CardTitle className="text-xl">Paramètres Généraux</CardTitle>
               <CardDescription>
-                Configurez vos préférences personnelles
+                Personnalisez votre expérience sur Mon Suivi Vert
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Notifications</Label>
-                <div className="flex items-center space-x-2">
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recevez des notifications pour vos plantes et activités
+                    </p>
+                  </div>
                   <Switch
                     id="notifications"
-                    checked={notificationsEnabled}
-                    onCheckedChange={setNotificationsEnabled}
+                    checked={settings.notificationsEnabled}
+                    onCheckedChange={(checked) => handleSettingChange('notificationsEnabled', checked)}
+                    disabled={isSaving}
                   />
-                  <Label htmlFor="notifications">Activer les notifications</Label>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Notifications par email</Label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Notifications par email</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recevez des rappels par email pour l'arrosage de vos plantes
+                    </p>
+                  </div>
                   <Switch
                     id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                    disabled={isSaving}
                   />
-                  <Label htmlFor="email-notifications">Recevoir les notifications par email</Label>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Thème</Label>
-                <select
-                  className="w-full p-2 border rounded-md"
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                >
-                  <option value="light">Clair</option>
-                  <option value="dark">Sombre</option>
-                  <option value="system">Système</option>
-                </select>
+                <div className="space-y-2">
+                  <Label className="text-base">Thème</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Choisissez l'apparence de l'application
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant={settings.theme === 'light' ? 'default' : 'outline'}
+                      onClick={() => handleSettingChange('theme', 'light')}
+                      disabled={isSaving}
+                    >
+                      Clair
+                    </Button>
+                    <Button
+                      variant={settings.theme === 'dark' ? 'default' : 'outline'}
+                      onClick={() => handleSettingChange('theme', 'dark')}
+                      disabled={isSaving}
+                    >
+                      Sombre
+                    </Button>
+                    <Button
+                      variant={settings.theme === 'system' ? 'default' : 'outline'}
+                      onClick={() => handleSettingChange('theme', 'system')}
+                      disabled={isSaving}
+                    >
+                      Système
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
