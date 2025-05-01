@@ -1333,7 +1333,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validation des données
       const validatedData = insertCommunityTipSchema.parse({
         ...req.body,
-        userId: req.user?.id
+        userId: req.user?.id,
+        approved: false // S'assurer que le post n'est pas approuvé par défaut
       });
       
       // Créer le conseil
@@ -1690,7 +1691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Accès non autorisé" });
       }
 
-      const pendingTips = await storage.getPendingTips();
+      const pendingTips = await storage.getCommunityTips({ approved: false });
       res.json(pendingTips);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1767,31 +1768,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID invalide" });
       }
 
+      // Récupérer le post avant la mise à jour
+      const post = await storage.getCommunityTipById(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post non trouvé" });
+      }
+
+      // Récupérer l'utilisateur qui a créé le post
+      const user = await storage.getUser(post.userId);
+      if (!user || !user.email) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      // Mettre à jour le post
       const updatedPost = await storage.updateCommunityTip(postId, { approved: false });
+
+      // Envoyer un email de notification
+      const emailContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="display: inline-block; background-color: #F44336; border-radius: 50%; width: 70px; height: 70px; line-height: 70px; text-align: center; margin-bottom: 10px;">
+              <span style="color: white; font-size: 36px;">⚠️</span>
+            </div>
+            <h2 style="color: #F44336; margin: 10px 0 0;">Post rejeté</h2>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.5;">Bonjour,</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.5;">
+            Votre post intitulé <strong style="color: #F44336;">${post.title}</strong> a été rejeté par un modérateur.
+          </p>
+          
+          <div style="background-color: #FFEBEE; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #F44336;">
+            <p style="margin: 0; font-size: 15px; color: #C62828;">
+              <strong>Raison du rejet :</strong> Le contenu ne respecte pas les règles du forum.
+            </p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333; line-height: 1.5;">
+            Vous pouvez modifier votre post et le soumettre à nouveau pour approbation.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://monsuivivert.fr/forum" style="background-color: #F44336; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Accéder au forum
+            </a>
+          </div>
+          
+          <p style="font-style: italic; color: #757575; margin-top: 30px; font-size: 0.9em; text-align: center; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+            Cet email est envoyé automatiquement par Mon Suivi Vert.
+          </p>
+        </div>
+      `;
+
+      await sendEmail({
+        to: user.email,
+        subject: `Votre post "${post.title}" a été rejeté`,
+        html: emailContent
+      });
+
       res.json(updatedPost);
     } catch (error: any) {
       console.error("Erreur lors du rejet du post:", error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  // Route pour supprimer un post
-  app.delete("/api/forum/posts/:id", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      // Vérifier si l'utilisateur est admin
-      if (req.user?.username !== 'Anteen') {
-        return res.status(403).json({ message: "Accès non autorisé" });
-      }
-
-      const postId = parseInt(req.params.id);
-      if (isNaN(postId)) {
-        return res.status(400).json({ message: "ID invalide" });
-      }
-
-      await storage.deleteCommunityTip(postId);
-      res.status(204).send();
-    } catch (error: any) {
-      console.error("Erreur lors de la suppression du post:", error);
       res.status(500).json({ message: error.message });
     }
   });

@@ -30,7 +30,7 @@ export function AdminPanel() {
 
   const fetchForumPosts = async () => {
     try {
-      const response = await fetch("/api/forum/posts/admin", {
+      const response = await fetch("/api/community/tips/pending", {
         credentials: "include"
       });
       
@@ -154,48 +154,52 @@ export function AdminPanel() {
             </div>
           ) : (
             <div className="space-y-4">
-              {forumPosts.map((post) => (
-                <div key={post.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{post.title}</h3>
-                      <p className="text-sm text-gray-500">Par {post.author}</p>
+              {forumPosts.length === 0 ? (
+                <p className="text-center text-gray-500">Aucun post en attente d'approbation</p>
+              ) : (
+                forumPosts.map((post) => (
+                  <div key={post.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{post.title}</h3>
+                        <p className="text-sm text-gray-500">Par {post.author}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePostAction(post.id, 'approve')}
+                          disabled={post.approved}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Approuver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePostAction(post.id, 'reject')}
+                          disabled={!post.approved}
+                        >
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          Rejeter
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handlePostAction(post.id, 'delete')}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePostAction(post.id, 'approve')}
-                        disabled={post.approved}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Approuver
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePostAction(post.id, 'reject')}
-                        disabled={!post.approved}
-                      >
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        Rejeter
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handlePostAction(post.id, 'delete')}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Supprimer
-                      </Button>
-                    </div>
+                    <p className="text-sm">{post.content}</p>
+                    <p className="text-xs text-gray-500">
+                      Créé le {new Date(post.createdAt).toLocaleString('fr-FR')}
+                    </p>
                   </div>
-                  <p className="text-sm">{post.content}</p>
-                  <p className="text-xs text-gray-500">
-                    Créé le {new Date(post.createdAt).toLocaleString('fr-FR')}
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
         </CardContent>
