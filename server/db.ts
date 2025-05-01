@@ -4,10 +4,15 @@ import * as schema from '@shared/schema';
 
 // Configuration de la base de données
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:Tugny-02640@db.rrvlihoixjwteiowfgdf.supabase.co:5432/postgres',
+  connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  host: 'db.rrvlihoixjwteiowfgdf.supabase.co',
+  port: 5432,
+  user: 'postgres',
+  password: 'Tugny-02640',
+  database: 'postgres'
 });
 
 // Création de l'instance drizzle
