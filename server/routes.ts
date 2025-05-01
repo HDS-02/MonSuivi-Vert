@@ -25,6 +25,7 @@ import { qrCodeService } from "./qrCodeService";
 import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification, sendTodayWateringReminderEmail, sendAutoWateringStatusEmail, sendResetPasswordEmail } from "./email";
 import { pdfService } from "./pdfService";
 import crypto from "crypto";
+import { createForumPostSchema, voteForumPostSchema, createForumCommentSchema, rejectForumPostSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for in-memory file storage
@@ -1776,6 +1777,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedTip = await storage.updateCommunityTip(tipId, { approved: false });
       res.json(updatedTip);
     } catch (error: any) {
+      console.error("Erreur lors du rejet du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Routes pour le forum
+  app.get("/api/forum/posts", async (req: Request, res: Response) => {
+    try {
+      const posts = await storage.getForumPosts();
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des posts:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/forum/posts", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const validatedData = createForumPostSchema.parse({
+        ...req.body,
+        userId: req.user?.id,
+      });
+
+      const post = await storage.createForumPost(validatedData);
+      res.status(201).json(post);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de la création du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/vote", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      const { vote } = voteForumPostSchema.parse(req.body);
+      const updatedPost = await storage.voteForumPost(id, req.user!.id, vote);
+      res.json(updatedPost);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors du vote:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/comments", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      const validatedData = createForumCommentSchema.parse({
+        ...req.body,
+        userId: req.user?.id,
+        postId: id,
+      });
+
+      const updatedPost = await storage.createForumComment(validatedData);
+      res.json(updatedPost);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
+      console.error("Erreur lors de l'ajout du commentaire:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/approve", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const updatedPost = await storage.approveForumPost(id);
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Erreur lors de l'approbation du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/reject", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const { reason } = rejectForumPostSchema.parse(req.body);
+      const updatedPost = await storage.rejectForumPost(id, reason);
+
+      // Envoyer un email à l'auteur du post
+      const post = await storage.getForumPost(id);
+      if (post) {
+        const author = await storage.getUser(post.userId);
+        if (author?.email) {
+          await sendEmail({
+            to: author.email,
+            subject: "Votre post a été rejeté",
+            html: `
+              <h2>Bonjour ${author.username},</h2>
+              <p>Votre post "${post.title}" a été rejeté par un modérateur.</p>
+              <p>Raison : ${reason}</p>
+              <p>Vous pouvez modifier votre post et le soumettre à nouveau.</p>
+            `,
+          });
+        }
+      }
+
+      res.json(updatedPost);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Données invalides", errors: error.errors });
+      }
       console.error("Erreur lors du rejet du post:", error);
       res.status(500).json({ message: error.message });
     }

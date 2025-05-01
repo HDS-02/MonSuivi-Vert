@@ -256,3 +256,69 @@ export interface PlantAnalysisResponse {
     additional?: string[];
   };
 }
+
+export const forumCategories = [
+  'conseils',
+  'questions',
+  'partage',
+  'identification',
+  'maladies',
+  'autres'
+] as const;
+
+export type ForumCategory = typeof forumCategories[number];
+
+export interface ForumPost {
+  id: number;
+  title: string;
+  content: string;
+  category: ForumCategory;
+  userId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  approved: boolean;
+  rejected: boolean;
+  rejectionReason?: string;
+  likes: number;
+  dislikes: number;
+  userVote?: 'like' | 'dislike';
+  comments: ForumComment[];
+  author: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+}
+
+export interface ForumComment {
+  id: number;
+  content: string;
+  userId: number;
+  postId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+}
+
+export const createForumPostSchema = z.object({
+  title: z.string().min(5).max(100),
+  content: z.string().min(20).max(5000),
+  category: z.enum(forumCategories),
+});
+
+export const createForumCommentSchema = z.object({
+  content: z.string().min(1).max(1000),
+  postId: z.number(),
+});
+
+export const voteForumPostSchema = z.object({
+  vote: z.enum(['like', 'dislike']),
+});
+
+export const rejectForumPostSchema = z.object({
+  reason: z.string().min(10).max(500),
+});

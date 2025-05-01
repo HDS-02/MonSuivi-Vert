@@ -5,7 +5,8 @@ import {
   users, User, InsertUser,
   growthJournal, GrowthJournalEntry, InsertGrowthJournalEntry,
   communityTips, CommunityTip, InsertCommunityTip,
-  communityComments, CommunityComment, InsertCommunityComment
+  communityComments, CommunityComment, InsertCommunityComment,
+  forumPosts, ForumPost, CreateForumPost, CreateForumComment
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -71,6 +72,15 @@ export interface IStorage {
   
   // Session store
   sessionStore: session.Store;
+
+  // Méthodes pour le forum
+  getForumPosts(): Promise<ForumPost[]>;
+  getForumPost(postId: number): Promise<ForumPost>;
+  createForumPost(data: CreateForumPost): Promise<ForumPost>;
+  voteForumPost(postId: number, userId: number, vote: "like" | "dislike"): Promise<ForumPost>;
+  createForumComment(data: CreateForumComment): Promise<ForumPost>;
+  approveForumPost(postId: number): Promise<ForumPost>;
+  rejectForumPost(postId: number, reason: string): Promise<ForumPost>;
 }
 
 export class MemStorage implements IStorage {
@@ -501,6 +511,74 @@ export class MemStorage implements IStorage {
     const updatedTip = { ...tip, validated: true };
     this.communityTips.set(id, updatedTip);
     return updatedTip;
+  }
+
+  // Méthodes pour le forum
+  async getForumPosts(): Promise<ForumPost[]> {
+    return Array.from(this.forumPosts.values());
+  }
+
+  async getForumPost(postId: number): Promise<ForumPost> {
+    return this.forumPosts.get(postId);
+  }
+
+  async createForumPost(data: CreateForumPost): Promise<ForumPost> {
+    const id = this.forumPostIdCounter++;
+    const createdAt = new Date();
+    const newPost: ForumPost = { ...data, id, createdAt };
+    this.forumPosts.set(id, newPost);
+    return newPost;
+  }
+
+  async voteForumPost(postId: number, userId: number, vote: "like" | "dislike"): Promise<ForumPost> {
+    const post = this.forumPosts.get(postId);
+    if (!post) throw new Error("Post not found");
+    
+    const updatedPost: ForumPost = {
+      ...post,
+      votes: {
+        ...post.votes,
+        [userId]: vote
+      }
+    };
+    
+    this.forumPosts.set(postId, updatedPost);
+    return updatedPost;
+  }
+
+  async createForumComment(data: CreateForumComment): Promise<ForumPost> {
+    const id = this.forumCommentIdCounter++;
+    const createdAt = new Date();
+    const newComment: ForumPost = { ...data, id, createdAt };
+    this.forumComments.set(id, newComment);
+    return newComment;
+  }
+
+  async approveForumPost(postId: number): Promise<ForumPost> {
+    const post = this.forumPosts.get(postId);
+    if (!post) throw new Error("Post not found");
+    
+    const updatedPost: ForumPost = {
+      ...post,
+      approved: true
+    };
+    
+    this.forumPosts.set(postId, updatedPost);
+    return updatedPost;
+  }
+
+  async rejectForumPost(postId: number, reason: string): Promise<ForumPost> {
+    const post = this.forumPosts.get(postId);
+    if (!post) throw new Error("Post not found");
+    
+    const updatedPost: ForumPost = {
+      ...post,
+      approved: false,
+      rejectionReason: reason
+    };
+    
+    this.forumPosts.set(postId, updatedPost);
+    return updatedPost;
   }
 }
 
