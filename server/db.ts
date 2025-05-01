@@ -5,9 +5,7 @@ import * as schema from '@shared/schema';
 // Configuration de la base de données
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: false
 });
 
 // Création de l'instance drizzle
