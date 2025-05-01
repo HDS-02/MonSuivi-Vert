@@ -1,0 +1,1 @@
+SELECT id, title, approved, validated FROM community_tips WHERE approved = false; 

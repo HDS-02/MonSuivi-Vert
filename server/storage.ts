@@ -52,7 +52,7 @@ export interface IStorage {
   deleteGrowthJournalEntry(id: number): Promise<boolean>;
   
   // Community features methods
-  getCommunityTips(): Promise<CommunityTip[]>;
+  getCommunityTips(options?: { approved?: boolean }): Promise<CommunityTip[]>;
   getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]>;
   getCommunityTipById(id: number): Promise<CommunityTip | undefined>;
   createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip>;
@@ -359,9 +359,9 @@ export class MemStorage implements IStorage {
   }
   
   // Community features methods
-  async getCommunityTips(): Promise<CommunityTip[]> {
+  async getCommunityTips(options?: { approved?: boolean }): Promise<CommunityTip[]> {
     return Array.from(this.communityTips.values())
-      .filter(tip => tip.approved)
+      .filter(tip => options?.approved === undefined || tip.approved === options.approved)
       .sort((a, b) => {
         // Sort by date descending (newest first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

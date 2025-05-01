@@ -238,12 +238,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Community CRUD methods
-  async getCommunityTips(): Promise<CommunityTip[]> {
-    return await db
-      .select()
-      .from(communityTips)
-      .where(eq(communityTips.approved, true))
-      .orderBy(desc(communityTips.createdAt));
+  async getCommunityTips(options?: { approved?: boolean }): Promise<CommunityTip[]> {
+    let query = db.select().from(communityTips);
+    
+    if (options?.approved !== undefined) {
+      query = query.where(eq(communityTips.approved, options.approved));
+    }
+    
+    return await query.orderBy(desc(communityTips.createdAt));
   }
 
   async getCommunityTipsByUserId(userId: number): Promise<CommunityTip[]> {

@@ -1696,6 +1696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pendingTips = await storage.getCommunityTips({ approved: false });
       res.json(pendingTips);
     } catch (error: any) {
+      console.error("Erreur lors de la récupération des posts en attente:", error);
       res.status(500).json({ message: error.message });
     }
   });
