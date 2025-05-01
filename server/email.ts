@@ -669,3 +669,28 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
     html: emailTemplate(`Arrosage automatique ${actionText}`, content)
   });
 }
+
+/**
+ * Envoie un email de réinitialisation de mot de passe
+ */
+export async function sendResetPasswordEmail(email: string, firstName: string = '', resetToken: string): Promise<boolean> {
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const content = `
+    <p>Bonjour ${firstName},</p>
+    <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte Mon Suivi Vert.</p>
+    <p>Pour réinitialiser votre mot de passe, cliquez sur le lien ci-dessous :</p>
+    <p style="text-align: center; margin: 20px 0;">
+      <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+        Réinitialiser mon mot de passe
+      </a>
+    </p>
+    <p>Ce lien expirera dans 1 heure.</p>
+    <p>Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Réinitialisation de votre mot de passe Mon Suivi Vert',
+    html: emailTemplate('Réinitialisation de mot de passe', content)
+  });
+}

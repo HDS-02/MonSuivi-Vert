@@ -21,8 +21,9 @@ import { badgeService } from "./badgeService";
 import { plantDatabase, searchPlants, getPlantByName, getPlantsByCategory, plantCategories } from "./plantDatabase";
 import { plantDiagnosticService } from "./plantDiagnosticService";
 import { qrCodeService } from "./qrCodeService";
-import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification, sendTodayWateringReminderEmail, sendAutoWateringStatusEmail } from "./email";
+import { sendEmail, sendTaskReminder, sendWelcomeEmail, sendPlantAddedEmail, sendPlantRemovedEmail, sendWateringReminderEmail, sendScheduledWateringNotification, sendTodayWateringReminderEmail, sendAutoWateringStatusEmail, sendResetPasswordEmail } from "./email";
 import { pdfService } from "./pdfService";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for in-memory file storage
@@ -1566,6 +1567,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Erreur lors du like du commentaire:", error);
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Route pour la réinitialisation du mot de passe
+  app.post("/api/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      // Vérifier si l'utilisateur existe
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ error: "Aucun utilisateur trouvé avec cette adresse email" });
+      }
+
+      // Générer un token de réinitialisation
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 heure
+
+      // Sauvegarder le token dans la base de données
+      await storage.updateUser(user.id, {
+        resetToken,
+        resetTokenExpiry
+      });
+
+      // Envoyer l'email de réinitialisation
+      await sendResetPasswordEmail(user.email, user.firstName || '', resetToken);
+
+      res.status(200).json({ message: "Email de réinitialisation envoyé" });
+    } catch (error) {
+      console.error("Erreur lors de la réinitialisation du mot de passe:", error);
+      res.status(500).json({ error: "Une erreur est survenue lors de la réinitialisation du mot de passe" });
+    }
+  });
+
+  // Route pour vérifier le token de réinitialisation
+  app.post("/api/verify-reset-token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user || !user.resetTokenExpiry || new Date(user.resetTokenExpiry) < new Date()) {
+        return res.status(400).json({ error: "Token invalide ou expiré" });
+      }
+
+      res.status(200).json({ valid: true });
+    } catch (error) {
+      console.error("Erreur lors de la vérification du token:", error);
+      res.status(500).json({ error: "Une erreur est survenue lors de la vérification du token" });
+    }
+  });
+
+  // Route pour mettre à jour le mot de passe
+  app.post("/api/update-password", async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user || !user.resetTokenExpiry || new Date(user.resetTokenExpiry) < new Date()) {
+        return res.status(400).json({ error: "Token invalide ou expiré" });
+      }
+
+      // Mettre à jour le mot de passe
+      await storage.updateUser(user.id, {
+        password: newPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      });
+
+      res.status(200).json({ message: "Mot de passe mis à jour avec succès" });
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du mot de passe:", error);
+      res.status(500).json({ error: "Une erreur est survenue lors de la mise à jour du mot de passe" });
     }
   });
 

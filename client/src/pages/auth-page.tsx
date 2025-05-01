@@ -183,6 +183,14 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
+                      <div className="text-right">
+                        <a 
+                          href="/reset-password" 
+                          className="text-sm text-primary hover:text-primary-dark transition-colors"
+                        >
+                          Mot de passe oublié ?
+                        </a>
+                      </div>
                       <Button 
                         type="submit" 
                         className="w-full bg-gradient-to-r from-primary to-primary-light text-white mt-4 shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200" 
