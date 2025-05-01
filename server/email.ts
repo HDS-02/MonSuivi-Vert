@@ -129,6 +129,8 @@ try {
   console.error('Impossible de créer le dossier pour les emails de secours:', err);
 }
 
+const SITE_URL = process.env.SITE_URL || 'https://monsuivivert.site';
+
 /**
  * Envoie un email via Nodemailer avec fallback
  */
@@ -238,7 +240,7 @@ export async function sendWelcomeEmail(email: string, firstName: string = ''): P
     </ul>
     <p>N'hésitez pas à ajouter vos premières plantes et à explorer toutes les fonctionnalités de l'application.</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder à mon espace</a>
+      <a href="${SITE_URL}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder à mon espace</a>
     </div>
     <p>À très bientôt sur Mon Suivi Vert !</p>
     <p style="font-style: italic; margin-top: 30px; font-size: 14px; color: #666;">
@@ -269,7 +271,7 @@ export async function sendLoginEmail(email: string, firstName: string = ''): Pro
     <p>Si c'est bien vous qui venez de vous connecter, vous pouvez ignorer cet email.</p>
     <p>Si vous n'êtes pas à l'origine de cette connexion, nous vous recommandons de changer immédiatement votre mot de passe.</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/settings" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Gérer mon compte</a>
+      <a href="${SITE_URL}/settings" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Gérer mon compte</a>
     </div>
   `;
   
@@ -318,7 +320,7 @@ export async function sendTaskReminder(email: string, tasks: Task[], plantNames:
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/calendar" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+      <a href="${SITE_URL}/calendar" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
     </div>
     
     <p>Pour ne plus recevoir ces rappels, vous pouvez désactiver les notifications par email dans les paramètres de l'application.</p>
@@ -351,7 +353,7 @@ export async function sendPlantAddedEmail(email: string, plant: Plant): Promise<
     <p>Nous vous enverrons des rappels pour prendre soin de votre ${plant.name}.</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/plants/${plant.id}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir ma plante</a>
+      <a href="${SITE_URL}/plants/${plant.id}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir ma plante</a>
     </div>
   `;
   
@@ -376,7 +378,7 @@ export async function sendPlantRemovedEmail(email: string, plantName: string): P
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/plants" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mes plantes</a>
+      <a href="${SITE_URL}/plants" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mes plantes</a>
     </div>
   `;
   
@@ -435,7 +437,7 @@ export async function sendTodayWateringReminderEmail(email: string, tasks: Task[
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+      <a href="${SITE_URL}/calendar" style="background-color: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
         Voir mon calendrier
       </a>
     </div>
@@ -490,7 +492,7 @@ export async function sendWateringReminderEmail(email: string, plants: Plant[]):
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+      <a href="${SITE_URL}/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
     </div>
   `;
   
@@ -548,7 +550,7 @@ export async function sendScheduledWateringNotification(email: string, plant: Pl
     </div>
     
     <div style="text-align: center; margin: 25px 0;">
-      <a href="https://monsuivivert.fr/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
+      <a href="${SITE_URL}/calendar" style="background-color: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Voir mon calendrier</a>
     </div>
     
     <p style="font-size: 14px; color: #666; font-style: italic;">Vous pouvez modifier ces tâches ou en ajouter de nouvelles directement depuis l'application.</p>
@@ -653,7 +655,7 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
     ${isEnabled ? wateringDatesHtml : ''}
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://monsuivivert.fr/plants/${plant.id}" style="background-color: ${actionColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+      <a href="${SITE_URL}/plants/${plant.id}" style="background-color: ${actionColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
         Voir ma plante
       </a>
     </div>
@@ -674,7 +676,7 @@ export async function sendAutoWateringStatusEmail(email: string, plant: Plant, i
  * Envoie un email de réinitialisation de mot de passe
  */
 export async function sendResetPasswordEmail(email: string, firstName: string = '', resetToken: string): Promise<boolean> {
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const resetLink = `${SITE_URL}/reset-password/${resetToken}`;
   const content = `
     <p>Bonjour ${firstName},</p>
     <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte Mon Suivi Vert.</p>

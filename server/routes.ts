@@ -1642,6 +1642,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour valider un post du forum (admin uniquement)
+  app.post('/api/community/tips/:id/validate', async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      const { isAdmin } = req.user;
+
+      if (!isAdmin) {
+        return res.status(403).json({ message: 'Accès non autorisé' });
+      }
+
+      const tip = await storage.getCommunityTip(tipId);
+      if (!tip) {
+        return res.status(404).json({ message: 'Post non trouvé' });
+      }
+
+      const validatedTip = await storage.updateCommunityTip(tipId, { ...tip, validated: true });
+      res.json(validatedTip);
+    } catch (error) {
+      console.error('Erreur lors de la validation du post:', error);
+      res.status(500).json({ message: 'Erreur serveur' });
+    }
+  });
+
+  // Route pour récupérer les posts non validés (admin uniquement)
+  app.get('/api/community/tips/pending', async (req, res) => {
+    try {
+      const { isAdmin } = req.user;
+
+      if (!isAdmin) {
+        return res.status(403).json({ message: 'Accès non autorisé' });
+      }
+
+      const pendingTips = await storage.getCommunityTips({ validated: false });
+      res.json(pendingTips);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des posts en attente:', error);
+      res.status(500).json({ message: 'Erreur serveur' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
