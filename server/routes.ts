@@ -1717,6 +1717,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour récupérer les posts du forum pour l'admin
+  app.get("/api/forum/posts/admin", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const posts = await storage.getCommunityTips();
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des posts:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Route pour approuver un post
+  app.post("/api/forum/posts/:id/approve", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const postId = parseInt(req.params.id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      const updatedPost = await storage.updateCommunityTip(postId, { approved: true });
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Erreur lors de l'approbation du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Route pour rejeter un post
+  app.post("/api/forum/posts/:id/reject", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const postId = parseInt(req.params.id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      const updatedPost = await storage.updateCommunityTip(postId, { approved: false });
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Erreur lors du rejet du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Route pour supprimer un post
+  app.delete("/api/forum/posts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Vérifier si l'utilisateur est admin
+      if (req.user?.username !== 'Anteen') {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+
+      const postId = parseInt(req.params.id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "ID invalide" });
+      }
+
+      await storage.deleteCommunityTip(postId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression du post:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

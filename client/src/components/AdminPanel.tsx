@@ -10,7 +10,7 @@ interface ForumPost {
   title: string;
   content: string;
   author: string;
-  status: 'pending' | 'approved' | 'rejected';
+  approved: boolean;
   createdAt: string;
 }
 
@@ -54,8 +54,24 @@ export function AdminPanel() {
 
   const handlePostAction = async (postId: number, action: 'approve' | 'reject' | 'delete') => {
     try {
-      const response = await fetch(`/api/forum/posts/${postId}/${action}`, {
-        method: "POST",
+      let endpoint = '';
+      let method = 'POST';
+      
+      switch (action) {
+        case 'approve':
+          endpoint = `/api/forum/posts/${postId}/approve`;
+          break;
+        case 'reject':
+          endpoint = `/api/forum/posts/${postId}/reject`;
+          break;
+        case 'delete':
+          endpoint = `/api/forum/posts/${postId}`;
+          method = 'DELETE';
+          break;
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
         credentials: "include"
       });
       
@@ -150,7 +166,7 @@ export function AdminPanel() {
                         variant="outline"
                         size="sm"
                         onClick={() => handlePostAction(post.id, 'approve')}
-                        disabled={post.status === 'approved'}
+                        disabled={post.approved}
                       >
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Approuver
@@ -159,7 +175,7 @@ export function AdminPanel() {
                         variant="outline"
                         size="sm"
                         onClick={() => handlePostAction(post.id, 'reject')}
-                        disabled={post.status === 'rejected'}
+                        disabled={!post.approved}
                       >
                         <AlertCircle className="h-4 w-4 mr-2" />
                         Rejeter

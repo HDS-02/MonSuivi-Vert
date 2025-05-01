@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { AdminPanel } from '../components/AdminPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,8 +16,24 @@ export default function Settings() {
   const [settings, setSettings] = useState({
     notificationsEnabled: true,
     emailNotifications: true,
-    theme: 'light'
+    theme: localStorage.getItem('theme') || 'light'
   });
+
+  // Appliquer le thème au chargement
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.theme === 'dark') {
+      root.classList.add('dark');
+    } else if (settings.theme === 'light') {
+      root.classList.remove('dark');
+    } else if (settings.theme === 'system') {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  }, [settings.theme]);
 
   const handleSettingChange = async (key: string, value: any) => {
     setIsSaving(true);
@@ -36,6 +52,9 @@ export default function Settings() {
       }
 
       setSettings(prev => ({ ...prev, [key]: value }));
+      if (key === 'theme') {
+        localStorage.setItem('theme', value);
+      }
       toast({
         title: "Paramètres mis à jour",
         description: "Vos préférences ont été enregistrées avec succès",
