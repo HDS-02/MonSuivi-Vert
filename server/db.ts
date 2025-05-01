@@ -8,5 +8,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Forcer l'utilisation d'IPv4
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  host: '127.0.0.1' // Utiliser l'adresse IPv4 locale
+});
+
+export { pool };
 export const db = drizzle(pool, { schema });
