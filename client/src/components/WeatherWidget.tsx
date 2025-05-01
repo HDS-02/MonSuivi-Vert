@@ -11,10 +11,18 @@ interface WeatherData {
   recommendations: string[];
   location: string;
   forecast?: {
-    temperature: number;
-    humidity: number;
-    description: string;
-    icon: string;
+    morning: {
+      temperature: number;
+      humidity: number;
+      description: string;
+      icon: string;
+    };
+    afternoon: {
+      temperature: number;
+      humidity: number;
+      description: string;
+      icon: string;
+    };
   };
 }
 
@@ -177,10 +185,18 @@ export default function WeatherWidget() {
             location: data.location.name + ', ' + data.location.country,
             recommendations: generateRecommendations(data.current.temp_c, data.current.humidity),
             forecast: {
-              temperature: Math.round(data.forecast.forecastday[1].day.avgtemp_c),
-              humidity: data.forecast.forecastday[1].day.avghumidity,
-              description: data.forecast.forecastday[1].day.condition.text,
-              icon: getWeatherIconFromCode(data.forecast.forecastday[1].day.condition.code)
+              morning: {
+                temperature: Math.round(data.forecast.forecastday[1].hour[8].temp_c),
+                humidity: data.forecast.forecastday[1].hour[8].humidity,
+                description: data.forecast.forecastday[1].hour[8].condition.text,
+                icon: getWeatherIconFromCode(data.forecast.forecastday[1].hour[8].condition.code)
+              },
+              afternoon: {
+                temperature: Math.round(data.forecast.forecastday[1].hour[14].temp_c),
+                humidity: data.forecast.forecastday[1].hour[14].humidity,
+                description: data.forecast.forecastday[1].hour[14].condition.text,
+                icon: getWeatherIconFromCode(data.forecast.forecastday[1].hour[14].condition.code)
+              }
             }
           };
           
@@ -199,10 +215,18 @@ export default function WeatherWidget() {
             location: "Paris, France",
             recommendations: generateRecommendations(data.current.temp_c, data.current.humidity),
             forecast: {
-              temperature: Math.round(data.forecast.forecastday[1].day.avgtemp_c),
-              humidity: data.forecast.forecastday[1].day.avghumidity,
-              description: data.forecast.forecastday[1].day.condition.text,
-              icon: getWeatherIconFromCode(data.forecast.forecastday[1].day.condition.code)
+              morning: {
+                temperature: Math.round(data.forecast.forecastday[1].hour[8].temp_c),
+                humidity: data.forecast.forecastday[1].hour[8].humidity,
+                description: data.forecast.forecastday[1].hour[8].condition.text,
+                icon: getWeatherIconFromCode(data.forecast.forecastday[1].hour[8].condition.code)
+              },
+              afternoon: {
+                temperature: Math.round(data.forecast.forecastday[1].hour[14].temp_c),
+                humidity: data.forecast.forecastday[1].hour[14].humidity,
+                description: data.forecast.forecastday[1].hour[14].condition.text,
+                icon: getWeatherIconFromCode(data.forecast.forecastday[1].hour[14].condition.code)
+              }
             }
           };
           
@@ -303,22 +327,33 @@ export default function WeatherWidget() {
                   <span className="material-icons mr-2 text-sm">calendar_today</span>
                   Prévisions pour demain
                 </h4>
-                <div className="flex items-center justify-center gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Prévisions du matin */}
                   <div className="text-center">
+                    <h5 className="text-sm font-medium text-gray-600 mb-2">Matin</h5>
                     <div className="bg-blue-50 rounded-full p-2 mb-1 inline-block hover:bg-blue-100 transition-colors duration-200">
                       <span className="material-icons text-blue-600">
-                        {getWeatherIcon(weatherData.forecast.icon)}
+                        {getWeatherIcon(weatherData.forecast.morning.icon)}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-600">{weatherData.forecast.description}</div>
+                    <div className="text-sm text-gray-600">{weatherData.forecast.morning.description}</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {weatherData.forecast.morning.temperature}°C • {weatherData.forecast.morning.humidity}%
+                    </div>
                   </div>
+                  
+                  {/* Prévisions de l'après-midi */}
                   <div className="text-center">
-                    <div className="text-sm text-gray-500 mb-1">Température</div>
-                    <div className="text-lg font-medium text-blue-600">{weatherData.forecast.temperature}°C</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-500 mb-1">Humidité</div>
-                    <div className="text-lg font-medium text-blue-600">{weatherData.forecast.humidity}%</div>
+                    <h5 className="text-sm font-medium text-gray-600 mb-2">Après-midi</h5>
+                    <div className="bg-blue-50 rounded-full p-2 mb-1 inline-block hover:bg-blue-100 transition-colors duration-200">
+                      <span className="material-icons text-blue-600">
+                        {getWeatherIcon(weatherData.forecast.afternoon.icon)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">{weatherData.forecast.afternoon.description}</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {weatherData.forecast.afternoon.temperature}°C • {weatherData.forecast.afternoon.humidity}%
+                    </div>
                   </div>
                 </div>
               </div>
