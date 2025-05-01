@@ -16,7 +16,6 @@ import Tips from "@/pages/Tips";
 import Badges from "@/pages/Badges";
 import AuthPage from "@/pages/auth-page";
 import AddPlantManually from "@/pages/AddPlantManually";
-import Forum from "@/pages/Forum";
 import ResetPassword from "@/pages/reset-password";
 import ResetPasswordToken from "@/pages/reset-password/[token]";
 import Settings from "@/pages/Settings";
@@ -34,7 +33,6 @@ function AppRoutes() {
         <ProtectedRoute path="/calendar" component={Calendar} />
         <ProtectedRoute path="/tips" component={Tips} />
         <ProtectedRoute path="/badges" component={Badges} />
-        <ProtectedRoute path="/forum" component={Forum} />
         <ProtectedRoute path="/settings" component={Settings} />
         <ProtectedRoute path="/admin" component={AdminPanel} />
         <ProtectedRoute path="/communaute" component={CommunitySpace} />
