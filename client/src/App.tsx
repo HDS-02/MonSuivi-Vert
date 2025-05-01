@@ -20,6 +20,7 @@ import Communaute from "@/pages/Communaute";
 import ConseilDetail from "@/pages/ConseilDetail";
 import ResetPassword from "@/pages/reset-password";
 import ResetPasswordToken from "@/pages/reset-password/[token]";
+import Settings from "@/pages/Settings";
 
 function AppRoutes() {
   return (
@@ -34,6 +35,7 @@ function AppRoutes() {
         <ProtectedRoute path="/badges" component={Badges} />
         <ProtectedRoute path="/communaute" component={Communaute} />
         <ProtectedRoute path="/communaute/:id" component={ConseilDetail} />
+        <ProtectedRoute path="/settings" component={Settings} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/reset-password/:token" component={ResetPasswordToken} />

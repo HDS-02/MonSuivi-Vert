@@ -1,6 +1,5 @@
 import { useState } from "react";
 import NotificationsDialog from "./NotificationsDialog";
-import SettingsDialog from "./SettingsDialog";
 import ProfileDialog from "./ProfileDialog";
 import newLogo from "../assets/logo.png";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,7 +8,6 @@ import { useLocation } from "wouter";
 
 export default function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
@@ -36,7 +34,7 @@ export default function Header() {
           </button>
           <button 
             className="p-2 rounded-full hover:bg-white/20 active:bg-white/30 transition-all duration-200 ease-in-out"
-            onClick={() => setSettingsOpen(true)}
+            onClick={() => navigate('/settings')}
             title="Paramètres"
           >
             <span className="material-icons">settings</span>
@@ -56,11 +54,6 @@ export default function Header() {
       <NotificationsDialog 
         open={notificationsOpen} 
         onOpenChange={setNotificationsOpen} 
-      />
-      
-      <SettingsDialog 
-        open={settingsOpen} 
-        onOpenChange={setSettingsOpen} 
       />
 
       <ProfileDialog
