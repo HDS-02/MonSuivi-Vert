@@ -186,6 +186,7 @@ export const communityTips = pgTable("community_tips", {
   imageUrl: text("image_url"),
   category: text("category"), // Entretien, Maladies, Arrosage, etc.
   approved: boolean("approved").default(false),
+  validated: boolean("validated").default(false),
 });
 
 export const communityComments = pgTable("community_comments", {
