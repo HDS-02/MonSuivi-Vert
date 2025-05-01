@@ -491,8 +491,5 @@ export class MemStorage implements IStorage {
 // Import la version persistante de notre storage avec base de données
 import { DatabaseStorage } from "./DatabaseStorage";
 
-// Utilisons le stockage en mémoire pour le développement
-export const storage = new MemStorage();
-
-// Utilisez cette ligne pour le stockage en base de données quand elle sera disponible
-// export const storage = new DatabaseStorage();
+// Utilisons le stockage en base de données
+export const storage = new DatabaseStorage();
