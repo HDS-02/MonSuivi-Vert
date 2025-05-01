@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   email: text("email"),
   createdAt: timestamp("created_at").defaultNow(),
   reminderTime: text("reminder_time").default("08:00"), // Heure à laquelle envoyer les rappels (format HH:MM)
+  isAdmin: boolean("is_admin").default(false), // Indique si l'utilisateur est administrateur
 });
 
 // Plant table

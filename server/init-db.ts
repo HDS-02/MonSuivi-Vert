@@ -12,7 +12,8 @@ export async function initDatabase() {
         first_name TEXT,
         email TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        reminder_time TEXT DEFAULT '08:00'
+        reminder_time TEXT DEFAULT '08:00',
+        is_admin BOOLEAN DEFAULT FALSE
       );
 
       CREATE TABLE IF NOT EXISTS plants (

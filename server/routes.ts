@@ -9,7 +9,8 @@ import {
   insertUserSchema, 
   insertGrowthJournalSchema,
   insertCommunityTipSchema,
-  insertCommunityCommentSchema
+  insertCommunityCommentSchema,
+  User
 } from "@shared/schema";
 import { analyzePlantImage, getPlantInfoByName } from "./openai";
 import multer from "multer";
@@ -1683,11 +1684,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route pour récupérer les posts en attente de validation
+  // Route pour récupérer les posts en attente de validation (admin uniquement)
   app.get("/api/community/tips/pending", isAuthenticated, async (req: Request, res: Response) => {
     try {
       // Vérifier si l'utilisateur est admin
-      if (req.user?.username !== 'Anteen') {
+      const user = req.user as User;
+      if (!user?.isAdmin) {
         return res.status(403).json({ message: "Accès non autorisé" });
       }
 
@@ -1734,54 +1736,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route pour approuver un post
-  app.post("/api/forum/posts/:id/approve", isAuthenticated, async (req: Request, res: Response) => {
+  // Route pour approuver un post (admin uniquement)
+  app.post("/api/community/tips/:id/approve", isAuthenticated, async (req: Request, res: Response) => {
     try {
       // Vérifier si l'utilisateur est admin
-      if (req.user?.username !== 'Anteen') {
+      const user = req.user as User;
+      if (!user?.isAdmin) {
         return res.status(403).json({ message: "Accès non autorisé" });
       }
 
-      const postId = parseInt(req.params.id);
-      if (isNaN(postId)) {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
         return res.status(400).json({ message: "ID invalide" });
       }
 
-      const updatedPost = await storage.updateCommunityTip(postId, { approved: true });
-      res.json(updatedPost);
+      const updatedTip = await storage.updateCommunityTip(tipId, { approved: true });
+      res.json(updatedTip);
     } catch (error: any) {
       console.error("Erreur lors de l'approbation du post:", error);
       res.status(500).json({ message: error.message });
     }
   });
 
-  // Route pour rejeter un post
-  app.post("/api/forum/posts/:id/reject", isAuthenticated, async (req: Request, res: Response) => {
+  // Route pour rejeter un post (admin uniquement)
+  app.post("/api/community/tips/:id/reject", isAuthenticated, async (req: Request, res: Response) => {
     try {
       // Vérifier si l'utilisateur est admin
-      if (req.user?.username !== 'Anteen') {
+      const user = req.user as User;
+      if (!user?.isAdmin) {
         return res.status(403).json({ message: "Accès non autorisé" });
       }
 
-      const postId = parseInt(req.params.id);
-      if (isNaN(postId)) {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
         return res.status(400).json({ message: "ID invalide" });
       }
 
       // Récupérer le post avant la mise à jour
-      const post = await storage.getCommunityTipById(postId);
-      if (!post) {
+      const tip = await storage.getCommunityTipById(tipId);
+      if (!tip) {
         return res.status(404).json({ message: "Post non trouvé" });
       }
 
       // Récupérer l'utilisateur qui a créé le post
-      const user = await storage.getUser(post.userId);
-      if (!user || !user.email) {
+      const author = await storage.getUser(tip.userId);
+      if (!author || !author.email) {
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
 
       // Mettre à jour le post
-      const updatedPost = await storage.updateCommunityTip(postId, { approved: false });
+      const updatedTip = await storage.updateCommunityTip(tipId, { approved: false });
 
       // Envoyer un email de notification
       const emailContent = `
@@ -1795,7 +1799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           <p style="font-size: 16px; color: #333; line-height: 1.5;">Bonjour,</p>
           <p style="font-size: 16px; color: #333; line-height: 1.5;">
-            Votre post intitulé <strong style="color: #F44336;">${post.title}</strong> a été rejeté par un modérateur.
+            Votre post intitulé <strong style="color: #F44336;">${tip.title}</strong> a été rejeté par un modérateur.
           </p>
           
           <div style="background-color: #FFEBEE; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #F44336;">
@@ -1821,12 +1825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
 
       await sendEmail({
-        to: user.email,
-        subject: `Votre post "${post.title}" a été rejeté`,
+        to: author.email,
+        subject: `Votre post "${tip.title}" a été rejeté`,
         html: emailContent
       });
 
-      res.json(updatedPost);
+      res.json(updatedTip);
     } catch (error: any) {
       console.error("Erreur lors du rejet du post:", error);
       res.status(500).json({ message: error.message });
