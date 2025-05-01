@@ -19,7 +19,12 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      },
       createTableIfMissing: true,
       tableName: 'session',
       ttl: 30 * 24 * 60 * 60, // 30 jours en secondes
