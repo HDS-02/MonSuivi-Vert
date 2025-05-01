@@ -1,10 +1,12 @@
 import { useLocation, Link } from "wouter";
 import { useState } from "react";
 import QRCodeScanner from "./QRCodeScanner";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function BottomNavigation() {
   const [location] = useLocation();
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <>
@@ -33,12 +35,20 @@ export default function BottomNavigation() {
             </button>
           </div>
 
-          <Link href="/communaute">
-            <div className={`py-3 px-3 flex flex-col items-center ${location === "/communaute" || location.startsWith("/communaute/") ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
+          <Link href="/forum">
+            <div className={`py-3 px-3 flex flex-col items-center ${location === "/forum" || location.startsWith("/forum/") ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
               <span className="material-icons text-current">forum</span>
-              <span className="text-xs mt-1">Communauté</span>
+              <span className="text-xs mt-1">Forum</span>
             </div>
           </Link>
+          {user?.isAdmin && (
+            <Link href="/admin">
+              <div className={`py-3 px-3 flex flex-col items-center ${location === "/admin" ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
+                <span className="material-icons text-current">admin_panel_settings</span>
+                <span className="text-xs mt-1">Admin</span>
+              </div>
+            </Link>
+          )}
           <Link href="/badges">
             <div className={`py-3 px-3 flex flex-col items-center ${location === "/badges" ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
               <span className="material-icons text-current">emoji_events</span>

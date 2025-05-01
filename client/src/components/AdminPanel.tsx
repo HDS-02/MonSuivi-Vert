@@ -4,6 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 /**
  * Panneau d'administration pour les opérations de maintenance
@@ -78,42 +80,60 @@ export default function AdminPanel() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gestion des Posts du Forum</CardTitle>
-        <CardDescription>
-          Approuvez ou rejetez les posts du forum
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+    <div className="container py-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Panneau d'administration</CardTitle>
+          <CardDescription>
+            Gestion des posts en attente de modération
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {pendingTips.length === 0 ? (
-            <p className="text-center text-gray-500">Aucun post en attente d'approbation</p>
+            <p className="text-center text-muted-foreground">
+              Aucun post en attente de modération
+            </p>
           ) : (
-            pendingTips.map((tip) => (
-              <div key={tip.id} className="border rounded-lg p-4 space-y-2">
-                <h3 className="text-lg font-semibold">{tip.title}</h3>
-                <p className="text-sm text-gray-500">Catégorie: {tip.category}</p>
-                <p className="text-gray-700">{tip.content}</p>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handlePostAction(tip.id, 'approve')}
-                    variant="default"
-                  >
-                    Approuver
-                  </Button>
-                  <Button
-                    onClick={() => handlePostAction(tip.id, 'reject')}
-                    variant="destructive"
-                  >
-                    Rejeter
-                  </Button>
-                </div>
-              </div>
-            ))
+            <div className="space-y-4">
+              {pendingTips.map((tip) => (
+                <Card key={tip.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold">{tip.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Posté {formatDistanceToNow(tip.createdAt || new Date(), { addSuffix: true, locale: fr })}
+                        </p>
+                        <p className="mt-2">{tip.content}</p>
+                        {tip.category && (
+                          <span className="inline-block mt-2 px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+                            {tip.category}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePostAction(tip.id, 'reject')}
+                        >
+                          Rejeter
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePostAction(tip.id, 'approve')}
+                        >
+                          Approuver
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
